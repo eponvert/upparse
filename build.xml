@@ -4,6 +4,6 @@
   
   <target name="compile">
     <mkdir dir="${destdir}"/>
-    <javac srcdir="${srcdir}" destdir="${destdir}"/>
+    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true"/>
   </target>
 </project>
