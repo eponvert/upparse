@@ -1,0 +1,9 @@
+<project name="upparse" default="compile" basedir=".">
+  <property name="srcdir" value="java"/>
+  <property name="destdir" value="classes"/>
+  
+  <target name="compile">
+    <mkdir dir="${destdir}"/>
+    <javac srcdir="${srcdir}" destdir="${destdir}"/>
+  </target>
+</project>
