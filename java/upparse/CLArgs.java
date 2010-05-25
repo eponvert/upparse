@@ -47,10 +47,10 @@ public class CLArgs {
           factor = args[i++];
 
         else if (arg.equals("-i") || arg.equals("--iter")) 
-          iter = Integer.parseInt(args[i]);
+          iter = Integer.parseInt(args[i++]);
 
         else if (arg.equals("-D") || arg.equals("--emdelta")) 
-          emdelta = Float.parseFloat(args[i]);
+          emdelta = Float.parseFloat(args[i++]);
 
         else if (arg.equals("-c") || arg.equals("--tag_contraints"))
           tagContraints = args[i++];

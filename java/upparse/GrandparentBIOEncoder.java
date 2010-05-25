@@ -12,7 +12,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public int[][] bioTrain(ClumpedCorpus corpus, int n) {
+  public int[] bioTrain(ClumpedCorpus corpus, int n) {
     // TODO Auto-generated method stub
     return null;
   }

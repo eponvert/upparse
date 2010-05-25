@@ -18,15 +18,14 @@ public class Main {
    * @throws IOException If there's a problem reading the training data
    */
   private static void simpleClump(String fname, CLArgs clargs) throws IOException {
-    PrintWriter output = new PrintWriter(new File(clargs.output));
+    PrintWriter output = 
+      new PrintWriter(new BufferedWriter(new FileWriter(clargs.output)));
     
     BasicCorpus corpus = new BasicCorpus(fname);
     int[] factor = clargs.getFactor();
     String stopv = clargs.stopv;
     SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
-    for (String s: clumper.getClumpedCorpus().strIter()) 
-      output.println(s);
-    
+    clumper.getClumpedCorpus().printTo(output);
     output.close();
   }
 
@@ -35,25 +34,48 @@ public class Main {
    * @throws IOException If there's a problem reading the training data
    */
   private static void hmm1Clump(String fname, CLArgs clargs) throws IOException {
-    PrintWriter output = new PrintWriter(new File(clargs.output));
-    
-    BasicCorpus corpus = new BasicCorpus(fname);
     int[] factor = clargs.getFactor();
     String stopv = clargs.stopv;
-    SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
-    ClumpedCorpus clumpedCorpus = clumper.getClumpedCorpus();
-    Alpha wrdAlpha = clumper.alpha;
+    ClumpedCorpus corpus = 
+      new SimpleClumper(new BasicCorpus(fname), factor, stopv).getClumpedCorpus();
+    Alpha wrdAlpha = corpus.alpha;
     BIOEncoder encoder = 
       BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, wrdAlpha);
-    int[] tokens = encoder.tokensFromClumpedCorpus(clumpedCorpus);
     
-    int[][] bioTrain = encoder.bioTrain(clumpedCorpus, tokens.length);
-    HMM hmm = HMM.mleEstimate(tokens, bioTrain);
-    int[] bioOutput = hmm.tag(tokens);
-    for (String s: encoder.clumpedCorpusFromBIOOutput(tokens, hmm.tag(tokens)).strIter())
-      output.println(s);
-    
-    output.close();
+    try {
+      HMM hmm = HMM.mleEstimate(corpus, encoder);
+      String outFile = clargs.output + ".iter000.txt"; 
+      PrintWriter output = 
+        new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
+      hmm.reTagTrainCC().printTo(output);
+      output.close();
+
+      int i = 0;
+
+      // Don't run more than 200 iterations of EM
+      int iter = clargs.iter < 0 ? 200 : clargs.iter;
+      double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+
+      String pFile = clargs.output + ".perplex.csv";
+      PrintWriter perplexLog = new PrintWriter(new File(pFile));
+
+      while (i++ < iter && lastPerplexChange <= clargs.emdelta) {
+        hmm.emUpdateFromTrain();
+        outFile = clargs.output + String.format(".iter%03d.txt", i+1);
+        output = new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
+        hmm.reTagTrainCC().printTo(output);
+        output.close();
+        currPerplex = hmm.currPerplex();
+        perplexLog.println(String.format("%d,%f", i+1, currPerplex));
+        lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+        lastPerplex = currPerplex;
+      }
+
+      perplexLog.close();
+    } catch (HMMError e) {
+      System.err.println("Problem initializing HMM: " + e.getMessage());
+      usageError();
+    }
   }
   
   public static void main(String[] argv) {

@@ -14,34 +14,28 @@ public class SimpleBIOEncoder extends BIOEncoder {
     I_STATE    = 2, 
     O_STATE    = 3;
   
-  private static final int[] 
-    STOP_TAG = new int[] {1, 0, 0, 0},
-    B_TAG    = new int[] {0, 1, 0, 0},
-    I_TAG    = new int[] {0, 0, 1, 0},
-    O_TAG    = new int[] {0, 0, 0, 1};
-
   public SimpleBIOEncoder(String stop, Alpha alpha) {
     super(stop, alpha);
   }
 
   @Override
-  public int[][] bioTrain(ClumpedCorpus corpus, int n) {
+  public int[] bioTrain(ClumpedCorpus corpus, int n) {
     int[][][][] clumpedCorpus = corpus.getArrays();
-    int[][] train = new int[n][4];
+    int[] train = new int[n];
     int i = 0, j;
-    train[i++] = STOP_TAG;
+    train[i++] = STOP_STATE;
     
     for (int[][][] s: clumpedCorpus) {
       for (int[][] seg: s) {
         for (int[] clump: seg) {
           if (clump.length == 1)
-            train[i++] = O_TAG;
+            train[i++] = O_STATE;
           else {
-            train[i++] = B_TAG;
+            train[i++] = B_STATE;
             for (j = 1; j < clump.length; j++)
-              train[i++] = I_TAG;
+              train[i++] = I_STATE;
           }
-          train[i++] = STOP_TAG;
+          train[i++] = STOP_STATE;
         }
       }
     }

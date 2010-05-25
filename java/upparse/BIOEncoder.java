@@ -56,7 +56,7 @@ public abstract class BIOEncoder {
  /** Creating BIO encoded training material for HMM
    * @param n number of tokens in clumpedCorpus
    */
-  public abstract int[][] bioTrain(ClumpedCorpus corpus, int n);
+  public abstract int[] bioTrain(ClumpedCorpus corpus, int n);
 
 /** Return a clumped corpus from BIO encoded HMM output */
 public abstract ClumpedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output);
