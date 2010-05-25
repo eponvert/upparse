@@ -36,6 +36,8 @@ public class Main {
         for (String s: clumper.clumpedCorpusStr()) 
           output.println(s);
         
+        output.close();
+        
       }
       
       else if (action.equals("hmm1-clump"))

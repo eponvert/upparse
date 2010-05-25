@@ -3,14 +3,15 @@ package upparse;
 import java.util.*;
 
 /**
+ * Simple structure for counting arrays of int
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class NgramCounts {
   
-  private final Map<Integer, Double> map = new HashMap<Integer, Double>();
+  private final Map<Integer, Double> map = new HashMap<Integer, Double>(50000);
   
   public double get(int... a) {
-    return _get(key(a));
+    return _get(Arrays.hashCode(a));
   }
   
   private double _get(int k) {
@@ -19,16 +20,7 @@ public class NgramCounts {
   }
   
   public void incr(int... a) {
-    int k = key(a);
+    int k = Arrays.hashCode(a);
     map.put(k, _get(k)+1.);
-  }
-  
-  public int key(int... a) {
-    int key = 1;
-    for (int v: a) { 
-      key *= 31;
-      key += v;
-    }
-    return key;
   }
 }

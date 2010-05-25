@@ -120,7 +120,7 @@ public class SimpleClumper {
     
     int i, j, k, m, n, pyrI, pyrJ, numClump, index1, index2;
     
-    double dontClumpVal;
+    double dontClumpVal, count;
     
     boolean[] toclump;
     
@@ -140,10 +140,9 @@ public class SimpleClumper {
           pyr[pyrI] = new double[n-pyrI-1];
 
         for (pyrI = m-1; pyrI >= 0; pyrI--) {
-          for (pyrJ = 0; pyrJ < pyrI; pyrJ++) {
-            pyr[pyrI][pyrJ] = 
-              factor[i] * bigramCounts.get(_terms[j], _terms[i+j+1]) 
-              + sumParents(pyr, pyrI, pyrJ, m, n);
+          for (pyrJ = 0; pyrJ < n-pyrI-1; pyrJ++) {
+            count = bigramCounts.get(_terms[pyrJ], _terms[pyrI+pyrJ+1]);
+            pyr[pyrI][pyrJ] = factor[pyrI] * count + sumParents(pyr,pyrI,pyrJ,m,n);
           }
         }
         
@@ -153,7 +152,7 @@ public class SimpleClumper {
             bigramCounts.get(_terms[k], stopv) + 
             bigramCounts.get(stopv, _terms[k+1]);
           
-          toclump[k] = pyr[0][k] < dontClumpVal; 
+          toclump[k] = pyr[0][k] >= dontClumpVal; 
         }
         
         clumpsTmp = new int[_terms.length][];

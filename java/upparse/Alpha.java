@@ -8,7 +8,7 @@ import java.util.*;
  */
 public class Alpha {
   
-  private final Map<String, Integer> stoi = new HashMap<String, Integer>();
+  private final Map<String, Integer> stoi = new HashMap<String, Integer>(50000);
   private final List<String> itos = new ArrayList<String>();
   
   public int getCode(String term) {
