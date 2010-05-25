@@ -2,8 +2,23 @@
   <property name="srcdir" value="java"/>
   <property name="destdir" value="classes"/>
   
-  <target name="compile">
+  <target name="clean">
+    <delete dir="${destdir}"/>
+  </target>
+  
+  <target name="compile" depends="clean">
     <mkdir dir="${destdir}"/>
-    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true"/>
+    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true">
+      <compilerarg value="-Xlint"/>
+    </javac>
+  </target>
+  
+  <target name="jar" depends="compile">
+    <jar destfile="upparse.jar">
+      <manifest>
+        <attribute name="Main-class" value="upparse.Main"/>
+      </manifest>
+      <fileset dir="${destdir}" includes="**/*.class"/>
+    </jar>
   </target>
 </project>
