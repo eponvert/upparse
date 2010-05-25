@@ -17,6 +17,7 @@ public class CLArgs {
   public String tagContraints;
   public String cmethod;
   public String stopv = "__stop__";
+  public boolean grandparents = false;
   
   public int[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -43,7 +44,7 @@ public class CLArgs {
           output = args[i++];
 
         else if (arg.equals("-F") || arg.equals("--factor")) 
-          factor = args[i];
+          factor = args[i++];
 
         else if (arg.equals("-i") || arg.equals("--iter")) 
           iter = Integer.parseInt(args[i]);
@@ -59,6 +60,9 @@ public class CLArgs {
         
         else if (arg.equals("-S") || arg.equals("--stopv"))
           stopv = args[i++];
+        
+        else if (arg.contains("-G") || arg.equals("--grandparents"))
+          grandparents = true;
 
         else
           otherArgs.add(arg);
@@ -93,7 +97,7 @@ public class CLArgs {
         "  -G|--grandparents         Use pseudo 2nd order tagset\n" +
         "  -i|--iter N               Iterations of EM\n" +
         "  -D|--emdelta D            Halt EM when data perplexity change is less than\n" +
-        "  -c|--tag_constraints FILE Use tag-pair constraint spec"
+        "  -c|--tag_constraints FILE Use tag-pair constraint spec\n"
     );
   }
 }

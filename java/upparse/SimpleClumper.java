@@ -8,7 +8,7 @@ import java.util.*;
  */
 public class SimpleClumper {
   
-  private final Alpha alpha = new Alpha();
+  final Alpha alpha = new Alpha();
   private final StopSegmentCorpus corpus;
   private final NgramCounts bigramCounts = new NgramCounts();
   private final int stopv;
@@ -33,80 +33,9 @@ public class SimpleClumper {
   }
   
   /**
-   * Iterate over the sentences of the original training corpus, returning
-   * strings representing clumped sentences
-   */
-  public Iterable<String> clumpedCorpusStr() {
-    final int[][][][] clumpedCorpus = getClumpedCorpus();
-    
-    return new Iterable<String>() {
-      
-      @Override
-      public Iterator<String> iterator() {
-        
-        return new Iterator<String>() {
-          
-          int i = 0;
-          
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-          
-          @Override
-          public String next() {
-            return clumps2str(clumpedCorpus[i++]);
-          }
-          
-          @Override
-          public boolean hasNext() {
-            return i < clumpedCorpus.length;
-          }
-        };
-      }
-    };
-  }
-  
-  /** Returns string representation of clumped sentence */
-  public String clumps2str(int[][][] clumps) {
-    StringBuffer sb = new StringBuffer();
-    
-    int lasti = clumps.length-1, lastj, lastk;
-    for (int i = 0; i < clumps.length; i++) {
-      lastj = clumps[i].length - 1;
-      for (int j = 0; j <= lastj; j++) {
-        lastk = clumps[i][j].length - 1;
-        
-        if (lastk == 0)
-          sb.append(alpha.getString(clumps[i][j][0]));
-        
-        else {
-          sb.append("(");
-
-          for (int k = 0; k <= lastk; k++) {
-            sb.append(alpha.getString(clumps[i][j][k]));
-            if (k != lastk)
-              sb.append(" ");
-          }
-          
-          sb.append(")");
-        }
-        
-        if (j != lastj)
-          sb.append(" ");
-      }
-      
-      if (i != lasti)
-        sb.append(" ");
-    }
-    
-    return sb.toString();
-  }
-
-  /**
    * Create clumped version of the original training corpus
    */
-  public int[][][][] getClumpedCorpus() {
+  public ClumpedCorpus getClumpedCorpus() {
     
     int[][][] _corpus = corpus.corpus;
     int[][] _segments;
@@ -172,7 +101,7 @@ public class SimpleClumper {
       }
     }
     
-    return clumpedCorpus;
+    return ClumpedCorpus.fromArrays(clumpedCorpus, alpha);
   }
   
   private static double sumParents(double[][] pyr, int i, int j, int m, int n) {
@@ -183,7 +112,7 @@ public class SimpleClumper {
     
     if (i == m-1) return 0.;
     else if (j == 0) return pyr[i+1][0];
-    else if (j == n-i-1) return pyr[i+1][j-1];
+    else if (j == n-i-2) return pyr[i+1][j-1];
     else return pyr[i+1][j-1] + pyr[i+1][j];
   }
 }

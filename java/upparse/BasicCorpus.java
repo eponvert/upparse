@@ -14,19 +14,21 @@ public class BasicCorpus {
   /** Create simple corpus from filename 
    * @throws IOException if there's any trouble reading the file */
   public BasicCorpus(String file) throws IOException {
-    this(new BufferedReader(new FileReader(new File(file))));
-  }
-
-  /** Create simple corpus from input stream 
-   * @throws IOException when there's trouble reading the file */
-  public BasicCorpus(BufferedReader bufferedReader) throws IOException {
-    String s = null;
-    List<String[]> corpusTmp = new ArrayList<String[]>();
-    while ((s = bufferedReader.readLine()) != null) {
-      corpusTmp.add(s.trim().split(" "));
-    }
+    // count the number of sentences
+    BufferedReader br = new BufferedReader(new FileReader(new File(file)));
+    int numS = 0;
+    while (br.readLine() != null) numS++;
+    br.close();
     
-    corpus = corpusTmp.toArray(new String[0][]);
+    corpus = new String[numS][];
+    
+    br = new BufferedReader(new FileReader(new File(file)));
+    int i = 0;
+    for (String s = br.readLine(); s != null; s = br.readLine())
+      corpus[i++] = s.trim().split(" ");
+    br.close();
+    
+    assert i == numS;
   }
   
   /** Iterate over the sentences of the corpus (as string arrays) */

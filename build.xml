@@ -2,14 +2,26 @@
   <property name="srcdir" value="java"/>
   <property name="destdir" value="classes"/>
   
+  <path id="classpath.test">
+    <pathelement location="${destdir}"/>
+    <pathelement location="lib/junit-4.8.2.jar"/>
+  </path>
+  
   <target name="clean">
     <delete dir="${destdir}"/>
   </target>
   
   <target name="compile" depends="clean">
     <mkdir dir="${destdir}"/>
-    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true">
+    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true" excludes="**/tests/*.java">
       <compilerarg value="-Xlint"/>
+    </javac>
+  </target>
+  
+  <target name="compile-tests" depends="compile">
+    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true" includes="**/tests/*.java">
+      <compilerarg value="-Xlint"/>
+      <classpath refid="classpath.test"/>
     </javac>
   </target>
   
@@ -18,7 +30,15 @@
       <manifest>
         <attribute name="Main-class" value="upparse.Main"/>
       </manifest>
-      <fileset dir="${destdir}" includes="**/*.class"/>
+      <fileset dir="${destdir}" includes="**/*.class" excludes="**/tests/*.class"/>
     </jar>
+  </target>
+  
+  <target name="unittests" depends="compile-tests">
+    <junit>
+      <classpath refid="classpath.test"/>
+      <test name="upparse.tests.BIOEncodingTests"/>
+      <test name="upparse.tests.ClumpedCorpusTests"/>
+    </junit>
   </target>
 </project>

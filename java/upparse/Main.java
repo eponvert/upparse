@@ -12,6 +12,49 @@ public class Main {
     CLArgs.printUsage(System.err);
     System.exit(1);
   }
+
+  /** Execute simple clumping model 
+   * @param fname File name of training/eval data
+   * @throws IOException If there's a problem reading the training data
+   */
+  private static void simpleClump(String fname, CLArgs clargs) throws IOException {
+    PrintWriter output = new PrintWriter(new File(clargs.output));
+    
+    BasicCorpus corpus = new BasicCorpus(fname);
+    int[] factor = clargs.getFactor();
+    String stopv = clargs.stopv;
+    SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
+    for (String s: clumper.getClumpedCorpus().strIter()) 
+      output.println(s);
+    
+    output.close();
+  }
+
+  /** Execute HMM clumping model based on baseline output training
+   * @param fname File name of training/eval data
+   * @throws IOException If there's a problem reading the training data
+   */
+  private static void hmm1Clump(String fname, CLArgs clargs) throws IOException {
+    PrintWriter output = new PrintWriter(new File(clargs.output));
+    
+    BasicCorpus corpus = new BasicCorpus(fname);
+    int[] factor = clargs.getFactor();
+    String stopv = clargs.stopv;
+    SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
+    ClumpedCorpus clumpedCorpus = clumper.getClumpedCorpus();
+    Alpha wrdAlpha = clumper.alpha;
+    BIOEncoder encoder = 
+      BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, wrdAlpha);
+    int[] tokens = encoder.tokensFromClumpedCorpus(clumpedCorpus);
+    
+    int[][] bioTrain = encoder.bioTrain(clumpedCorpus, tokens.length);
+    HMM hmm = HMM.mleEstimate(tokens, bioTrain);
+    int[] bioOutput = hmm.tag(tokens);
+    for (String s: encoder.clumpedCorpusFromBIOOutput(tokens, hmm.tag(tokens)).strIter())
+      output.println(s);
+    
+    output.close();
+  }
   
   public static void main(String[] argv) {
     try {
@@ -26,22 +69,13 @@ public class Main {
       
       if (action.equals("simple-clump")) { 
         if (args.length < 2) usageError();
-        
-        PrintWriter output = new PrintWriter(new File(clargs.output));
-        
-        BasicCorpus corpus = new BasicCorpus(args[1]);
-        int[] factor = clargs.getFactor();
-        String stopv = clargs.stopv;
-        SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
-        for (String s: clumper.clumpedCorpusStr()) 
-          output.println(s);
-        
-        output.close();
-        
+        simpleClump(args[1], clargs);
       }
       
-      else if (action.equals("hmm1-clump"))
-        System.exit(0);
+      else if (action.equals("hmm1-clump")) {
+        if (args.length < 2) usageError();
+        hmm1Clump(args[1], clargs);
+      }
       
       else if (action.equals("hmm2-clump"))
         System.exit(0);
@@ -60,6 +94,7 @@ public class Main {
       
     } catch (IOException e) {
       System.err.println("IO problem");
+      e.printStackTrace(System.err);
       usageError();
     }
     
