@@ -358,7 +358,7 @@ public class HMM {
   public static HMM mleEstimate(
       int[] tokens, int[] tags, BIOEncoder encoder) {
     final double[][] emiss = getEmiss(tokens, tags);
-    int ntag = emiss[0].length;
+    int ntag = emiss.length;
     final double[] initTag = getInitTag(tags, ntag);
     final double[][] trans = getTrans(tags, ntag);
     return new HMM(encoder, tokens, emiss, trans, initTag);
