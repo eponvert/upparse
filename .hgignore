@@ -1,8 +1,8 @@
 syntax: glob
 
 data
-bin
 classes
 .classpath
 .settings
 .project
+*.jar
