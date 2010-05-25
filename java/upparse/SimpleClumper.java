@@ -10,7 +10,7 @@ public class SimpleClumper {
   
   private final Alpha alpha = new Alpha();
   private final StopSegmentCorpus corpus;
-  private final double[][] bigramCounts;
+  private final NgramCounts bigramCounts = new NgramCounts();
   private final int stopv;
   private final int[] factor;
 
@@ -19,19 +19,15 @@ public class SimpleClumper {
     corpus = new StopSegmentCorpus(basicCorpus.compiledCorpus(alpha), stopv);
     this.factor = factor;
     
-    int nVocab = alpha.size();
-    bigramCounts = new double[nVocab][nVocab];
-    
     int[][][] _corpus = corpus.corpus;
     int n, j;
     for (int[][] s: _corpus) {
       for (int[] seg: s) {
         n = seg.length;
-        bigramCounts[stopv][seg[0]] += 1.;
-        bigramCounts[seg[n-1]][stopv] += 1.;
-        for (j=0; j < seg.length-1; j++) {
-          bigramCounts[seg[j]][seg[j+1]] += 1.;
-        }
+        bigramCounts.incr(stopv, seg[0]);
+        bigramCounts.incr(seg[n-1], stopv);
+        for (j = 0; j < seg.length-1; j++)
+          bigramCounts.incr(seg[j], seg[j+1]);
       }
     }
   }
@@ -146,7 +142,7 @@ public class SimpleClumper {
         for (pyrI = m-1; pyrI >= 0; pyrI--) {
           for (pyrJ = 0; pyrJ < pyrI; pyrJ++) {
             pyr[pyrI][pyrJ] = 
-              factor[i] * bigramCounts[_terms[j]][_terms[i+j+1]] 
+              factor[i] * bigramCounts.get(_terms[j], _terms[i+j+1]) 
               + sumParents(pyr, pyrI, pyrJ, m, n);
           }
         }
@@ -154,8 +150,8 @@ public class SimpleClumper {
         toclump = new boolean[_terms.length-1];
         for (k = 0; k < _terms.length-1; k++) {
           dontClumpVal =
-            bigramCounts[_terms[k]][stopv] + 
-            bigramCounts[stopv][_terms[k+1]];
+            bigramCounts.get(_terms[k], stopv) + 
+            bigramCounts.get(stopv, _terms[k+1]);
           
           toclump[k] = pyr[0][k] < dontClumpVal; 
         }
