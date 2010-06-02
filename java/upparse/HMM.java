@@ -59,18 +59,18 @@ public class HMM {
 
   public void emUpdateFrom(int[] data) {
     int 
-    ndata = data.length,
-    last = ndata - 1,
-    ntag = trans.length,
-    nvocab = emiss[0].length;
+      ndata = data.length,
+      last = ndata - 1,
+      ntag = trans.length,
+      nvocab = emiss[0].length;
 
     final double neginf = Double.NEGATIVE_INFINITY;
-
+    
     // Forward-backward algorithm
 
     double[][] 
-             forward = new double[ndata][ntag],
-             backward = new double[ndata][ntag];
+      forward = new double[ndata][ntag], 
+      backward = new double[ndata][ntag];
 
     for (int d = 0; d < ndata; d++) {
       for (int t = 0; t < ntag; t++) {
