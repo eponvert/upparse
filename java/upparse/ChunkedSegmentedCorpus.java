@@ -6,18 +6,14 @@ import java.util.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class ClumpedCorpus {
+public class ChunkedSegmentedCorpus {
   
   private final int[][][][] corpus;
   final Alpha alpha;
   
-  private ClumpedCorpus(final int[][][][] _corpus, final Alpha _alpha) {
+  private ChunkedSegmentedCorpus(final int[][][][] _corpus, final Alpha _alpha) {
     corpus = _corpus;
     alpha = _alpha;
-  }
-
-  public static ClumpedCorpus fromArrays(int[][][][] clumpedCorpus, Alpha alpha) {
-    return new ClumpedCorpus(clumpedCorpus, alpha);
   }
 
   public int[][][][] getArrays() {
@@ -93,8 +89,16 @@ public class ClumpedCorpus {
     return sb.toString();
   }
 
-  public void printTo(PrintWriter output) {
-    for (String s:strIter())
-      output.println(s);
+  public void writeTo(String fname) throws IOException {
+    ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeTo(fname);
+  }
+
+  public static ChunkedSegmentedCorpus fromArrays(
+      int[][][][] clumpedCorpus, Alpha alpha) {
+    return new ChunkedSegmentedCorpus(clumpedCorpus, alpha);
+  }
+
+  public ChunkedCorpus toChunkedCorpus() {
+    return ChunkedCorpus.fromChunkedSegmentedCorpus(this);
   }
 }

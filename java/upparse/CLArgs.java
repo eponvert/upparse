@@ -9,15 +9,21 @@ import java.util.*;
  */
 public class CLArgs {
 
-  public String output;
+  public String output = null;
   public String factor = "2";
   public int iter;
   public float emdelta;
-  public String[] args;
-  public String tagContraints;
-  public String cmethod;
+  public String[] args = new String[0];
+  public String tagContraints = null;
+  public String cmethod = null;
   public String stopv = "__stop__";
   public boolean grandparents = false;
+  public String goldStandards = null;
+  private final ChunkingEval[] evals;
+  public String evalType = "PR"; 
+  
+  public final Alpha alpha = new Alpha();
+  public boolean verbose = false;
   
   public int[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -29,7 +35,7 @@ public class CLArgs {
     return f;
   }
 
-  public CLArgs(String[] args) throws BadCLArgsException {
+  public CLArgs(String[] args) throws BadCLArgsException, IOException {
 
     int i = 0;
     String arg;
@@ -40,35 +46,57 @@ public class CLArgs {
       while (i < args.length) {
         arg = args[i++];
 
-        if (arg.equals("-o") || arg.equals("--output")) 
+        if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
 
-        else if (arg.equals("-F") || arg.equals("--factor")) 
+        else if (arg.equals("-F") || arg.equals("-factor")) 
           factor = args[i++];
 
-        else if (arg.equals("-i") || arg.equals("--iter")) 
+        else if (arg.equals("-i") || arg.equals("-iterations")) 
           iter = Integer.parseInt(args[i++]);
 
-        else if (arg.equals("-D") || arg.equals("--emdelta")) 
+        else if (arg.equals("-D") || arg.equals("-emdelta")) 
           emdelta = Float.parseFloat(args[i++]);
 
-        else if (arg.equals("-c") || arg.equals("--tag_contraints"))
+        else if (arg.equals("-c") || arg.equals("-constraints"))
           tagContraints = args[i++];
 
-        else if (arg.equals("-C") || arg.equals("--cmethod")) 
+        else if (arg.equals("-C") || arg.equals("-constraintmethod")) 
           cmethod = args[i++];
         
-        else if (arg.equals("-S") || arg.equals("--stopv"))
+        else if (arg.equals("-S") || arg.equals("-stopsymbol"))
           stopv = args[i++];
         
-        else if (arg.contains("-G") || arg.equals("--grandparents"))
+        else if (arg.equals("-G") || arg.equals("-grandparents"))
           grandparents = true;
+        
+        else if (arg.equals("-g") || arg.equals("-goldstandards"))
+          goldStandards = args[i++];
+        
+        else if (arg.equals("-E") || arg.equals("-evaltype"))
+          evalType = args[i++];
+        
+        else if (arg.equals("-v") || arg.equals("-verbose")) 
+          verbose = true;
 
         else
           otherArgs.add(arg);
       }
       
       this.args = otherArgs.toArray(new String[0]);
+      
+      if (goldStandards != null) {
+        String[] gs = goldStandards.split(",");
+        evals = new ChunkingEval[gs.length];
+        for (i = 0; i < gs.length; i++) {
+          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha);
+        }
+      } else {
+        evals = new ChunkingEval[0];
+      }
+
+      // don't run EM more than 200 iterations
+      if (iter < 0) iter = 200;
     }
     catch (ArrayIndexOutOfBoundsException e) {
       throw new BadCLArgsException();
@@ -85,19 +113,30 @@ public class CLArgs {
         "Usage: java " + prog + " action [options] [args]\n" +
         "\n" +
         "Actions:\n" +
-        "  simple-clump\n" +
-        "  hmm1-clump\n" +
-        "  hmm2-clump\n" +
-        "  rrg1-clump\n" +  
-        "  rrg2-clump\n" +
+        "  simple-chunk\n" +
+        "  hmm1-chunk\n" +
+        "  hmm2-chunk\n" +
+        "  rrg1-chunk\n" +  
+        "  rrg2-chunk\n" +
         "\n" +
         "Options:\n" +
-        "  -o|--output FILE          Set output file/template\n" +
-        "  -F|--factor F             Mult factors for baseline chunking\n" +
-        "  -G|--grandparents         Use pseudo 2nd order tagset\n" +
-        "  -i|--iter N               Iterations of EM\n" +
-        "  -D|--emdelta D            Halt EM when data perplexity change is less than\n" +
-        "  -c|--tag_constraints FILE Use tag-pair constraint spec\n"
+        "  -o|-output FILE            Set output file/template\n" +
+        "  -F|-factor N1,N2...        Mult factors for baseline chunking\n" +
+        "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
+        "  -G|-grandparents           Use pseudo 2nd order tagset\n" +
+        "  -i|-iterations N           Iterations of EM\n" +
+        "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
+        "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
+        "  -C|-constraintmethod M     Use specified method for enforcing constraints"
     );
+  }
+
+  /**
+   * @return An array of evaluation objects for each gold standard corpus 
+   * provided
+   * @throws IOException If there is any problem opening one of the corpus files 
+   */
+  public ChunkingEval[] getEvals() throws IOException {
+    return evals;
   }
 }

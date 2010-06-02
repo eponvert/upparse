@@ -1,7 +1,6 @@
 package upparse;
 
 import java.io.*;
-import java.util.*;
 
 /**
  * Very simple corpus data structure: arrays of string
@@ -31,35 +30,6 @@ public class BasicCorpus {
     assert i == numS;
   }
   
-  /** Iterate over the sentences of the corpus (as string arrays) */
-  public Iterable<String[]> sIter() {
-    return new Iterable<String[]>() {
-      
-      @Override
-      public Iterator<String[]> iterator() {
-        return new Iterator<String[]>() {
-          
-          int i = 0;
-          
-          @Override
-          public void remove() {
-            throw new UnsupportedOperationException();
-          }
-          
-          @Override
-          public String[] next() {
-            return corpus[i++];
-          }
-          
-          @Override
-          public boolean hasNext() {
-            return i < corpus.length;
-          }
-        };
-      }
-    };
-  }
-
   /** Returns corpus indexed by alphabet provided */
   public int[][] compiledCorpus(final Alpha a) {
     int[][] compiledCorpus = new int[corpus.length][];

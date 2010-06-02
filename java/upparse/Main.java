@@ -12,69 +12,120 @@ public class Main {
     CLArgs.printUsage(System.err);
     System.exit(1);
   }
-
-  /** Execute simple clumping model 
-   * @param fname File name of training/eval data
-   * @throws IOException If there's a problem reading the training data
-   */
-  private static void simpleClump(String fname, CLArgs clargs) throws IOException {
-    PrintWriter output = 
-      new PrintWriter(new BufferedWriter(new FileWriter(clargs.output)));
-    
-    BasicCorpus corpus = new BasicCorpus(fname);
-    int[] factor = clargs.getFactor();
-    String stopv = clargs.stopv;
-    SimpleClumper clumper = new SimpleClumper(corpus, factor, stopv);
-    clumper.getClumpedCorpus().printTo(output);
-    output.close();
+  
+  private static SimpleChunker getSimpleChunker(String fname, CLArgs clargs) 
+  throws IOException {
+    return 
+    new SimpleChunker(
+        new BasicCorpus(fname), clargs.getFactor(), clargs.stopv, clargs.alpha);
+  }
+  
+  private static BIOEncoder getBIOEncoder(
+      ChunkedSegmentedCorpus corpus, CLArgs clargs) {
+    return 
+    BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, corpus.alpha); 
   }
 
-  /** Execute HMM clumping model based on baseline output training
+  /** Execute simple chunking model 
    * @param fname File name of training/eval data
    * @throws IOException If there's a problem reading the training data
    */
-  private static void hmm1Clump(String fname, CLArgs clargs) throws IOException {
-    int[] factor = clargs.getFactor();
-    String stopv = clargs.stopv;
-    ClumpedCorpus corpus = 
-      new SimpleClumper(new BasicCorpus(fname), factor, stopv).getClumpedCorpus();
-    Alpha wrdAlpha = corpus.alpha;
-    BIOEncoder encoder = 
-      BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, wrdAlpha);
+  private static void simpleChunk(String fname, CLArgs clargs) 
+  throws IOException {
+    ChunkedSegmentedCorpus outputCorpus = 
+      getSimpleChunker(fname, clargs).getChunkedCorpus();
+    
+    if (clargs.output != null)
+      outputCorpus.writeTo(clargs.output);
     
     try {
-      HMM hmm = HMM.mleEstimate(corpus, encoder);
-      String outFile = clargs.output + ".iter000.txt"; 
-      PrintWriter output = 
-        new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
-      hmm.reTagTrainCC().printTo(output);
-      output.close();
-
-      int i = 0;
-
-      // Don't run more than 200 iterations of EM
-      int iter = clargs.iter < 0 ? 200 : clargs.iter;
-      double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
-
-      String pFile = clargs.output + ".perplex.csv";
-      PrintWriter perplexLog = new PrintWriter(new File(pFile));
-
-      while (i++ < iter && lastPerplexChange <= clargs.emdelta) {
-        hmm.emUpdateFromTrain();
-        outFile = clargs.output + String.format(".iter%03d.txt", i+1);
-        output = new PrintWriter(new BufferedWriter(new FileWriter(outFile)));
-        hmm.reTagTrainCC().printTo(output);
-        output.close();
-        currPerplex = hmm.currPerplex();
-        perplexLog.println(String.format("%d,%f", i+1, currPerplex));
-        lastPerplexChange = Math.abs(currPerplex - lastPerplex);
-        lastPerplex = currPerplex;
+      for (ChunkingEval eval: clargs.getEvals()) {
+        eval.eval("Baseline", outputCorpus.toChunkedCorpus());
+        eval.writeSummary(clargs.evalType);
       }
+    } catch (EvalError e) {
+      System.err.println("Problem with evaluation");
+      System.err.println(e.getMessage());
+    }
+  }
 
-      perplexLog.close();
+  /** Execute HMM chunking model based on baseline output training
+   * @param fname File name of training/eval data
+   * @throws IOException If there's a problem reading the training data
+   */
+  private static void hmm1Chunk(String fname, CLArgs clargs) 
+  throws IOException {
+    
+    boolean writeOut = clargs.output != null;
+    
+    try {
+      ChunkedSegmentedCorpus baselineCorpus = 
+        getSimpleChunker(fname, clargs).getChunkedCorpus();
+      
+      if (writeOut)
+        baselineCorpus.writeTo(clargs.output + ".baseline.txt");
+      
+      ChunkingEval[] evals = clargs.getEvals();
+      for (ChunkingEval eval: evals) 
+        eval.eval("Baseline", baselineCorpus.toChunkedCorpus());
+      
+      BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
+      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder);
+      
+      ChunkedSegmentedCorpus taggedCorpus = hmm.reTagTrainCC();
+      if (writeOut)
+        taggedCorpus.writeTo(clargs.output + ".noem.txt");
+      
+      for (ChunkingEval eval: evals)
+        eval.eval("No EM", 
+            ChunkedCorpus.fromChunkedSegmentedCorpus(taggedCorpus));
+
+      if (clargs.iter != 0) {
+        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+        
+        final CSVFileWriter perplexLog = 
+          writeOut ?  
+              new CSVFileWriter(clargs.output + ".perplex.csv") :
+              null;
+
+        for (int i = 0;
+             i < clargs.iter && lastPerplexChange > clargs.emdelta;
+             i++) {
+          
+          hmm.emUpdateFromTrain();
+          currPerplex = hmm.currPerplex();
+          if (clargs.verbose)
+            System.out.println(String.format(
+                "Iteration %d: Perplexity = %f", i+1, currPerplex));
+          if (writeOut)
+            perplexLog.write(i+1, currPerplex);
+          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+          lastPerplex = currPerplex;
+
+          taggedCorpus = hmm.reTagTrainCC();
+          
+          if (writeOut)
+            taggedCorpus.writeTo(
+                String.format("%s.iter%03d.txt", clargs.output, i+1));
+
+          for (ChunkingEval eval: evals)
+            eval.eval(String.format("Iter %03d", i+1), 
+                ChunkedCorpus.fromChunkedSegmentedCorpus(taggedCorpus));
+        }
+        
+        if (writeOut) perplexLog.close();
+      }
+      
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType);
+
     } catch (HMMError e) {
       System.err.println("Problem initializing HMM: " + e.getMessage());
       usageError();
+      
+    } catch (EvalError e) {
+      System.err.println("Problem with eval: " + e.getMessage());
+      System.exit(1);
     }
   }
   
@@ -84,34 +135,45 @@ public class Main {
       
       String[] args = clargs.args;
 
-      if (clargs.args.length == 0) 
+      if (clargs.args.length == 0)  {
+        System.err.println("Please specify an action\n");
         usageError();
+      }
 
       String action = args[0];
       
-      if (action.equals("simple-clump")) { 
-        if (args.length < 2) usageError();
-        simpleClump(args[1], clargs);
+      if (action.equals("simple-chunk")) { 
+        if (args.length < 2) {
+          System.err.println("Training file required\n");
+          usageError();
+        }
+        simpleChunk(args[1], clargs);
       }
       
-      else if (action.equals("hmm1-clump")) {
-        if (args.length < 2) usageError();
-        hmm1Clump(args[1], clargs);
+      else if (action.equals("hmm1-chunk")) {
+        if (args.length < 2) {
+          System.err.println("Training file required");
+          usageError();
+        }
+        hmm1Chunk(args[1], clargs);
       }
       
-      else if (action.equals("hmm2-clump"))
+      else if (action.equals("hmm2-chunk"))
         System.exit(0);
       
-      else if (action.equals("rrg1-clump"))
+      else if (action.equals("rrg1-chunk"))
         System.exit(0);
       
-      else if (action.equals("rrg2-clump"))
+      else if (action.equals("rrg2-chunk"))
         System.exit(0);
       
-      else
+      else {
+        System.err.println("Unexpected action: " + action);
         usageError();
+      }
       
     } catch (BadCLArgsException e) {
+      System.err.println("Bad command line error: " + e.getMessage());
       usageError();
       
     } catch (IOException e) {
@@ -119,6 +181,5 @@ public class Main {
       e.printStackTrace(System.err);
       usageError();
     }
-    
   }
 }

@@ -12,15 +12,21 @@ public class GrandparentBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public int[] bioTrain(ClumpedCorpus corpus, int n) {
+  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public ClumpedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) {
+  public ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public void writeBIOtrain(String string, ChunkedSegmentedCorpus corpus) {
+    // TODO Auto-generated method stub
+    
   }
 
 }

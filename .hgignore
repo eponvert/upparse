@@ -6,3 +6,5 @@ classes
 .settings
 .project
 upparse.jar
+tmp*
+jrat*

@@ -14,11 +14,13 @@ public class HMM {
   private double perplex = 1e10;
   private final BIOEncoder encoder;
   private final int[] orig;
-  private double[][] emiss;
-  private double[][] trans;
+  double[][] emiss;
+  double[][] trans;
   private double[] initTag;
   private int[][] tagdict;
-  
+
+  private static final double LOGEPS = -1e+16;
+
   private HMM(
       final BIOEncoder _encoder, 
       final int[] _tokens,
@@ -32,88 +34,268 @@ public class HMM {
     initTag = _initTag;
     tagdict = new int[emiss[0].length][];
     updateTagDict();
+    checkSanity();
   }
-  
+
   private void updateTagDict() {
-    int ntag = emiss.length, nterm = emiss[0].length, numTags, w, t;
+    int ntag = emiss.length, nterm = emiss[0].length, numTags, w, t, term;
     int[] temp;
     final Double neginf = Double.NEGATIVE_INFINITY;
-    
+
     for (w = 0; w < nterm; w++) {
       temp = new int[ntag];
       numTags = 0;
       for (t = 0; t < ntag; t++) 
         if (emiss[t][w] != neginf)
           temp[numTags++] = t;
-      
+
       tagdict[w] = Arrays.copyOf(temp, numTags);
     }
   }
 
-  public ClumpedCorpus reTagTrainCC() {
-    int[] output = reTagTrain();
+  public void emUpdateFromTrain() {
+    emUpdateFrom(orig);
+  }
+
+  public void emUpdateFrom(int[] data) {
+    int 
+    ndata = data.length,
+    last = ndata - 1,
+    ntag = trans.length,
+    nvocab = emiss[0].length;
+
+    final double neginf = Double.NEGATIVE_INFINITY;
+
+    // Forward-backward algorithm
+
+    double[][] 
+             forward = new double[ndata][ntag],
+             backward = new double[ndata][ntag];
+
+    for (int d = 0; d < ndata; d++) {
+      for (int t = 0; t < ntag; t++) {
+        forward[d][t] = neginf;
+        backward[d][t] = neginf;
+      }
+    }
+
+    for (int j = 0; j < ntag; j++) {
+      forward[0][j] = emiss[j][data[0]] + initTag[j];
+    }
+
+    // Forward probabilities
+    for (int n = 1; n < ndata; n++) {
+      for (int j: tagdict[data[n-1]]) {
+        for (int k: tagdict[data[n]]) {
+          double arcprob = trans[j][k] + emiss[k][data[n]];
+          double forwUpd = forward[n-1][j] + arcprob;
+          forward[n][k] = logadd(forward[n][k], forwUpd);
+        }
+      }
+    }
+
+    // TODO check end conditions
+    double forwTotal = forward[last][0];
+    backward[last][0] = 0;
+
+    // Backward probabilities. Also collecting new emission and transition 
+    // counts as we go
+    final double[][] emissCount = new double[ntag][nvocab];
+    final double[][] transCount = new double[ntag][ntag];
+
+    for (int n = last; n > 0; n--) {
+      for (int k: tagdict[data[n]]) {
+        double pFwd = forward[n][k];
+        double pBwd = backward[n][k];
+
+        if (pFwd != neginf && pBwd != neginf) {
+          final double emissUpd = exp(pFwd + pBwd - forwTotal);
+          emissCount[k][data[n]] += emissUpd;
+
+
+          for (int j: tagdict[data[n-1]]) {
+            final double tprob = trans[j][k];
+            final double eprob = emiss[k][data[n]];
+            final double arcprob = tprob + eprob;
+            final double backUpd = arcprob + backward[n][k];
+            backward[n-1][j] = logadd(backward[n-1][j], backUpd);
+
+            pFwd = forward[n-1][j];
+
+            if (pFwd != neginf && pBwd != neginf) {
+              final double transUpd = exp(pFwd + pBwd + arcprob - forwTotal);
+              transCount[j][k] += transUpd;
+            }
+          }
+        }
+      }
+    }
+
+    for (int j = 0; j < ntag; j++)
+      emissCount[j][data[0]] += exp(forward[0][j] + backward[0][j] - forwTotal); 
+
+    // Update the HMM probabilities from the new counts
+
+    for (int j = 0; j < ntag; j++) { 
+      final double sum = log(sum(emissCount[j]));
+      for (int w = 0; w < nvocab; w++) {
+        emiss[j][w] = log(emissCount[j][w]) - sum;
+        assert !Double.isNaN(emiss[j][w]);
+      }
+    }
+
+    for (int j = 0; j < ntag; j++) {
+      final double sum = log(sum(transCount[j]));
+      for (int k = 0; k < ntag; k++) {
+        trans[j][k] = log(transCount[j][k]) - sum;
+        assert !Double.isNaN(trans[j][k]);
+      }
+    }
+
+
+    updateTagDict();
+    checkSanity();
+
+    // Get perplexity
+    perplex = exp(-forward[last][0]/ndata);
+  }
+
+  private void checkSanity() {
+    for (int i = 0; i < emiss.length; i++) {
+      double s = 0.; 
+      for (int j = 0; j < emiss[0].length; j++) {
+        assert !Double.isNaN(emiss[i][j]);
+        s += Math.exp(emiss[i][j]);
+      }
+      assert abs(s - 1) < 1e-5;
+    }
+
+    for (int i = 0; i < trans.length; i++) {
+      double s = 0.;
+      for (int j = 0; j < trans[i].length; j++)
+        s += exp(trans[i][j]);
+      assert abs(s - 1) < 1e-5;
+    }
+  }
+
+  private double sum(final double[] ds) {
+    double s = 0;
+    for (double d: ds)
+      s += d;
+    return s;
+  }
+
+  private static double logadd(final double x, final double y) {
+    assert !Double.isNaN(y);
+    assert !Double.isNaN(x);
+    if (x <= LOGEPS) 
+      return y;
+    else if (y <= LOGEPS) 
+      return x;
+    else if (y <= x) 
+      return x + log(1 + exp(y-x)); 
+    else 
+      return y + log(1 + exp(x-y));
+  }
+
+  public ChunkedSegmentedCorpus reTagTrainCC() throws HMMError {
+    int[] output = tag(orig);
     return encoder.clumpedCorpusFromBIOOutput(orig, output);
   }
 
-  public int[] reTagTrain() {
-    return tag(orig);
-  }
-  
   private int[] tag(int[] tokens) {
 
-    int ndata = tokens.length, ntag = trans.length, argmax;
-    double eprob, maxval, prob;
-    final double neginf = Double.NEGATIVE_INFINITY;
-    
-    double[][] viterbi = new double[ndata][ntag];
-    for (double[] vstep: viterbi)
-      Arrays.fill(vstep, Double.NEGATIVE_INFINITY);
-    
-    int[][] backpointer = new int[ndata][ntag];
-    for (int[] bstep: backpointer)
-      Arrays.fill(bstep, -1);
-    
-    for (int j: tagdict[tokens[0]])
-      viterbi[0][j] = emiss[j][tokens[0]] + initTag[j];
-    
-    for (int i = 1; i < ndata; i++) {
-      for (int k: tagdict[tokens[i]]) {
-        eprob = emiss[k][tokens[i]];
-        maxval = neginf;
-        argmax = -1;
-        
-        for (int j: tagdict[tokens[i-1]]) {
-          prob = viterbi[i-1][j] + trans[j][k] + eprob;
-          if (prob > maxval) {
-            argmax = j;
-            maxval = prob;
-          }
-        }
-        
-        viterbi[i][k] = maxval;
-        backpointer[i][k] = argmax;
-      }
+    int ndata = tokens.length, ntag = trans.length;
+    double eprob, tprob, pprob;
+    MaxVals m;
+
+    double[][] viterbi = new double[ndata][];
+
+    double[] v;
+
+    int[][] backpointer = new int[ndata][];
+
+    int[] tags, _tags = tagdict[tokens[0]];
+    assert _tags.length != 0;
+    int n, j, k;
+
+    viterbi[0] = new double[_tags.length];
+    for (j = 0; j < _tags.length; j++) {
+      eprob = emiss[_tags[j]][tokens[0]];
+      tprob = initTag[_tags[j]];
+      viterbi[0][j] = eprob + tprob;
     }
-      
-    int[] output = new int[tokens.length];
-    for (int i = ndata-1; i > 0; i--)
-      output[i-1] = backpointer[i][output[i]];
+
+    int[][] checks = new int[][] 
+                               {{}, {-1}, {-1, -1}, {-1, -1, -1}, {-1, -1, -1, -1}};
+
+    for (n = 1; n < ndata; n++) {
+      tags = tagdict[tokens[n]];
+
+      viterbi[n] = new double[tags.length];
+      backpointer[n] = new int[tags.length];
+
+      for (k = 0; k < tags.length; k++) {
+        eprob = emiss[tags[k]][tokens[n]];
+
+        v = new double[_tags.length];
+        for (j = 0; j < _tags.length; j++) {
+          tprob = trans[_tags[j]][tags[k]];
+          pprob = viterbi[n-1][j];
+          v[j] = pprob + tprob + eprob;
+        }
+
+        m = new MaxVals(v); 
+        viterbi[n][k] = m.max;
+        backpointer[n][k] = m.argmax;
+
+        assert backpointer[n] != null;
+        assert !Arrays.equals(checks[backpointer[n].length], backpointer[n]);
+      }
+
+      _tags = tags;
+    }
+
+    m = new MaxVals(viterbi[ndata-1]);
+
+    int[] output = new int[ndata];
+    output[ndata-1] = m.argmax;
+
+    // first pass gets the indices for the tags in the tagdict
+    for (int i = ndata-1; i > 0; i--) {
+      int curr = output[i];
+      int next = backpointer[i][curr];
+      output[i-1] = next;
+    }
+
+    // second pass fills in the actual tags from the tagdict
+    for (int i = 0; i < ndata; i++)
+      output[i] = tagdict[tokens[i]][output[i]];
 
     return output;
   }
 
-  public void emUpdateFromTrain() {
-    // TODO method stub
+  private static class MaxVals {
+    int argmax = -1;
+    double max = Double.NEGATIVE_INFINITY;
+    public MaxVals(final double[] vals) {
+      for (int i = 0; i < vals.length; i++) {
+        if (vals[i] > max) {
+          argmax = i;
+          max = vals[i];
+        }
+      }
+    }
   }
 
   public double currPerplex() {
     return perplex;
   }
-  
+
   private abstract static class TransCountUpd {
     double[][] train;
     boolean[][] constr;
-    
+
     TransCountUpd(double[][] _train, boolean[][] _constr) {
       train = _train;
       constr = _constr;
@@ -121,10 +303,10 @@ public class HMM {
 
     public abstract double get(int i, int j, int k);
   }
-  
+
   private static boolean[][] getTagConstraintsFromFile(
       String fname, Alpha alpha) throws IOException {
-    
+
     int n = alpha.size();
     boolean[][] constr = new boolean[n][n];
     BufferedReader br = new BufferedReader(new FileReader(new File(fname)));
@@ -137,9 +319,9 @@ public class HMM {
     }
     return constr;
   }
-  
+
   private static class NoConstraintsTransCountUpd extends TransCountUpd {
-    
+
     NoConstraintsTransCountUpd(double[][] _train) {
       super(_train, null);
     }
@@ -149,9 +331,9 @@ public class HMM {
       return train[i-1][j] * train[i][k];
     }
   }
-  
+
   private static class UniformTransCountUpd extends TransCountUpd {
-    
+
     UniformTransCountUpd(double[][] _train, boolean[][] _constr) {
       super(_train, _constr);
     }
@@ -162,9 +344,9 @@ public class HMM {
       return 0;
     }
   }
-  
+
   private static class ByTagTransCountUpd extends TransCountUpd {
-    
+
     ByTagTransCountUpd(double[][] _train, boolean[][] _constr) {
       super(_train, _constr);
     }
@@ -175,27 +357,27 @@ public class HMM {
       return 0;
     }
   }
-  
+
   private static TransCountUpd getTransCountUpd(
       final boolean[][] constraints, 
       final String constrMethod,  
       final double[][] train) 
   throws HMMError {
-    
+
     if (constraints == null)
       return new NoConstraintsTransCountUpd(train);
-    
+
     else if (constrMethod.equals("uniform"))
       return new UniformTransCountUpd(train, constraints);
-    
+
     else if (constrMethod.equals("bytag"))
       return new ByTagTransCountUpd(train, constraints);
-    
+
     else
       throw new HMMError(
           "Unknown transition probability constraint method " + constrMethod); 
   }
-  
+
   /**
    * @param alpha Must be initialized with the tags expected to be seen
    * @throws IOException if there is any trouble with the tag constraints file
@@ -219,33 +401,33 @@ public class HMM {
   throws HMMError {
     return mleEstimate(tokens, train, encoder, null, null);
   }
-  
+
   private static double[][] getEmiss(final int[] tokens, final double[][] train) {
     assert tokens.length == train.length;
     int nterm = arrayMax(tokens) + 1, ntag = train[0].length, i, j, w;
     double sum;
-    
+
     final double[][] emissCount = new double[ntag][nterm];
     for (i = 0; i < tokens.length; i++) 
       for (j = 0; j < ntag; j++)
         emissCount[j][tokens[i]] += train[i][j];
-    
+
     final double[][] emiss = new double[ntag][nterm];
     for (j = 0; j < ntag; j++) {
       sum = 0.;
       for (w = 0; w < nterm; w++) 
         sum += emissCount[j][w];
       sum = log(sum);
-      
+
       for (w = 0; w < nterm; w++)
         emiss[j][w] = log(emissCount[j][w]) - sum;
     }
     return emiss;
   }
-  
+
   private static double[][] getEmiss(final int[] tokens, final int[] tags) {
     assert tokens.length == tags.length;
-    
+
     int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1, i, j, w;
     double sum;
 
@@ -257,7 +439,7 @@ public class HMM {
     for (j = 0; j < ntag; j++) 
       for (w = 0; w < nterm; w++)
         emissCountD[j][w] = (double) emissCount[j][w];
-    
+
     double[][] emiss = new double[ntag][nterm];
     for (j = 0; j < ntag; j++) {
       sum = 0.;
@@ -271,7 +453,7 @@ public class HMM {
 
     return emiss;
   }
-  
+
   private static double[] getInitTag(final double[][] train) {
     int ntag = train[0].length, k;
     double[] initTag = new double[ntag];
@@ -279,7 +461,7 @@ public class HMM {
       initTag[k] = log(train[0][k]);
     return initTag;
   }
-  
+
   private static double[] getInitTag(final int[] tag, final int ntag) {
     double[] initTag = new double[ntag];
     double log1 = log(1.), log0 = log(0.);
@@ -287,7 +469,7 @@ public class HMM {
       initTag[j] = j == tag[0] ? log1 : log0;
     return initTag;
   }
-  
+
   private static double[][] getTrans(
       final double[][] train, 
       final boolean[][] constr, 
@@ -297,28 +479,28 @@ public class HMM {
     int ntag = train[0].length, i, j, k;
     double[][] transCount = new double[ntag][ntag];
     double sum;
-    
+
     for (i = 1; i < train.length; i++)
       for (j = 0; j < ntag; j++)
         for (k = 0; k < ntag; k++)
           transCount[j][k] += getUpd.get(i,j,k);
-    
+
     double[][] trans = new double[ntag][ntag];
     for (j = 0; j < ntag; j++) {
       sum = 0;
       for (k = 0; k < ntag; k++)
         sum += transCount[j][k];
       sum = log(sum);
-      
+
       for (k = 0; k < ntag; k++)
         trans[j][k] = log(transCount[j][k]) - sum;
     }
 
     return trans;
   }
-  
+
   private static double[][] getTrans(final int[] tags, final int ntag) {
-    
+
     int[][] transCount = new int[ntag][ntag];
     int i, j, k;
     double sum;
@@ -344,17 +526,17 @@ public class HMM {
 
     return trans;
   }
-  
+
   public static HMM mleEstimate(
       int[] tokens, double[][] train, BIOEncoder encoder,
       boolean[][] constraints, String constrMethod) throws HMMError {
-    
+
     final double[][] emiss = getEmiss(tokens, train);
     final double[] initTag = getInitTag(train);
     final double[][] trans = getTrans(train, constraints, constrMethod);
     return new HMM(encoder, tokens, emiss, trans, initTag);
   }
-  
+
   public static HMM mleEstimate(
       int[] tokens, int[] tags, BIOEncoder encoder) {
     final double[][] emiss = getEmiss(tokens, tags);
@@ -363,14 +545,14 @@ public class HMM {
     final double[][] trans = getTrans(tags, ntag);
     return new HMM(encoder, tokens, emiss, trans, initTag);
   }
-  
-  public static HMM mleEstimate(ClumpedCorpus corpus, BIOEncoder encoder) 
+
+  public static HMM mleEstimate(ChunkedSegmentedCorpus corpus, BIOEncoder encoder) 
   throws HMMError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
     return mleEstimate(tokens, bioTrain, encoder);
   }
-  
+
   private static int arrayMax(int[] t) {
     assert t.length > 0;
     int v = t[0];

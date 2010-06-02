@@ -1,5 +1,7 @@
 package upparse;
 
+import java.io.*;
+
 /**
  * Utility for encoding a clumped corpus as a BIO-tagged training set 
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
@@ -24,16 +26,21 @@ public abstract class BIOEncoder {
       return new SimpleBIOEncoder(stop, alpha);
   }
   
-  public final int[] tokensFromClumpedCorpus(final ClumpedCorpus corpus) {
+  public final int[] tokensFromClumpedCorpus(final ChunkedSegmentedCorpus corpus) {
     
     int[][][][] clumpedCorpus = corpus.getArrays();
     
     // count tokens 
     int n = 1; // for start token
-    for (int[][][] s: clumpedCorpus)
-      for (int[][] seg: s)
-        for (int[] clump: seg)
-          n += clump.length + 1;
+    for (int[][][] s: clumpedCorpus) {
+      for (int[][] seg: s) {
+        for (int[] clump: seg) {
+          n += clump.length;
+        }
+        n++;
+      }
+    }
+        
     
     int[] tokens = new int[n];
     int i = 0, eosv = alpha.getCode(EOS);
@@ -44,8 +51,8 @@ public abstract class BIOEncoder {
         for (int[] clump: seg) {
           System.arraycopy(clump, 0, tokens, i, clump.length);
           i += clump.length;
-          tokens[i++] = stopv;
         }
+        tokens[i++] = stopv;
       }
       tokens[i-1] = eosv;
     }
@@ -56,8 +63,11 @@ public abstract class BIOEncoder {
  /** Creating BIO encoded training material for HMM
    * @param n number of tokens in clumpedCorpus
    */
-  public abstract int[] bioTrain(ClumpedCorpus corpus, int n);
+  public abstract int[] bioTrain(ChunkedSegmentedCorpus corpus, int n);
 
-/** Return a clumped corpus from BIO encoded HMM output */
-public abstract ClumpedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output);
+  /** Return a clumped corpus from BIO encoded HMM output 
+   * @throws HMMError */
+  public abstract ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) throws HMMError;
+
+  public abstract void writeBIOtrain(String string, ChunkedSegmentedCorpus corpus) throws IOException;
 }

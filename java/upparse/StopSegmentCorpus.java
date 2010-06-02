@@ -27,7 +27,7 @@ public class StopSegmentCorpus {
       for (int j = 0; j < stopIndices.length; j++) {
         pos2 = stopIndices[j];
         
-        if (pos2-pos1 > 1) {
+        if (pos2-pos1 > 0) {
           seg = Arrays.copyOfRange(compiledCorpus[i], pos1, pos2);
           segments.add(seg);
         }

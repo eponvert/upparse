@@ -1,5 +1,6 @@
 package upparse;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -19,7 +20,7 @@ public class SimpleBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public int[] bioTrain(ClumpedCorpus corpus, int n) {
+  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) {
     int[][][][] clumpedCorpus = corpus.getArrays();
     int[] train = new int[n];
     int i = 0, j;
@@ -35,8 +36,8 @@ public class SimpleBIOEncoder extends BIOEncoder {
             for (j = 1; j < clump.length; j++)
               train[i++] = I_STATE;
           }
-          train[i++] = STOP_STATE;
         }
+        train[i++] = STOP_STATE;
       }
     }
     
@@ -44,7 +45,10 @@ public class SimpleBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public ClumpedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) {
+  public ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) 
+  throws HMMError {
+    
+    assert tokens.length == output.length;
     
     // Count the number of sentences
     int eosv = alpha.getCode(EOS);
@@ -58,16 +62,18 @@ public class SimpleBIOEncoder extends BIOEncoder {
     int i = 1, j, sInd = 0, nextEos = 1, numSeg, segInd, nextEoSeg, numClumps, 
     clumpInd;
     
-    while (nextEos < tokens.length) {
+    assert output[i] != I_STATE;
+    
+    //while (nextEos < tokens.length) {
+    while (sInd < numS) {
       
       // process a sentence
-      while (tokens[nextEos] != eosv)
-        nextEos++;
+      while (nextEos < tokens.length && tokens[nextEos] != eosv) nextEos++;
       
       // count the number of segments
       numSeg = 0;
       j = i;
-      while (j <= nextEos) {
+      while (j < tokens.length && j <= nextEos) {
         if (tokens[j] == stopv || tokens[j] == eosv) {
           numSeg++;
         }
@@ -80,41 +86,56 @@ public class SimpleBIOEncoder extends BIOEncoder {
       nextEoSeg = i;
       while (segInd < numSeg) {
         
-        while (output[nextEoSeg] != STOP_STATE) 
-          nextEoSeg++;
+        while (output[nextEoSeg] != STOP_STATE) nextEoSeg++;
+        
+        assert output[nextEoSeg] == STOP_STATE;
+        assert nextEoSeg >= output.length-1 || output[nextEoSeg+1] != I_STATE;
         
         // count the number of clumps
         numClumps = 0;
         j = i;
         while (j < nextEoSeg) {
-          if (output[j] == B_STATE || output[j] == O_STATE)
-            numClumps++;
+          if (output[j] == B_STATE || output[j] == O_STATE) numClumps++;
           j++;
         }     
         
         clumpedCorpus[sInd][segInd] = new int[numClumps][];
         clumpInd = 0;
         
+        boolean firstIn = true;
         while (i < nextEoSeg) {
           if (output[i] == O_STATE) {
-            clumpedCorpus[sInd][segInd][clumpInd] = new int[] { tokens[i] };
-            i++;
+            clumpedCorpus[sInd][segInd][clumpInd] = new int[] { tokens[i++] };
             clumpInd++;
+            assert output[i] != I_STATE;
+            firstIn = false;
           }
 
           else if (output[i] == B_STATE) {
             j = i+1;
-            while (output[j] == I_STATE) 
-              j++;
-
+            assert output[j] == I_STATE;
+            while (output[j] == I_STATE) j++;
+            assert output[j] != I_STATE;
             clumpedCorpus[sInd][segInd][clumpInd] = 
               Arrays.copyOfRange(tokens, i, j);
 
             // next clump
             i = j;
             clumpInd++;
+            assert output[i] != I_STATE;    
+            firstIn = false;
+          }
+          
+          else {
+            assert firstIn;
+            assert output[i] != STOP_STATE: "output[i] should not be STOP";
+            assert output[i] != I_STATE: "output[i] should not be I";
+            throw new HMMError(String.format("Unexpected tag: %d", output[i]));
           }
         }
+        
+        assert i == nextEoSeg: 
+          String.format("i = %d nextEoSeg = %d", i, nextEoSeg);
         
         // next segment
         segInd++;
@@ -126,10 +147,37 @@ public class SimpleBIOEncoder extends BIOEncoder {
       sInd++;
       
       // increment everything
-      i++;
+      assert i == nextEos+1: String.format("(%d) i = %d nextEos = %d", sInd, i, nextEos);
       nextEos = i;
     }
     
-    return ClumpedCorpus.fromArrays(clumpedCorpus, alpha);
+    return ChunkedSegmentedCorpus.fromArrays(clumpedCorpus, alpha);
+  }
+
+  @Override
+  public void writeBIOtrain(String output, ChunkedSegmentedCorpus corpus) 
+  throws IOException {
+    Alpha alpha = corpus.alpha;
+    int[] tokens = tokensFromClumpedCorpus(corpus);
+    int[] tags = bioTrain(corpus, tokens.length);
+    assert tokens.length == tags.length;
+    String[] tagNames = tagNames();
+    PrintWriter pw = 
+      new PrintWriter(new BufferedWriter(new FileWriter(output)));
+    assert tokens.length == tags.length;
+    for (int i = 0; i < tokens.length; i++) 
+      pw.println(
+          String.format("%s %s", alpha.getString(tokens[i]) ,tagNames[tags[i]]));
+    pw.close();
+  }
+  
+  private String[] tagNames() {
+    String[] tagNames = new String[4];
+    tagNames[STOP_STATE] = "STOP";
+    tagNames[I_STATE] = "I";
+    tagNames[B_STATE] = "B";
+    tagNames[O_STATE] = "O";
+    return tagNames;
+    
   }
 }
