@@ -226,9 +226,6 @@ public class HMM {
       viterbi[0][j] = eprob + tprob;
     }
 
-    int[][] checks = new int[][] 
-                               {{}, {-1}, {-1, -1}, {-1, -1, -1}, {-1, -1, -1, -1}};
-
     for (n = 1; n < ndata; n++) {
       tags = tagdict[tokens[n]];
 
@@ -250,7 +247,6 @@ public class HMM {
         backpointer[n][k] = m.argmax;
 
         assert backpointer[n] != null;
-        assert !Arrays.equals(checks[backpointer[n].length], backpointer[n]);
       }
 
       _tags = tags;

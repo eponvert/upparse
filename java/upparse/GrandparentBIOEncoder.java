@@ -101,6 +101,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
           simpleOutput[i] = SimpleBIOEncoder.B_STATE; break;
           
         case (B_I_STATE):
+        case (I_I_STATE):
           simpleOutput[i] = SimpleBIOEncoder.I_STATE; break;
           
         case (STOP_O_STATE):
