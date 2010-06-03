@@ -33,12 +33,16 @@ public abstract class BIOEncoder {
     // count tokens 
     int n = 1; // for start token
     for (int[][][] s: clumpedCorpus) {
-      for (int[][] seg: s) {
-        for (int[] clump: seg) {
-          n += clump.length;
+      if (s.length != 0)  {
+        for (int[][] seg: s) {
+          for (int[] clump: seg) {
+            n += clump.length;
+          } 
+          n++;
         }
-        n++;
       }
+      else
+        n++;
     }
         
     
@@ -47,14 +51,17 @@ public abstract class BIOEncoder {
     tokens[i++] = alpha.getCode(START);
     
     for (int[][][] s: clumpedCorpus) {
-      for (int[][] seg: s)  {
-        for (int[] clump: seg) {
-          System.arraycopy(clump, 0, tokens, i, clump.length);
-          i += clump.length;
+      if (s.length != 0) {
+        for (int[][] seg: s)  {
+          for (int[] clump: seg) {
+            System.arraycopy(clump, 0, tokens, i, clump.length);
+            i += clump.length;
+          }
+          tokens[i++] = stopv;
         }
-        tokens[i++] = stopv;
-      }
-      tokens[i-1] = eosv;
+        tokens[i-1] = eosv;
+      } else
+        tokens[i++] = eosv;
     }
     
     return tokens;

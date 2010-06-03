@@ -86,6 +86,9 @@ public class ChunkedCorpus {
     
     while ((s = br.readLine()) != null) {
       pieces = s.replace("(", "( ").replace(")", " )").split("  *");
+      if (pieces.length == 1 && pieces[0].length() == 0) {
+        pieces = new String[0];
+      }
       inClump = false;
       nClump = 0;
       for (String piece: pieces) { 

@@ -190,24 +190,32 @@ public class ChunkingEval {
       int[][][] goldIndices = goldCorpus.getArrays();
       int[][][] outpIndices = outputCorpus.getArrays();
       
-      int[] terms;
+      int[] terms, _terms;
       int[][] gold, outp;
       
-      if (goldIndices.length != outpIndices.length)
+      if (goldIndices.length != outpIndices.length) {
+        for (int i = 0; i < Math.min(goldIndices.length, outpIndices.length); i++) {
+          int[] g = termsFromSent(goldIndices[i]);
+          int[] o = termsFromSent(outpIndices[i]);
+          assert Arrays.equals(g, o);
+        }
         throw new EvalError(
             String.format("Different corpus len: Gold = %d Output = %d",
                 goldIndices.length, outpIndices.length));
+      }
       
       for (int i = 0; i < goldIndices.length; i++) {
         gold = goldIndices[i];
         outp = outpIndices[i];
         
         terms = termsFromSent(gold);
-        assert Arrays.equals(terms, termsFromSent(outp)):
+        _terms = termsFromSent(outp);
+        assert Arrays.equals(terms, _terms):
           String.format(
-              "Terms do not match:\nGold: %s\nOutp: %s",
+              "Terms do not match:\nGold: %s\nOutp: %s\n[%d]",
               termStr(terms),
-              termStr(termsFromSent(outp)));
+              termStr(termsFromSent(outp)),
+              i);
               
         
         final ChunkSet 

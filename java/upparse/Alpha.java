@@ -15,6 +15,8 @@ public class Alpha {
     if (stoi.containsKey(term))
       return stoi.get(term);
     
+    assert term.length() != 0;
+    
     int code = itos.size();
     stoi.put(term, code);
     itos.add(term);

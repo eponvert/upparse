@@ -27,18 +27,22 @@ public class SimpleBIOEncoder extends BIOEncoder {
     train[i++] = STOP_STATE;
     
     for (int[][][] s: clumpedCorpus) {
-      for (int[][] seg: s) {
-        for (int[] clump: seg) {
-          if (clump.length == 1)
-            train[i++] = O_STATE;
-          else {
-            train[i++] = B_STATE;
-            for (j = 1; j < clump.length; j++)
-              train[i++] = I_STATE;
+      if (s.length != 0) {
+        for (int[][] seg: s) {
+          for (int[] clump: seg) {
+            if (clump.length == 1)
+              train[i++] = O_STATE;
+            else {
+              train[i++] = B_STATE;
+              for (j = 1; j < clump.length; j++)
+                train[i++] = I_STATE;
+            }
           }
+          train[i++] = STOP_STATE;
         }
-        train[i++] = STOP_STATE;
       }
+      else 
+        train[i++] = STOP_STATE;
     }
     
     return train;
@@ -87,6 +91,8 @@ public class SimpleBIOEncoder extends BIOEncoder {
       while (segInd < numSeg) {
         
         while (output[nextEoSeg] != STOP_STATE) nextEoSeg++;
+        
+        assert nextEoSeg <= nextEos;
         
         assert output[nextEoSeg] == STOP_STATE;
         assert nextEoSeg >= output.length-1 || output[nextEoSeg+1] != I_STATE;
