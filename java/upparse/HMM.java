@@ -38,7 +38,7 @@ public class HMM {
   }
 
   private void updateTagDict() {
-    int ntag = emiss.length, nterm = emiss[0].length, numTags, w, t, term;
+    int ntag = emiss.length, nterm = emiss[0].length, numTags, w, t;
     int[] temp;
     final Double neginf = Double.NEGATIVE_INFINITY;
 
@@ -205,7 +205,7 @@ public class HMM {
 
   private int[] tag(int[] tokens) {
 
-    int ndata = tokens.length, ntag = trans.length;
+    int ndata = tokens.length;
     double eprob, tprob, pprob;
     MaxVals m;
 
@@ -290,11 +290,9 @@ public class HMM {
 
   private abstract static class TransCountUpd {
     double[][] train;
-    boolean[][] constr;
 
-    TransCountUpd(double[][] _train, boolean[][] _constr) {
+    TransCountUpd(double[][] _train) {
       train = _train;
-      constr = _constr;
     }
 
     public abstract double get(int i, int j, int k);
@@ -319,32 +317,45 @@ public class HMM {
   private static class NoConstraintsTransCountUpd extends TransCountUpd {
 
     NoConstraintsTransCountUpd(double[][] _train) {
-      super(_train, null);
+      super(_train);
     }
 
     @Override
-    public double get(int i, int j, int k) {
+    public double get(final int i, final int j, final int k) {
       return train[i-1][j] * train[i][k];
     }
   }
 
   private static class UniformTransCountUpd extends TransCountUpd {
 
-    UniformTransCountUpd(double[][] _train, boolean[][] _constr) {
-      super(_train, _constr);
+    final double[][] tagAdj;
+
+    UniformTransCountUpd(double[][] _train, boolean[][] constr) {
+      super(_train);
+      int ntag = train[0].length;
+      int[] possibleTags = new int[ntag];
+      for (int j = 0; j < ntag; j++) 
+        for (int k = 0; k < ntag; k++) 
+          if (constr[j][k]) 
+            possibleTags[j]++;
+
+      tagAdj = new double[ntag][ntag];
+      for (int j = 0; j < ntag; j++) 
+        for (int k = 0; k < ntag; k++)
+          if (constr[j][k])
+            tagAdj[j][k] = (double) ntag / (double) possibleTags[j];
     }
 
     @Override
-    public double get(int i, int j, int k) {
-      // TODO Auto-generated method stub
-      return 0;
+    public double get(final int i, final int j, final int k) {
+      return tagAdj[j][k] * train[i-1][j] * train[i][k];
     }
   }
 
   private static class ByTagTransCountUpd extends TransCountUpd {
 
     ByTagTransCountUpd(double[][] _train, boolean[][] _constr) {
-      super(_train, _constr);
+      super(_train);
     }
 
     @Override
