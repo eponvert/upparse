@@ -1,6 +1,5 @@
 package upparse;
 
-import java.io.*;
 
 /**
  * Utility for encoding a clumped corpus as a BIO-tagged training set 
