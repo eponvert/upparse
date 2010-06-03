@@ -25,12 +25,12 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   
-  public int[] getFactor() {
+  public double[] getFactor() {
     String[] fpieces = factor.split(",");
     
-    int[] f = new int[fpieces.length];
+    double[] f = new double[fpieces.length];
     for (int i = 0; i < fpieces.length; i++) 
-      f[i] = Integer.parseInt(fpieces[i]);
+      f[i] = Double.parseDouble(fpieces[i]);
     
     return f;
   }

@@ -1,6 +1,5 @@
 package upparse;
 
-import java.io.*;
 import java.util.*;
 
 /**
@@ -20,7 +19,8 @@ public class SimpleBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) {
+  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) 
+  throws HMMError {
     int[][][][] clumpedCorpus = corpus.getArrays();
     int[] train = new int[n];
     int i = 0, j;
@@ -158,32 +158,5 @@ public class SimpleBIOEncoder extends BIOEncoder {
     }
     
     return ChunkedSegmentedCorpus.fromArrays(clumpedCorpus, alpha);
-  }
-
-  @Override
-  public void writeBIOtrain(String output, ChunkedSegmentedCorpus corpus) 
-  throws IOException {
-    Alpha alpha = corpus.alpha;
-    int[] tokens = tokensFromClumpedCorpus(corpus);
-    int[] tags = bioTrain(corpus, tokens.length);
-    assert tokens.length == tags.length;
-    String[] tagNames = tagNames();
-    PrintWriter pw = 
-      new PrintWriter(new BufferedWriter(new FileWriter(output)));
-    assert tokens.length == tags.length;
-    for (int i = 0; i < tokens.length; i++) 
-      pw.println(
-          String.format("%s %s", alpha.getString(tokens[i]) ,tagNames[tags[i]]));
-    pw.close();
-  }
-  
-  private String[] tagNames() {
-    String[] tagNames = new String[4];
-    tagNames[STOP_STATE] = "STOP";
-    tagNames[I_STATE] = "I";
-    tagNames[B_STATE] = "B";
-    tagNames[O_STATE] = "O";
-    return tagNames;
-    
   }
 }

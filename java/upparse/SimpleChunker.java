@@ -12,10 +12,10 @@ public class SimpleChunker {
   private final StopSegmentCorpus corpus;
   private final NgramCounts bigramCounts = new NgramCounts();
   private final int stopv;
-  private final int[] factor;
+  private final double[] factor;
 
   public SimpleChunker(
-      BasicCorpus basicCorpus, int[] factor, String stop, Alpha a) {
+      BasicCorpus basicCorpus, double[] factor, String stop, Alpha a) {
     
     alpha = a == null ? new Alpha() : a;
     stopv = alpha.getCode(stop);
