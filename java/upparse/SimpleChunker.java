@@ -1,5 +1,6 @@
 package upparse;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -41,8 +42,18 @@ public class SimpleChunker {
    * Create clumped version of the original training corpus
    */
   public ChunkedSegmentedCorpus getChunkedCorpus() {
+    return getChunkedCorpus(corpus);
+  }
 
-    int[][][] _corpus = corpus.corpus;
+  public ChunkedSegmentedCorpus getChunkedCorpus(String testCorpus) 
+  throws IOException {
+    return getChunkedCorpus(
+        new StopSegmentCorpus(
+            new BasicCorpus(testCorpus).compiledCorpus(alpha), stopv));
+  }
+
+  public ChunkedSegmentedCorpus getChunkedCorpus(StopSegmentCorpus c) {
+    int[][][] _corpus = c.corpus;
     int[][] _segments;
     int[] _terms;
 

@@ -13,8 +13,8 @@ public class HMM {
 
   private double perplex = 1e10;
   private final BIOEncoder encoder;
-  private final int[] orig;
-  double[][] emiss;
+  final int[] orig;
+  EmissionProbs emiss;
   double[][] trans;
   private double[] initTag;
   private int[][] tagdict;
@@ -24,7 +24,7 @@ public class HMM {
   private HMM(
       final BIOEncoder _encoder, 
       final int[] _tokens,
-      final double[][] _emiss, 
+      final EmissionProbs _emiss, 
       final double[][] _trans, 
       final double[] _initTag) {
     encoder = _encoder;
@@ -32,13 +32,13 @@ public class HMM {
     emiss = _emiss;
     trans = _trans;
     initTag = _initTag;
-    tagdict = new int[emiss[0].length][];
+    tagdict = new int[emiss.numTerms()][];
     updateTagDict();
     checkSanity();
   }
 
   private void updateTagDict() {
-    int ntag = emiss.length, nterm = emiss[0].length, numTags, w, t;
+    int ntag = emiss.numTags(), nterm = emiss.numTerms(), numTags, w, t;
     int[] temp;
     final Double neginf = Double.NEGATIVE_INFINITY;
 
@@ -46,7 +46,7 @@ public class HMM {
       temp = new int[ntag];
       numTags = 0;
       for (t = 0; t < ntag; t++) 
-        if (emiss[t][w] != neginf)
+        if (emiss.getProb(t,w) != neginf)
           temp[numTags++] = t;
 
       tagdict[w] = Arrays.copyOf(temp, numTags);
@@ -62,7 +62,7 @@ public class HMM {
       ndata = data.length,
       last = ndata - 1,
       ntag = trans.length,
-      nvocab = emiss[0].length;
+      nvocab = emiss.numTerms();
 
     final double neginf = Double.NEGATIVE_INFINITY;
     
@@ -80,14 +80,14 @@ public class HMM {
     }
 
     for (int j = 0; j < ntag; j++) {
-      forward[0][j] = emiss[j][data[0]] + initTag[j];
+      forward[0][j] = emiss.getProb(j, data[0]) + initTag[j];
     }
 
     // Forward probabilities
     for (int n = 1; n < ndata; n++) {
       for (int j: tagdict[data[n-1]]) {
         for (int k: tagdict[data[n]]) {
-          double arcprob = trans[j][k] + emiss[k][data[n]];
+          double arcprob = trans[j][k] + emiss.getProb(k, data[n]);
           double forwUpd = forward[n-1][j] + arcprob;
           forward[n][k] = logadd(forward[n][k], forwUpd);
         }
@@ -115,7 +115,7 @@ public class HMM {
 
           for (int j: tagdict[data[n-1]]) {
             final double tprob = trans[j][k];
-            final double eprob = emiss[k][data[n]];
+            final double eprob = emiss.getProb(k, data[n]);
             final double arcprob = tprob + eprob;
             final double backUpd = arcprob + backward[n][k];
             backward[n-1][j] = logadd(backward[n-1][j], backUpd);
@@ -135,14 +135,8 @@ public class HMM {
       emissCount[j][data[0]] += exp(forward[0][j] + backward[0][j] - forwTotal); 
 
     // Update the HMM probabilities from the new counts
-
-    for (int j = 0; j < ntag; j++) { 
-      final double sum = log(sum(emissCount[j]));
-      for (int w = 0; w < nvocab; w++) {
-        emiss[j][w] = log(emissCount[j][w]) - sum;
-        assert !Double.isNaN(emiss[j][w]);
-      }
-    }
+    
+    emiss.update(emissCount);
 
     for (int j = 0; j < ntag; j++) {
       final double sum = log(sum(transCount[j]));
@@ -161,11 +155,12 @@ public class HMM {
   }
 
   private void checkSanity() {
-    for (int i = 0; i < emiss.length; i++) {
-      double s = 0.; 
-      for (int j = 0; j < emiss[0].length; j++) {
-        assert !Double.isNaN(emiss[i][j]);
-        s += Math.exp(emiss[i][j]);
+    for (int i = 0; i < emiss.numTags(); i++) {
+      double s = 0, p; 
+      for (int j = 0; j < emiss.numTerms(); j++) {
+        p = emiss.getProb(i,j);
+        assert !Double.isNaN(p);
+        s += Math.exp(p);
       }
       assert abs(s - 1) < 1e-5;
     }
@@ -178,7 +173,7 @@ public class HMM {
     }
   }
 
-  private double sum(final double[] ds) {
+  static double sum(final double[] ds) {
     double s = 0;
     for (double d: ds)
       s += d;
@@ -197,10 +192,10 @@ public class HMM {
     else 
       return y + log(1 + exp(x-y));
   }
-
-  public ChunkedSegmentedCorpus reTagTrainCC() throws HMMError {
-    int[] output = tag(orig);
-    return encoder.clumpedCorpusFromBIOOutput(orig, output);
+  
+  public ChunkedSegmentedCorpus tagCC(int[] testCorpus) throws HMMError {
+    int[] output = tag(testCorpus);
+    return encoder.clumpedCorpusFromBIOOutput(testCorpus, output);
   }
 
   private int[] tag(int[] tokens) {
@@ -221,7 +216,7 @@ public class HMM {
 
     viterbi[0] = new double[_tags.length];
     for (j = 0; j < _tags.length; j++) {
-      eprob = emiss[_tags[j]][tokens[0]];
+      eprob = emiss.getProb(_tags[j], tokens[0]);
       tprob = initTag[_tags[j]];
       viterbi[0][j] = eprob + tprob;
     }
@@ -233,7 +228,7 @@ public class HMM {
       backpointer[n] = new int[tags.length];
 
       for (k = 0; k < tags.length; k++) {
-        eprob = emiss[tags[k]][tokens[n]];
+        eprob = emiss.getProb(tags[k], tokens[n]);
 
         v = new double[_tags.length];
         for (j = 0; j < _tags.length; j++) {
@@ -409,34 +404,22 @@ public class HMM {
     return mleEstimate(tokens, train, encoder, null, null);
   }
 
-  private static double[][] getEmiss(final int[] tokens, final double[][] train) {
+  private static EmissionProbs getEmiss(final int[] tokens, final double[][] train) {
     assert tokens.length == train.length;
-    int nterm = arrayMax(tokens) + 1, ntag = train[0].length, i, j, w;
-    double sum;
+    int nterm = arrayMax(tokens) + 1, ntag = train[0].length, i, j;
 
     final double[][] emissCount = new double[ntag][nterm];
     for (i = 0; i < tokens.length; i++) 
       for (j = 0; j < ntag; j++)
         emissCount[j][tokens[i]] += train[i][j];
-
-    final double[][] emiss = new double[ntag][nterm];
-    for (j = 0; j < ntag; j++) {
-      sum = 0.;
-      for (w = 0; w < nterm; w++) 
-        sum += emissCount[j][w];
-      sum = log(sum);
-
-      for (w = 0; w < nterm; w++)
-        emiss[j][w] = log(emissCount[j][w]) - sum;
-    }
-    return emiss;
+    
+    return EmissionProbs.fromCounts(emissCount);
   }
 
-  private static double[][] getEmiss(final int[] tokens, final int[] tags) {
+  private static EmissionProbs getEmiss(final int[] tokens, final int[] tags) {
     assert tokens.length == tags.length;
 
     int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1, i, j, w;
-    double sum;
 
     final int[][] emissCount = new int[ntag][nterm];
     for (i = 0; i < tokens.length; i++)
@@ -446,19 +429,8 @@ public class HMM {
     for (j = 0; j < ntag; j++) 
       for (w = 0; w < nterm; w++)
         emissCountD[j][w] = (double) emissCount[j][w];
-
-    double[][] emiss = new double[ntag][nterm];
-    for (j = 0; j < ntag; j++) {
-      sum = 0.;
-      for (w = 0; w < nterm; w++)
-        sum += emissCountD[j][w];
-      sum = log(sum);
-
-      for (w = 0; w < nterm; w++)
-        emiss[j][w] = log(emissCountD[j][w]) - sum;
-    }
-
-    return emiss;
+    
+    return EmissionProbs.fromCounts(emissCountD);
   }
 
   private static double[] getInitTag(final double[][] train) {
@@ -538,7 +510,7 @@ public class HMM {
       int[] tokens, double[][] train, BIOEncoder encoder,
       boolean[][] constraints, String constrMethod) throws HMMError {
 
-    final double[][] emiss = getEmiss(tokens, train);
+    final EmissionProbs emiss = getEmiss(tokens, train);
     final double[] initTag = getInitTag(train);
     final double[][] trans = getTrans(train, constraints, constrMethod);
     return new HMM(encoder, tokens, emiss, trans, initTag);
@@ -546,8 +518,8 @@ public class HMM {
 
   public static HMM mleEstimate(
       int[] tokens, int[] tags, BIOEncoder encoder) {
-    final double[][] emiss = getEmiss(tokens, tags);
-    int ntag = emiss.length;
+    final EmissionProbs emiss = getEmiss(tokens, tags);
+    int ntag = emiss.numTags();
     final double[] initTag = getInitTag(tags, ntag);
     final double[][] trans = getTrans(tags, ntag);
     return new HMM(encoder, tokens, emiss, trans, initTag);

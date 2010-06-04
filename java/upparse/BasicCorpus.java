@@ -42,4 +42,14 @@ public class BasicCorpus {
     
     return compiledCorpus;
   }
+
+  public StopSegmentCorpus toStopSegmentCorpus(Alpha alpha, int stopv) {
+    return new StopSegmentCorpus(compiledCorpus(alpha), stopv);
+  }
+
+  public ChunkedSegmentedCorpus toBaseChunkedSegmentedCorpus(final Alpha alpha,
+      final int stopv) {
+    return toStopSegmentCorpus(alpha, stopv)
+      .toBaseChunkedSegmentedCorpus(alpha);
+  }
 }

@@ -38,6 +38,21 @@ public class StopSegmentCorpus {
       corpus[i] = segments.toArray(new int[0][]);
     }
   }
+  
+  public ChunkedSegmentedCorpus toBaseChunkedSegmentedCorpus(Alpha alpha) {
+    int[][][][] arrays = new int[corpus.length][][][];
+    for (int i = 0; i < corpus.length; i++) {
+      arrays[i] = new int[corpus[i].length][][];
+      for (int j = 0; j < corpus[i].length; j++) {
+        arrays[i][j] = new int[corpus[i][j].length][];
+        for (int k = 0; k < corpus[i][j].length; k++) {
+          arrays[i][j][k] = new int[] { corpus[i][j][k] };
+        }
+      }
+    }
+    
+    return ChunkedSegmentedCorpus.fromArrays(arrays, alpha); 
+  }
 
   private int[] getStopIndices(int[] s) {
     int[] indicesTmp = new int[s.length];

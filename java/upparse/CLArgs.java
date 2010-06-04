@@ -21,9 +21,9 @@ public class CLArgs {
   public String goldStandards = null;
   private final ChunkingEval[] evals;
   public String evalType = "PR"; 
-  
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
+  public String testCorpus = null;
   
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -48,6 +48,9 @@ public class CLArgs {
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
+        
+        else if (arg.equals("-t") || arg.equals("-test"))
+          testCorpus = args[i++];
 
         else if (arg.equals("-F") || arg.equals("-factor")) 
           factor = args[i++];

@@ -32,8 +32,13 @@ public class Main {
    */
   private static void simpleChunk(String fname, CLArgs clargs) 
   throws IOException {
-    ChunkedSegmentedCorpus outputCorpus = 
-      getSimpleChunker(fname, clargs).getChunkedCorpus();
+    
+    final ChunkedSegmentedCorpus outputCorpus;
+    final SimpleChunker chunker = getSimpleChunker(fname, clargs);
+    if (clargs.testCorpus != null)
+      outputCorpus = chunker.getChunkedCorpus(clargs.testCorpus);
+    else
+      outputCorpus = chunker.getChunkedCorpus();
     
     if (clargs.output != null)
       outputCorpus.writeTo(clargs.output);
@@ -59,26 +64,39 @@ public class Main {
     boolean writeOut = clargs.output != null;
     
     try {
-      ChunkedSegmentedCorpus baselineCorpus = 
-        getSimpleChunker(fname, clargs).getChunkedCorpus();
+      SimpleChunker chunker = getSimpleChunker(fname, clargs); 
+      ChunkedSegmentedCorpus baselineCorpus = chunker.getChunkedCorpus();
+      
+      ChunkedSegmentedCorpus evalCorpus;
+      if (clargs.testCorpus == null)
+        evalCorpus = baselineCorpus;
+      else
+        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus); 
       
       if (writeOut)
-        baselineCorpus.writeTo(clargs.output + ".baseline.txt");
+        evalCorpus.writeTo(clargs.output + ".baseline.txt");
       
       ChunkingEval[] evals = clargs.getEvals();
       for (ChunkingEval eval: evals) 
-        eval.eval("Baseline", baselineCorpus.toChunkedCorpus());
+        eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
       HMM hmm = HMM.mleEstimate(baselineCorpus, encoder);
       
-      ChunkedSegmentedCorpus taggedCorpus = hmm.reTagTrainCC();
+      int[] testCorpus;
+      if (clargs.testCorpus != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus);
+      else
+        testCorpus = hmm.orig;
+      
+      evalCorpus = hmm.tagCC(testCorpus);
+      
       if (writeOut)
-        taggedCorpus.writeTo(clargs.output + ".noem.txt");
+        evalCorpus.writeTo(clargs.output + ".noem.txt");
       
       for (ChunkingEval eval: evals)
         eval.eval("No EM", 
-            ChunkedCorpus.fromChunkedSegmentedCorpus(taggedCorpus));
+            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
 
       if (clargs.iter != 0) {
         double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
@@ -102,15 +120,15 @@ public class Main {
           lastPerplexChange = Math.abs(currPerplex - lastPerplex);
           lastPerplex = currPerplex;
 
-          taggedCorpus = hmm.reTagTrainCC();
+          evalCorpus = hmm.tagCC(testCorpus);
           
           if (writeOut)
-            taggedCorpus.writeTo(
+            evalCorpus.writeTo(
                 String.format("%s.iter%03d.txt", clargs.output, i+1));
 
           for (ChunkingEval eval: evals)
             eval.eval(String.format("Iter %03d", i+1), 
-                ChunkedCorpus.fromChunkedSegmentedCorpus(taggedCorpus));
+                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
         }
         
         if (writeOut) perplexLog.close();

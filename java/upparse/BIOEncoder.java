@@ -1,5 +1,7 @@
 package upparse;
 
+import java.io.*;
+
 
 /**
  * Utility for encoding a clumped corpus as a BIO-tagged training set 
@@ -25,7 +27,13 @@ public abstract class BIOEncoder {
       return new SimpleBIOEncoder(stop, alpha);
   }
   
-  public final int[] tokensFromClumpedCorpus(final ChunkedSegmentedCorpus corpus) {
+  public final int[] tokensFromFile(final String fname) throws IOException {
+    return tokensFromClumpedCorpus(
+        new BasicCorpus(fname).toBaseChunkedSegmentedCorpus(alpha, stopv));
+  }
+  
+  public final int[] tokensFromClumpedCorpus(
+      final ChunkedSegmentedCorpus corpus) {
     
     int[][][][] clumpedCorpus = corpus.getArrays();
     
