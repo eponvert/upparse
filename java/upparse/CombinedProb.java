@@ -1,6 +1,7 @@
 package upparse;
 
 import static java.lang.Math.*;
+import static upparse.Util.*;
 
 /**
  * Combined emission-transition probilities for right-regular grammar
@@ -10,18 +11,21 @@ public class CombinedProb {
 
   private final double[][][] prob;
   private final double[][] lastTok;
-  public final int origLastSeenToken;
-  public final int origLastSeenTag;
+  private double nvocab;
+  private final double[][] defaultProb;
+  
+  private double smoothFactor = 1e-3;
 
+  // TODO remove _origLastSeenToken, _origLastSeenTag
   private CombinedProb(
       final double[][][] _prob, 
-      final double[][] _lastTok, 
+      final double[][] _lastTok,
+      final double[][] _defaultProb,
       final int _origLastSeenToken, 
       final int _origLastSeenTag) {
     prob = _prob;
     lastTok = _lastTok;
-    origLastSeenToken = _origLastSeenToken;
-    origLastSeenTag = _origLastSeenTag;
+    defaultProb = _defaultProb;
   }
 
   public int numTags() {
@@ -33,7 +37,7 @@ public class CombinedProb {
   }
   
   public double getProb(final int j, final int w, final int k) {
-    return prob[j][w][k];
+    return w < numTerms() ? prob[j][w][k] : defaultProb[j][k];
   }
 
   /**
@@ -51,20 +55,14 @@ public class CombinedProb {
     final int ntag = countsD.length, nterm = countsD[0].length;
     final double[][][] prob = new double[ntag][nterm][ntag];
     final double[][] lastTok = new double[ntag][nterm];
+    final double[][] defaultProb = new double[ntag][ntag];
     
+    // TODO remove lastSeenToken, lastSeenTag
     CombinedProb c = 
-      new CombinedProb(prob, lastTok, lastSeenToken, lastSeenTag);
+      new CombinedProb(prob, lastTok, defaultProb, lastSeenToken, lastSeenTag);
     
     c.update(countsD);
     return c;
-  }
-
-  private static double sum(double[][] ds) {
-    double s = 0;
-    for (double[] a: ds)
-      for (double b: a)
-        s += b;
-    return s;
   }
 
   /**
@@ -75,29 +73,64 @@ public class CombinedProb {
     // TODO implement smoothing
     final int ntag = counts.length, nterm = counts[0].length;
     
+    // We're going to estimate last token probabilities basically as
+    // emission probabilities on the whole data-set.
+    // TODO assuming stop state is 0
+    final double
+      stopStateSum = log(sum(counts[0])),
+      neginf = Double.NEGATIVE_INFINITY;
+    
+    int nvocabI = 0;
+    for (int w = 0; w < nterm; w++) {
+      final double count = sum(counts[0][w]);
+      if (count == 0) nvocabI++;
+      lastTok[0][w] = log(count) - stopStateSum;
+      for (int k = 0; k < ntag; k++) {
+        prob[0][w][k] = log(counts[0][w][k]) - stopStateSum;
+      }
+      assert !Double.isNaN(lastTok[0][w]);
+    }
+    
+    nvocab = (double) nvocabI;
+    
+    // Get transition probabilities for smoothing
+    final double[][] trans = new double[ntag][ntag];
+    for (int j = 0; j < ntag; j++) 
+      for (int w = 0; w < nterm; w++) 
+        for (int k = 0; k < ntag; k++) 
+          trans[j][k] += counts[j][w][k];
+    
     for (int j = 0; j < ntag; j++) {
-      final double sum = log(sum(counts[j]));
-      assert !Double.isNaN(sum);
-      assert sum != Double.NEGATIVE_INFINITY;
+      final double sum = sum(trans[j]);
+      assert sum != 0;
+      for (int k = 0; k < ntag; k++) trans[j][k] = trans[j][k]/sum;
+    }
+    
+    for (int j = 1; j < ntag; j++) {
+      final double sum = log(sum(counts[j]) + smoothFactor * nvocab);
       for (int w = 0; w < nterm; w++) {
-        for (int k = 0; k < ntag; k++) {
-          assert !Double.isNaN(counts[j][w][k]);
-          prob[j][w][k] = log(counts[j][w][k]) - sum;
-          assert !Double.isNaN(prob[j][w][k]);
+        
+        if (lastTok[0][w] > neginf) {
+          lastTok[j][w] = neginf;
+          for (int k = 0; k < ntag; k++) {
+            prob[j][w][k] = neginf;
+          }
+        } else {
+          for (int k = 0; k < ntag; k++) {
+            lastTok[j][w] = log(sum(counts[j][w]) + smoothFactor) - sum;
+            assert !Double.isNaN(counts[j][w][k]);
+            prob[j][w][k] = 
+              log(counts[j][w][k] + smoothFactor * trans[j][k]) - sum;
+            assert !Double.isNaN(prob[j][w][k]);
+          }
         }
       }
     }
     
-    final double neginf = Double.NEGATIVE_INFINITY;
-    final double uniformprob = -log(nterm);
-    for (int t = 0; t < ntag; t++)
-      for (int w = 0; w < nterm; w++)
-        lastTok[t][w] = uniformprob;
-    
-    for (int w = 0; w < nterm; w++)
-      lastTok[origLastSeenTag][w] = neginf;
-    
-    lastTok[origLastSeenTag][origLastSeenToken] = 0;
+    double lognvocab = log(smoothFactor * nvocab);
+    for (int j = 0; j < ntag; j++) 
+      for (int k = 0; k < ntag; k++) 
+        defaultProb[j][k] = log(smoothFactor * trans[j][k]) - lognvocab;
   }
 
   public void checkSanity() {

@@ -87,7 +87,7 @@ public class RRG implements SequenceModel {
         for (int k: tagdict[data[n]]) {
           final double forwUpd = 
             forward[n-1][j] + combinedP.getProb(j, data[n-1], k);
-          forward[n][k] = HMM.logadd(forward[n][k], forwUpd);
+          forward[n][k] = Util.logadd(forward[n][k], forwUpd);
         }
       }
     }
@@ -97,7 +97,7 @@ public class RRG implements SequenceModel {
       for (int k: tagdict[data[last]]) {
         final double forwUpd = 
           forward[last-1][j] + combinedP.lastTok(k, data[last]);
-        forward[last][j] = HMM.logadd(forward[last][j], forwUpd);
+        forward[last][j] = Util.logadd(forward[last][j], forwUpd);
       }
     }
     
@@ -119,7 +119,7 @@ public class RRG implements SequenceModel {
             arcprob = combinedP.getProb(j, data[n-1], k),
             backUpd = arcprob + bwd;
           
-          backward[n-1][j] = HMM.logadd(backward[n-1][j], backUpd);
+          backward[n-1][j] = Util.logadd(backward[n-1][j], backUpd);
           if (arcprob != neginf && fwd != neginf && bwd != neginf) {
             final double
               logupd = fwd + bwd + arcprob - forwTotal,

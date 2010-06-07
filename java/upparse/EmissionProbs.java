@@ -49,7 +49,7 @@ public class EmissionProbs {
       nterm = numTerms();
     
     final double 
-      stopStateSum = log(HMM.sum(emissCount[0])),
+      stopStateSum = log(Util.sum(emissCount[0])),
       neginf = Double.NEGATIVE_INFINITY;
 
     int nvocabI = 0;
@@ -63,7 +63,7 @@ public class EmissionProbs {
     defaultProb = log(1/nvocab);
     
     for (int j = 1; j < ntag; j++) { 
-      final double sum = log(HMM.sum(emissCount[j]) + nvocab);
+      final double sum = log(Util.sum(emissCount[j]) + nvocab);
       for (int w = 0; w < nterm; w++) {
         if (emiss[0][w] > neginf) emiss[j][w] = neginf;
         else emiss[j][w] = log(emissCount[j][w] + 1.) - sum;

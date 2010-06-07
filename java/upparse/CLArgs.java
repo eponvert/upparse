@@ -130,7 +130,8 @@ public class CLArgs {
         "  -i|-iterations N           Iterations of EM\n" +
         "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
-        "  -C|-constraintmethod M     Use specified method for enforcing constraints"
+        "  -C|-constraintmethod M     Use specified method for enforcing constraints\n" +
+        "  -t|-test F                 Use this data set as test"
     );
   }
 

@@ -23,8 +23,6 @@ public class HMM implements SequenceModel {
   private double[] initTag;
   private int[][] tagdict;
 
-  private static final double LOGEPS = -1e+16;
-
   private HMM(
       final BIOEncoder _encoder, 
       final int[] _tokens,
@@ -100,7 +98,7 @@ public class HMM implements SequenceModel {
         for (int k: tagdict[data[n]]) {
           double arcprob = trans[j][k] + emiss.getProb(k, data[n]);
           double forwUpd = forward[n-1][j] + arcprob;
-          forward[n][k] = logadd(forward[n][k], forwUpd);
+          forward[n][k] = Util.logadd(forward[n][k], forwUpd);
         }
       }
     }
@@ -130,7 +128,7 @@ public class HMM implements SequenceModel {
             final double eprob = emiss.getProb(k, data[n]);
             final double arcprob = tprob + eprob;
             final double backUpd = arcprob + backward[n][k];
-            backward[n-1][j] = logadd(backward[n-1][j], backUpd);
+            backward[n-1][j] = Util.logadd(backward[n-1][j], backUpd);
 
             pFwd = forward[n-1][j];
 
@@ -151,7 +149,7 @@ public class HMM implements SequenceModel {
     emiss.update(emissCount);
 
     for (int j = 0; j < ntag; j++) {
-      final double sum = log(sum(transCount[j]));
+      final double sum = log(Util.sum(transCount[j]));
       for (int k = 0; k < ntag; k++) {
         trans[j][k] = log(transCount[j][k]) - sum;
         assert !Double.isNaN(trans[j][k]);
@@ -184,26 +182,6 @@ public class HMM implements SequenceModel {
     }
   }
 
-  static double sum(final double[] ds) {
-    double s = 0;
-    for (double d: ds)
-      s += d;
-    return s;
-  }
-
-  static double logadd(final double x, final double y) {
-    assert !Double.isNaN(y);
-    assert !Double.isNaN(x);
-    if (x <= LOGEPS) 
-      return y;
-    else if (y <= LOGEPS) 
-      return x;
-    else if (y <= x) 
-      return x + log(1 + exp(y-x)); 
-    else 
-      return y + log(1 + exp(x-y));
-  }
-  
   @Override
   public ChunkedSegmentedCorpus tagCC(final int[] testCorpus) 
   throws HMMError, EncoderError {
