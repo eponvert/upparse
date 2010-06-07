@@ -26,7 +26,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
   }
 
   @Override
-  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) throws HMMError {
+  public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) throws EncoderError {
     int[] simpTrain = simpleEncoder.bioTrain(corpus, n);
     int[] train = new int[simpTrain.length];
     
@@ -45,7 +45,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
             train[i] = STOP_O_STATE; break;
             
           default: 
-            throw new HMMError("Unexpected tag sequence");
+            throw new EncoderError("Unexpected tag sequence");
         }
       } else if (simpTrain[i-1] == SimpleBIOEncoder.B_STATE) {
         switch (simpTrain[i]) {
@@ -53,7 +53,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
             train[i] = B_I_STATE; break;
 
           default: 
-            throw new HMMError("Unexpected tag sequence");
+            throw new EncoderError("Unexpected tag sequence");
         }    
       } else if (simpTrain[i-1] == SimpleBIOEncoder.I_STATE) {
         switch (simpTrain[i]) {
@@ -67,7 +67,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
             train[i] = I_O_STATE; break;
             
           default: 
-            throw new HMMError("Unexpected tag sequence");
+            throw new EncoderError("Unexpected tag sequence");
         }
       } else if (simpTrain[i-1] == SimpleBIOEncoder.O_STATE) {
         switch (simpTrain[i]) {
@@ -78,9 +78,9 @@ public class GrandparentBIOEncoder extends BIOEncoder {
             train[i] = O_O_STATE; break;
           
           default: 
-            throw new HMMError("Unexpected tag sequence");
+            throw new EncoderError("Unexpected tag sequence");
         }
-      } else throw new HMMError("Unexpected tag sequence");
+      } else throw new EncoderError("Unexpected tag sequence");
     }
       
     return train;
@@ -88,7 +88,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
 
   @Override
   public ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(
-      int[] tokens, int[] output) throws HMMError {
+      int[] tokens, int[] output) throws EncoderError {
     int[] simpleOutput = new int[output.length];
     for (int i = 0; i < output.length; i++) {
       switch (output[i]) {
@@ -110,7 +110,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
           simpleOutput[i] = SimpleBIOEncoder.O_STATE; break;
           
         default:
-          throw new HMMError(
+          throw new EncoderError(
               String.format("Unexpected tag %d", output[i]));
           
       }

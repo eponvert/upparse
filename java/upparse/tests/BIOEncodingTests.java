@@ -13,7 +13,7 @@ import static upparse.SimpleBIOEncoder.*;
 public class BIOEncodingTests {
 
   @Test
-  public void testSimpleBIOEncoding() throws HMMError {
+  public void testSimpleBIOEncoding() throws EncoderError {
     
     Alpha alpha = new Alpha();
 
@@ -52,7 +52,7 @@ public class BIOEncodingTests {
     assertClumpedCorporaEq(expClumpedCorpus, clumpedCorpusOutput);
   }
    
-  @Test public void testNestedBIOEncoding() throws HMMError {
+  @Test public void testNestedBIOEncoding() throws EncoderError {
     
     Alpha alpha = new Alpha();
 
@@ -88,7 +88,7 @@ public class BIOEncodingTests {
     assertClumpedCorporaEq(expClumpedCorpus, clumpedCorpusOutput);
   }
   
-  @Test public void testEncodingWithSingleWordSeg() throws HMMError {
+  @Test public void testEncodingWithSingleWordSeg() throws EncoderError {
 
     Alpha alpha = new Alpha();
 

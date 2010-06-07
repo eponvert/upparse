@@ -37,6 +37,7 @@ from cPickle import load, dump, UnpicklingError
 from itertools import izip, count as icount, chain, imap, starmap
 from operator import methodcaller
 from math import sqrt
+from logging import info
 
 # Includes Chinese punctuation
 STOPPING_PUNC = ['.', '?', '!', ';', ',', '--', 
@@ -53,6 +54,12 @@ CTB_PUNC_POS = ['PU']
 COUNT_IGNORE = ['(', ')', 'nz$','$','m$','#','us$','s$','a$','hk$','c$']
 
 def brak_from_tup(tup): return Bracket(tup[0], tup[1])
+
+def basic_stats(corpus):
+  num_s = len(corpus)
+  num_w = sum(map(len, corpus))
+  num_t = len(set(chain.from_iterable(corpus)))
+  return 'sentences: %d tokens: %d types: %d' % (num_s, num_w, num_t)
 
 class Bracket:
   """

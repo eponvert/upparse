@@ -20,7 +20,7 @@ public class SimpleBIOEncoder extends BIOEncoder {
 
   @Override
   public int[] bioTrain(ChunkedSegmentedCorpus corpus, int n) 
-  throws HMMError {
+  throws EncoderError {
     int[][][][] clumpedCorpus = corpus.getArrays();
     int[] train = new int[n];
     int i = 0, j;
@@ -50,7 +50,7 @@ public class SimpleBIOEncoder extends BIOEncoder {
 
   @Override
   public ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(int[] tokens, int[] output) 
-  throws HMMError {
+  throws EncoderError {
     
     assert tokens.length == output.length;
     
@@ -136,7 +136,8 @@ public class SimpleBIOEncoder extends BIOEncoder {
             assert firstIn;
             assert output[i] != STOP_STATE: "output[i] should not be STOP";
             assert output[i] != I_STATE: "output[i] should not be I";
-            throw new HMMError(String.format("Unexpected tag: %d", output[i]));
+            throw new EncoderError(
+                String.format("Unexpected tag: %d", output[i]));
           }
         }
         

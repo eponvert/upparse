@@ -54,8 +54,105 @@ public class Main {
     }
   }
 
+  /** Execute right-regular grammar model based on output training
+   * @param fname File name of training/eval data
+   * @param clargs Command-line arguments
+   */
+  private static void rrg1Chunk(String fname, CLArgs clargs) 
+  throws IOException {
+    boolean writeOut = clargs.output != null;
+    
+    try {
+      SimpleChunker chunker = getSimpleChunker(fname, clargs); 
+      ChunkedSegmentedCorpus baselineCorpus = chunker.getChunkedCorpus();
+      
+      ChunkedSegmentedCorpus evalCorpus;
+      if (clargs.testCorpus == null)
+        evalCorpus = baselineCorpus;
+      else
+        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus); 
+      
+      if (writeOut)
+        evalCorpus.writeTo(clargs.output + ".baseline.txt");
+      
+      ChunkingEval[] evals = clargs.getEvals();
+      for (ChunkingEval eval: evals) 
+        eval.eval("Baseline", evalCorpus.toChunkedCorpus());
+      
+      BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
+      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder);
+      
+      int[] testCorpus;
+      if (clargs.testCorpus != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus);
+      else
+        testCorpus = rrg.getOrig();
+      
+      evalCorpus = rrg.tagCC(testCorpus);
+      
+      if (writeOut)
+        evalCorpus.writeTo(clargs.output + ".noem.txt");
+      
+      for (ChunkingEval eval: evals)
+        eval.eval("No EM", 
+            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+
+      if (clargs.iter != 0) {
+        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+        
+        final CSVFileWriter perplexLog = 
+          writeOut ?  
+              new CSVFileWriter(clargs.output + ".perplex.csv") :
+              null;
+
+        for (int i = 0;
+             i < clargs.iter && lastPerplexChange > clargs.emdelta;
+             i++) {
+          
+          rrg.emUpdateFromTrain();
+          currPerplex = rrg.currPerplex();
+          if (clargs.verbose)
+            System.out.println(String.format(
+                "Iteration %d: Perplexity = %f", i+1, currPerplex));
+          if (writeOut)
+            perplexLog.write(i+1, currPerplex);
+          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+          lastPerplex = currPerplex;
+
+          evalCorpus = rrg.tagCC(testCorpus);
+          
+          if (writeOut)
+            evalCorpus.writeTo(
+                String.format("%s.iter%03d.txt", clargs.output, i+1));
+
+          for (ChunkingEval eval: evals)
+            eval.eval(String.format("Iter %03d", i+1), 
+                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+        }
+        
+        if (writeOut) perplexLog.close();
+      }
+      
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType);
+
+    } catch (EvalError e) {
+      System.err.println("Problem with eval: " + e.getMessage());
+      System.exit(1);
+
+    } catch (RRGError e) {
+      System.err.println("Problem initializing RRG: " + e.getMessage());
+      usageError();
+      
+    } catch (EncoderError e) {
+      System.err.println("Problem with BIO encoding: " + e.getMessage());
+      usageError();
+    }
+  }
+  
   /** Execute HMM chunking model based on baseline output training
    * @param fname File name of training/eval data
+   * @param clargs Command-line arguments
    * @throws IOException If there's a problem reading the training data
    */
   private static void hmm1Chunk(String fname, CLArgs clargs) 
@@ -87,7 +184,7 @@ public class Main {
       if (clargs.testCorpus != null)
         testCorpus = encoder.tokensFromFile(clargs.testCorpus);
       else
-        testCorpus = hmm.orig;
+        testCorpus = hmm.getOrig();
       
       evalCorpus = hmm.tagCC(testCorpus);
       
@@ -144,6 +241,10 @@ public class Main {
     } catch (EvalError e) {
       System.err.println("Problem with eval: " + e.getMessage());
       System.exit(1);
+      
+    } catch (EncoderError e) {
+      System.err.println("Problem with BIO encoding: " + e.getMessage());
+      usageError();
     }
   }
   
@@ -179,8 +280,13 @@ public class Main {
       else if (action.equals("hmm2-chunk"))
         System.exit(0);
       
-      else if (action.equals("rrg1-chunk"))
-        System.exit(0);
+      else if (action.equals("rrg1-chunk")) {
+        if (args.length < 2) {
+          System.err.println("Training file required");
+          usageError();
+        }
+        rrg1Chunk(args[1], clargs);
+      }
       
       else if (action.equals("rrg2-chunk"))
         System.exit(0);

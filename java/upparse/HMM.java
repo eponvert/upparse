@@ -4,16 +4,20 @@ import java.io.*;
 import java.util.*;
 
 import static java.lang.Math.*;
+import static upparse.MaxVals.*;
 
 /**
  * Hidden Markov model 
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class HMM {
+public class HMM implements SequenceModel {
 
   private double perplex = 1e10;
   private final BIOEncoder encoder;
-  final int[] orig;
+  
+  /** The original training set */
+  private final int[] orig;
+  
   EmissionProbs emiss;
   double[][] trans;
   private double[] initTag;
@@ -37,8 +41,14 @@ public class HMM {
     checkSanity();
   }
 
+  @Override
+  public int[] getOrig() {
+    return orig;
+  }
+  
   private void updateTagDict() {
-    int ntag = emiss.numTags(), nterm = emiss.numTerms(), numTags, w, t;
+    final int ntag = emiss.numTags(), nterm = emiss.numTerms();
+    int numTags, w, t;
     int[] temp;
     final Double neginf = Double.NEGATIVE_INFINITY;
 
@@ -53,11 +63,13 @@ public class HMM {
     }
   }
 
+  @Override
   public void emUpdateFromTrain() {
     emUpdateFrom(orig);
   }
 
-  public void emUpdateFrom(int[] data) {
+  @Override
+  public void emUpdateFrom(final int[] data) {
     int 
       ndata = data.length,
       last = ndata - 1,
@@ -79,11 +91,10 @@ public class HMM {
       }
     }
 
-    for (int j = 0; j < ntag; j++) {
-      forward[0][j] = emiss.getProb(j, data[0]) + initTag[j];
-    }
-
     // Forward probabilities
+    for (int j = 0; j < ntag; j++) 
+      forward[0][j] = emiss.getProb(j, data[0]) + initTag[j];
+
     for (int n = 1; n < ndata; n++) {
       for (int j: tagdict[data[n-1]]) {
         for (int k: tagdict[data[n]]) {
@@ -95,7 +106,8 @@ public class HMM {
     }
 
     // TODO check end conditions
-    double forwTotal = forward[last][0];
+    // for now assuming last tag is STOP with index 0
+    final double forwTotal = forward[last][0];
     backward[last][0] = 0;
 
     // Backward probabilities. Also collecting new emission and transition 
@@ -146,7 +158,6 @@ public class HMM {
       }
     }
 
-
     updateTagDict();
     checkSanity();
 
@@ -180,7 +191,7 @@ public class HMM {
     return s;
   }
 
-  private static double logadd(final double x, final double y) {
+  static double logadd(final double x, final double y) {
     assert !Double.isNaN(y);
     assert !Double.isNaN(x);
     if (x <= LOGEPS) 
@@ -193,7 +204,9 @@ public class HMM {
       return y + log(1 + exp(x-y));
   }
   
-  public ChunkedSegmentedCorpus tagCC(int[] testCorpus) throws HMMError {
+  @Override
+  public ChunkedSegmentedCorpus tagCC(final int[] testCorpus) 
+  throws HMMError, EncoderError {
     int[] output = tag(testCorpus);
     return encoder.clumpedCorpusFromBIOOutput(testCorpus, output);
   }
@@ -204,7 +217,7 @@ public class HMM {
     double eprob, tprob, pprob;
     MaxVals m;
 
-    double[][] viterbi = new double[ndata][];
+    final double[][] viterbi = new double[ndata][];
 
     double[] v;
 
@@ -240,8 +253,6 @@ public class HMM {
         m = new MaxVals(v); 
         viterbi[n][k] = m.max;
         backpointer[n][k] = m.argmax;
-
-        assert backpointer[n] != null;
       }
 
       _tags = tags;
@@ -266,19 +277,7 @@ public class HMM {
     return output;
   }
 
-  private static class MaxVals {
-    int argmax = -1;
-    double max = Double.NEGATIVE_INFINITY;
-    public MaxVals(final double[] vals) {
-      for (int i = 0; i < vals.length; i++) {
-        if (vals[i] > max) {
-          argmax = i;
-          max = vals[i];
-        }
-      }
-    }
-  }
-
+  @Override
   public double currPerplex() {
     return perplex;
   }
@@ -380,46 +379,12 @@ public class HMM {
           "Unknown transition probability constraint method " + constrMethod); 
   }
 
-  /**
-   * @param alpha Must be initialized with the tags expected to be seen
-   * @throws IOException if there is any trouble with the tag constraints file
-   * @throws HMMError if there is some problem with the constraints
-   */
-  public static HMM mleEstimate(
-      int[] tokens, 
-      double[][] train, 
-      BIOEncoder encoder, 
-      Alpha alpha, 
-      String constrFname, 
-      String constrMethod) 
-  throws IOException, HMMError {
-    boolean[][] constraints = 
-      getTagConstraintsFromFile(constrFname, alpha);
-    return mleEstimate(tokens, train, encoder, constraints, constrMethod);
-  }
-
-  public static HMM mleEstimate(
-      final int[] tokens, final double[][] train, final BIOEncoder encoder) 
-  throws HMMError {
-    return mleEstimate(tokens, train, encoder, null, null);
-  }
-
-  private static EmissionProbs getEmiss(final int[] tokens, final double[][] train) {
-    assert tokens.length == train.length;
-    int nterm = arrayMax(tokens) + 1, ntag = train[0].length, i, j;
-
-    final double[][] emissCount = new double[ntag][nterm];
-    for (i = 0; i < tokens.length; i++) 
-      for (j = 0; j < ntag; j++)
-        emissCount[j][tokens[i]] += train[i][j];
-    
-    return EmissionProbs.fromCounts(emissCount);
-  }
-
   private static EmissionProbs getEmiss(final int[] tokens, final int[] tags) {
     assert tokens.length == tags.length;
 
-    int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1, i, j, w;
+    final int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1;
+    
+    int i, j, w;
 
     final int[][] emissCount = new int[ntag][nterm];
     for (i = 0; i < tokens.length; i++)
@@ -441,7 +406,7 @@ public class HMM {
     return initTag;
   }
 
-  private static double[] getInitTag(final int[] tag, final int ntag) {
+  static double[] getInitTag(final int[] tag, final int ntag) {
     double[] initTag = new double[ntag];
     double log1 = log(1.), log0 = log(0.);
     for (int j = 0; j < ntag; j++)
@@ -506,6 +471,42 @@ public class HMM {
     return trans;
   }
 
+  private static EmissionProbs getEmiss(final int[] tokens, final double[][] train) {
+    assert tokens.length == train.length;
+    int nterm = MaxVals.arrayMax(tokens) + 1, ntag = train[0].length, i, j;
+
+    final double[][] emissCount = new double[ntag][nterm];
+    for (i = 0; i < tokens.length; i++) 
+      for (j = 0; j < ntag; j++)
+        emissCount[j][tokens[i]] += train[i][j];
+    
+    return EmissionProbs.fromCounts(emissCount);
+  }
+
+  /**
+   * @param alpha Must be initialized with the tags expected to be seen
+   * @throws IOException if there is any trouble with the tag constraints file
+   * @throws HMMError if there is some problem with the constraints
+   */
+  public static HMM mleEstimate(
+      int[] tokens, 
+      double[][] train, 
+      BIOEncoder encoder, 
+      Alpha alpha, 
+      String constrFname, 
+      String constrMethod) 
+  throws IOException, HMMError {
+    boolean[][] constraints = 
+      getTagConstraintsFromFile(constrFname, alpha);
+    return mleEstimate(tokens, train, encoder, constraints, constrMethod);
+  }
+
+  public static HMM mleEstimate(
+      final int[] tokens, final double[][] train, final BIOEncoder encoder) 
+  throws HMMError {
+    return mleEstimate(tokens, train, encoder, null, null);
+  }
+
   public static HMM mleEstimate(
       int[] tokens, double[][] train, BIOEncoder encoder,
       boolean[][] constraints, String constrMethod) throws HMMError {
@@ -526,18 +527,9 @@ public class HMM {
   }
 
   public static HMM mleEstimate(ChunkedSegmentedCorpus corpus, BIOEncoder encoder) 
-  throws HMMError {
+  throws HMMError, EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
     return mleEstimate(tokens, bioTrain, encoder);
-  }
-
-  private static int arrayMax(int[] t) {
-    assert t.length > 0;
-    int v = t[0];
-    for (int i = 1; i < t.length; i++) 
-      if (t[i] > v) 
-        v = t[i];
-    return v;
   }
 }
