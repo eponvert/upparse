@@ -23,8 +23,13 @@ public class BasicCorpus {
     
     br = new BufferedReader(new FileReader(new File(file)));
     int i = 0;
-    for (String s = br.readLine(); s != null; s = br.readLine())
-      corpus[i++] = s.trim().split(" ");
+    for (String s = br.readLine(); s != null; s = br.readLine()) {
+      s = s.trim();
+      if (s.equals(""))
+        corpus[i++] = new String[0];
+      else
+        corpus[i++] = s.split(" ");
+    }
     br.close();
     
     assert i == numS;

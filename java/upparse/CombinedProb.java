@@ -13,19 +13,17 @@ public class CombinedProb {
   private final double[][] lastTok;
   private double nvocab;
   private final double[][] defaultProb;
-  
-  private double smoothFactor = 1e-3;
+  private final double smoothFactor;
 
-  // TODO remove _origLastSeenToken, _origLastSeenTag
   private CombinedProb(
       final double[][][] _prob, 
       final double[][] _lastTok,
       final double[][] _defaultProb,
-      final int _origLastSeenToken, 
-      final int _origLastSeenTag) {
+      final double _smoothFactor) {
     prob = _prob;
     lastTok = _lastTok;
     defaultProb = _defaultProb;
+    smoothFactor = _smoothFactor;
   }
 
   public int numTags() {
@@ -50,17 +48,14 @@ public class CombinedProb {
   }
 
   public static CombinedProb fromCounts(
-      double[][][] countsD, int lastSeenToken, int lastSeenTag) {
+      double[][][] countsD, double smoothFactor) {
     
     final int ntag = countsD.length, nterm = countsD[0].length;
     final double[][][] prob = new double[ntag][nterm][ntag];
     final double[][] lastTok = new double[ntag][nterm];
     final double[][] defaultProb = new double[ntag][ntag];
-    
-    // TODO remove lastSeenToken, lastSeenTag
-    CombinedProb c = 
-      new CombinedProb(prob, lastTok, defaultProb, lastSeenToken, lastSeenTag);
-    
+    final CombinedProb c = 
+      new CombinedProb(prob, lastTok, defaultProb, smoothFactor);
     c.update(countsD);
     return c;
   }
@@ -69,8 +64,7 @@ public class CombinedProb {
    * Update the probability distribution using these tag-term-tag counts
    */
   public void update(double[][][] counts) {
-    
-    // TODO implement smoothing
+
     final int ntag = counts.length, nterm = counts[0].length;
     
     // We're going to estimate last token probabilities basically as
@@ -127,10 +121,10 @@ public class CombinedProb {
       }
     }
     
-    double lognvocab = log(smoothFactor * nvocab);
+    double lognvocab = log(nvocab);
     for (int j = 0; j < ntag; j++) 
       for (int k = 0; k < ntag; k++) 
-        defaultProb[j][k] = log(smoothFactor * trans[j][k]) - lognvocab;
+        defaultProb[j][k] = log(trans[j][k]) - lognvocab;
   }
 
   public void checkSanity() {

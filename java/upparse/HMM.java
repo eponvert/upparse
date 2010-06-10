@@ -14,7 +14,7 @@ public class HMM implements SequenceModel {
 
   private double perplex = 1e10;
   private final BIOEncoder encoder;
-  
+    
   /** The original training set */
   private final int[] orig;
   
@@ -357,7 +357,10 @@ public class HMM implements SequenceModel {
           "Unknown transition probability constraint method " + constrMethod); 
   }
 
-  private static EmissionProbs getEmiss(final int[] tokens, final int[] tags) {
+  private static EmissionProbs getEmiss(
+      final int[] tokens, 
+      final int[] tags, 
+      final double smoothFactor) {
     assert tokens.length == tags.length;
 
     final int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1;
@@ -373,7 +376,7 @@ public class HMM implements SequenceModel {
       for (w = 0; w < nterm; w++)
         emissCountD[j][w] = (double) emissCount[j][w];
     
-    return EmissionProbs.fromCounts(emissCountD);
+    return EmissionProbs.fromCounts(emissCountD, smoothFactor);
   }
 
   private static double[] getInitTag(final double[][] train) {
@@ -449,7 +452,10 @@ public class HMM implements SequenceModel {
     return trans;
   }
 
-  private static EmissionProbs getEmiss(final int[] tokens, final double[][] train) {
+  private static EmissionProbs getEmiss(
+      final int[] tokens, 
+      final double[][] train,
+      final double smoothFactor) {
     assert tokens.length == train.length;
     int nterm = MaxVals.arrayMax(tokens) + 1, ntag = train[0].length, i, j;
 
@@ -458,7 +464,7 @@ public class HMM implements SequenceModel {
       for (j = 0; j < ntag; j++)
         emissCount[j][tokens[i]] += train[i][j];
     
-    return EmissionProbs.fromCounts(emissCount);
+    return EmissionProbs.fromCounts(emissCount, smoothFactor);
   }
 
   /**
@@ -467,47 +473,61 @@ public class HMM implements SequenceModel {
    * @throws HMMError if there is some problem with the constraints
    */
   public static HMM mleEstimate(
-      int[] tokens, 
-      double[][] train, 
-      BIOEncoder encoder, 
-      Alpha alpha, 
-      String constrFname, 
-      String constrMethod) 
+      final int[] tokens, 
+      final double[][] train, 
+      final BIOEncoder encoder, 
+      final Alpha alpha, 
+      final String constrFname, 
+      final String constrMethod,
+      final double smoothFactor) 
   throws IOException, HMMError {
     boolean[][] constraints = 
       getTagConstraintsFromFile(constrFname, alpha);
-    return mleEstimate(tokens, train, encoder, constraints, constrMethod);
+    return mleEstimate(
+        tokens, train, encoder, constraints, constrMethod, smoothFactor);
   }
 
   public static HMM mleEstimate(
-      final int[] tokens, final double[][] train, final BIOEncoder encoder) 
-  throws HMMError {
-    return mleEstimate(tokens, train, encoder, null, null);
+      final int[] tokens, 
+      final double[][] train, 
+      final BIOEncoder encoder,
+      final double smoothFactor) throws HMMError {
+    return mleEstimate(tokens, train, encoder, null, null, smoothFactor);
   }
 
   public static HMM mleEstimate(
-      int[] tokens, double[][] train, BIOEncoder encoder,
-      boolean[][] constraints, String constrMethod) throws HMMError {
+      final int[] tokens, 
+      final double[][] train, 
+      final BIOEncoder encoder,
+      final boolean[][] constraints, 
+      final String constrMethod,
+      final double smoothFactor) throws HMMError {
 
-    final EmissionProbs emiss = getEmiss(tokens, train);
+    final EmissionProbs emiss = getEmiss(tokens, train, smoothFactor);
     final double[] initTag = getInitTag(train);
     final double[][] trans = getTrans(train, constraints, constrMethod);
     return new HMM(encoder, tokens, emiss, trans, initTag);
   }
 
   public static HMM mleEstimate(
-      int[] tokens, int[] tags, BIOEncoder encoder) {
-    final EmissionProbs emiss = getEmiss(tokens, tags);
+      final int[] tokens, 
+      final int[] tags, 
+      final BIOEncoder encoder,
+      final double smoothFactor) {
+    final EmissionProbs emiss = getEmiss(tokens, tags, smoothFactor);
     int ntag = emiss.numTags();
     final double[] initTag = getInitTag(tags, ntag);
     final double[][] trans = getTrans(tags, ntag);
     return new HMM(encoder, tokens, emiss, trans, initTag);
   }
 
-  public static HMM mleEstimate(ChunkedSegmentedCorpus corpus, BIOEncoder encoder) 
+  public static HMM mleEstimate(
+      final ChunkedSegmentedCorpus corpus, 
+      final BIOEncoder encoder, 
+      final double smoothFactor) 
   throws HMMError, EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder);
+    return mleEstimate(tokens, bioTrain, encoder, smoothFactor);
   }
 }

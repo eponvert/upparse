@@ -216,11 +216,13 @@ public class RRG implements SequenceModel {
    * @param encoder A {@link BIOEncoder} for encoding data-sets
    * @return A new right-regular grammar model
    */
-  public static RRG mleEstimate(ChunkedSegmentedCorpus corpus,
-      BIOEncoder encoder) throws EncoderError {
+  public static RRG mleEstimate(
+      final ChunkedSegmentedCorpus corpus,
+      final BIOEncoder encoder, 
+      final double smoothFactor) throws EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder);
+    return mleEstimate(tokens, bioTrain, encoder, smoothFactor);
   }
 
   /**
@@ -232,8 +234,9 @@ public class RRG implements SequenceModel {
   public static RRG mleEstimate(
       final int[] tokens, 
       final int[] train, 
-      final BIOEncoder _encoder) {
-    final CombinedProb combined = getCombinedProb(tokens, train);
+      final BIOEncoder _encoder,
+      final double smoothFactor) {
+    final CombinedProb combined = getCombinedProb(tokens, train, smoothFactor);
     final double[] initTag = HMM.getInitTag(train, combined.numTags());
     assert tokens.length == train.length;
     final int last = tokens.length - 1;
@@ -246,7 +249,10 @@ public class RRG implements SequenceModel {
    * @param train
    * @return
    */
-  private static CombinedProb getCombinedProb(int[] tokens, int[] train) {
+  private static CombinedProb getCombinedProb(
+      final int[] tokens, 
+      final int[] train,
+      final double smoothFactor) {
     final int 
       nterm = arrayMax(tokens) + 1,
       ntag = arrayMax(train) + 1;
@@ -262,11 +268,6 @@ public class RRG implements SequenceModel {
         for (int k = 0; k < ntag; k++)
           countsD[j][w][k] = (double) counts[j][w][k];
     
-    final int 
-      last = tokens.length - 1,
-      lastSeenToken = tokens[last],
-      lastSeenTag = train[last];
-    
-    return CombinedProb.fromCounts(countsD, lastSeenToken, lastSeenTag);
+    return CombinedProb.fromCounts(countsD, smoothFactor);
   }
 }
