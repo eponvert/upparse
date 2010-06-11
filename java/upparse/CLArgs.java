@@ -19,20 +19,20 @@ public class CLArgs {
   public String stopv = "__stop__";
   public boolean grandparents = false;
   public String goldStandards = null;
-  private final ChunkingEval[] evals;
+  private ChunkingEval[] evals = null;
   public String evalType = "PR"; 
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String testCorpus = null;
   public double smoothFactor = 1e-2;
-  
+
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
-    
+
     double[] f = new double[fpieces.length];
     for (int i = 0; i < fpieces.length; i++) 
       f[i] = Double.parseDouble(fpieces[i]);
-    
+
     return f;
   }
 
@@ -43,16 +43,16 @@ public class CLArgs {
 
     try {
       List<String> otherArgs = new ArrayList<String>();
-      
+
       while (i < args.length) {
         arg = args[i++];
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
-        
+
         else if (arg.equals("-S") || arg.equals("-smooth"))
           smoothFactor = Double.parseDouble(args[i++]);
-        
+
         else if (arg.equals("-t") || arg.equals("-test"))
           testCorpus = args[i++];
 
@@ -70,37 +70,27 @@ public class CLArgs {
 
         else if (arg.equals("-C") || arg.equals("-constraintmethod")) 
           cmethod = args[i++];
-        
+
         else if (arg.equals("-S") || arg.equals("-stopsymbol"))
           stopv = args[i++];
-        
+
         else if (arg.equals("-G") || arg.equals("-grandparents"))
           grandparents = true;
-        
+
         else if (arg.equals("-g") || arg.equals("-goldstandards"))
           goldStandards = args[i++];
-        
+
         else if (arg.equals("-E") || arg.equals("-evaltype"))
           evalType = args[i++];
-        
+
         else if (arg.equals("-v") || arg.equals("-verbose")) 
           verbose = true;
 
         else
           otherArgs.add(arg);
       }
-      
+
       this.args = otherArgs.toArray(new String[0]);
-      
-      if (goldStandards != null) {
-        String[] gs = goldStandards.split(",");
-        evals = new ChunkingEval[gs.length];
-        for (i = 0; i < gs.length; i++) {
-          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha);
-        }
-      } else {
-        evals = new ChunkingEval[0];
-      }
 
       // don't run EM more than 200 iterations
       if (iter < 0) iter = 200;
@@ -146,6 +136,17 @@ public class CLArgs {
    * @throws IOException If there is any problem opening one of the corpus files 
    */
   public ChunkingEval[] getEvals() throws IOException {
+    if (evals == null)
+      if (goldStandards != null) {
+        String[] gs = goldStandards.split(",");
+        evals = new ChunkingEval[gs.length];
+        for (int i = 0; i < gs.length; i++) {
+          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha);
+        }
+      } else {
+        evals = new ChunkingEval[0];
+      }
+
     return evals;
   }
 }

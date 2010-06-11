@@ -56,7 +56,7 @@ public class SimpleBIOEncoder extends BIOEncoder {
     
     // Count the number of sentences
     int eosv = alpha.getCode(EOS);
-    int numS = 0;
+    int numS = -1; // don't count first __eos__
     for (int w: tokens)
       if (w == eosv)
         numS++;

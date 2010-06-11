@@ -9,7 +9,6 @@ import java.io.*;
  */
 public abstract class BIOEncoder {
   
-  static final String START = "__start__";
   static final String EOS = "__eos__";
   
   final int stopv;
@@ -55,7 +54,7 @@ public abstract class BIOEncoder {
     
     int[] tokens = new int[n];
     int i = 0, eosv = alpha.getCode(EOS);
-    tokens[i++] = alpha.getCode(START);
+    tokens[i++] = eosv;
     
     for (int[][][] s: clumpedCorpus) {
       if (s.length != 0) {

@@ -171,23 +171,34 @@ public class RRG implements SequenceModel {
       tags = tagdict[tokens[t]];
       viterbi[t] = new double[tags.length];
       backpointer[t] = new int[tags.length];
+      final double[][] arcprobs = new double[_tags.length][tags.length];
+      final int token = tokens[t-1];
+      for (int j: _tags) 
+        for (int k: tags)
+          arcprobs[j][k] = combinedP.getProb(j, token, k);
+      
       for (int k: tags) {
         v = new double[_tags.length];
-        for (int j: _tags) {
-          v[j] = viterbi[t-1][j] + combinedP.getProb(j, tokens[t-1], k);
-        }
+        for (int j: _tags) 
+          v[j] = viterbi[t-1][j] + arcprobs[j][k];
+
         mv = new MaxVals(v);
         viterbi[t][k] = mv.max;
         backpointer[t][k] = mv.argmax;
       }
+      
+      mv = new MaxVals(viterbi[t]);
+      assert mv.argmax != -1;
+      
       _tags = tags;
     }
     
     final int last = ndata - 1;
     for (int t: tagdict[tokens[last]])
       viterbi[last][t] += combinedP.lastTok(t, tokens[last]);
-    
+   
     mv = new MaxVals(viterbi[last]);
+    assert mv.argmax != -1;
     
     // first past gets the indices for the tags in the tagdict
     final int[] output = new int[ndata];
