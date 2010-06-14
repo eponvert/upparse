@@ -11,11 +11,9 @@ public class EmissionProbs {
   private final double[][] emiss;
   private double defaultProb;
   private double nvocab;
-  private final double smoothFactor;
 
-  public EmissionProbs(final double[][] _emiss, final double _smooothFactor) {
+  public EmissionProbs(final double[][] _emiss) {
     emiss = _emiss;
-    smoothFactor = _smooothFactor;
     nvocab = emiss[0].length;
     defaultProb = log(1./nvocab);
   }
@@ -65,19 +63,18 @@ public class EmissionProbs {
     defaultProb = log(1/nvocab);
     
     for (int j = 1; j < ntag; j++) { 
-      final double sum = log(Util.sum(emissCount[j]) + nvocab * smoothFactor);
+      final double sum = log(Util.sum(emissCount[j]) + nvocab);
       for (int w = 0; w < nterm; w++) {
         if (emiss[0][w] > neginf) emiss[j][w] = neginf;
-        else emiss[j][w] = log(emissCount[j][w] + smoothFactor) - sum;
+        else emiss[j][w] = log(emissCount[j][w] + 1.) - sum;
         assert !Double.isNaN(emiss[j][w]);
       }
     }
   }
 
-  public static EmissionProbs fromCounts(
-      final double[][] emissCount, final double smoothFactor) {
+  public static EmissionProbs fromCounts(final double[][] emissCount) {
     final int m = emissCount.length, n = emissCount[0].length;
-    final EmissionProbs e = new EmissionProbs(new double[m][n], smoothFactor);
+    final EmissionProbs e = new EmissionProbs(new double[m][n]);
     e.update(emissCount);
     return e;
   }

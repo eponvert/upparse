@@ -24,7 +24,6 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String testCorpus = null;
-  public double smoothFactor = 1e-2;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -49,9 +48,6 @@ public class CLArgs {
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
-
-        else if (arg.equals("-S") || arg.equals("-smooth"))
-          smoothFactor = Double.parseDouble(args[i++]);
 
         else if (arg.equals("-t") || arg.equals("-test"))
           testCorpus = args[i++];
@@ -125,8 +121,7 @@ public class CLArgs {
         "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
         "  -C|-constraintmethod M     Use specified method for enforcing constraints\n" +
-        "  -t|-test F                 Use this data set as test\n" +
-        "  -S|-smooth N               Smoothing factor for additive smoothing"
+        "  -t|-test F                 Use this data set as test"
     );
   }
 

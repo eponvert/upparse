@@ -80,7 +80,7 @@ public class Main {
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder, clargs.smoothFactor);
+      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -140,7 +140,7 @@ public class Main {
       System.err.println("Problem with eval: " + e.getMessage());
       System.exit(1);
 
-    } catch (RRGError e) {
+    } catch (SequenceModelError e) {
       System.err.println("Problem initializing RRG: " + e.getMessage());
       usageError();
       
@@ -178,7 +178,7 @@ public class Main {
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder, clargs.smoothFactor);
+      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -234,7 +234,7 @@ public class Main {
       for (ChunkingEval eval: evals) 
         eval.writeSummary(clargs.evalType);
 
-    } catch (HMMError e) {
+    } catch (SequenceModelError e) {
       System.err.println("Problem initializing HMM: " + e.getMessage());
       usageError();
       

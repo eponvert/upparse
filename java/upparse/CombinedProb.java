@@ -10,20 +10,14 @@ import static upparse.Util.*;
 public class CombinedProb {
 
   private final double[][][] prob;
-  private final double[][] lastTok;
-  private double nvocab;
-  private final double[][] defaultProb;
-  private final double smoothFactor;
+  private final double[] logSum;
+  final HMM backoffHmm;
 
   private CombinedProb(
-      final double[][][] _prob, 
-      final double[][] _lastTok,
-      final double[][] _defaultProb,
-      final double _smoothFactor) {
+      final double[][][] _prob, final double[] _logSum,  final HMM _backoffHmm) {
     prob = _prob;
-    lastTok = _lastTok;
-    defaultProb = _defaultProb;
-    smoothFactor = _smoothFactor;
+    logSum = _logSum;
+    backoffHmm = _backoffHmm;
   }
 
   public int numTags() {
@@ -34,8 +28,9 @@ public class CombinedProb {
     return prob[0].length;
   }
   
-  public double getProb(final int j, final int w, final int k) {
-    return w < numTerms() ? prob[j][w][k] : defaultProb[j][k];
+  public double arcprob(final int j, final int w, final int k) {
+    return w < numTerms() ? prob[j][w][k] : 
+      backoffHmm.arcprob(j, w, k) - logSum[j];
   }
 
   /**
@@ -44,18 +39,17 @@ public class CombinedProb {
    * @return The probability of this tag/token pair at the end of the sequence
    */
   public double lastTok(int t, int i) {
-    return lastTok[t][i];
+    return backoffHmm.emiss.getProb(t, i);
   }
 
   public static CombinedProb fromCounts(
-      double[][][] countsD, double smoothFactor) {
+      double[][][] countsD, final HMM backoffHmm) {
     
     final int ntag = countsD.length, nterm = countsD[0].length;
     final double[][][] prob = new double[ntag][nterm][ntag];
-    final double[][] lastTok = new double[ntag][nterm];
-    final double[][] defaultProb = new double[ntag][ntag];
+    final double[] logSum = new double[ntag];
     final CombinedProb c = 
-      new CombinedProb(prob, lastTok, defaultProb, smoothFactor);
+      new CombinedProb(prob, logSum, backoffHmm);
     c.update(countsD);
     return c;
   }
@@ -64,70 +58,21 @@ public class CombinedProb {
    * Update the probability distribution using these tag-term-tag counts
    */
   public void update(double[][][] counts) {
-
-    final int ntag = counts.length, nterm = counts[0].length;
-    
-    // We're going to estimate last token probabilities basically as
-    // emission probabilities on the whole data-set.
-    // TODO assuming stop state is 0
-    final double
-      stopStateSum = log(sum(counts[0])),
-      neginf = Double.NEGATIVE_INFINITY;
-    
-    int nvocabI = 0;
-    for (int w = 0; w < nterm; w++) {
-      final double count = sum(counts[0][w]);
-      if (count == 0) nvocabI++;
-      lastTok[0][w] = log(count) - stopStateSum;
-      for (int k = 0; k < ntag; k++) {
-        prob[0][w][k] = log(counts[0][w][k]) - stopStateSum;
-      }
-      assert !Double.isNaN(lastTok[0][w]);
-    }
-    
-    nvocab = (double) nvocabI;
-    
-    // Get transition probabilities for smoothing
-    final double[][] trans = new double[ntag][ntag];
-    for (int j = 0; j < ntag; j++) 
-      for (int w = 0; w < nterm; w++) 
-        for (int k = 0; k < ntag; k++) 
-          trans[j][k] += counts[j][w][k];
-    
-    for (int j = 0; j < ntag; j++) {
-      final double sum = sum(trans[j]);
-      assert sum != 0;
-      for (int k = 0; k < ntag; k++) trans[j][k] = trans[j][k]/sum;
-    }
-    
-    for (int j = 1; j < ntag; j++) {
-      final double sum = log(sum(counts[j]) + smoothFactor * nvocab);
-      for (int w = 0; w < nterm; w++) {
-        
-        if (lastTok[0][w] > neginf) {
-          lastTok[j][w] = neginf;
-          for (int k = 0; k < ntag; k++) {
-            prob[j][w][k] = neginf;
-          }
-        } else {
-          for (int k = 0; k < ntag; k++) {
-            lastTok[j][w] = log(sum(counts[j][w]) + smoothFactor) - sum;
-            assert !Double.isNaN(counts[j][w][k]);
-            prob[j][w][k] = 
-              log(counts[j][w][k] + smoothFactor * trans[j][k]) - sum;
-            assert !Double.isNaN(prob[j][w][k]);
-          }
+    backoffHmm.update(counts); 
+    for (int t = 0; t < numTags(); t++) {
+      logSum[t] = log(sum(counts[t]) + 1);
+      for (int w = 0; w < numTerms(); w++) {
+        for (int _t = 0; _t < numTags(); _t++) {
+          prob[t][w][_t] = 
+            log(counts[t][w][_t] + exp(backoffHmm.arcprob(t, w, _t))) 
+            - logSum[t];
         }
       }
     }
-    
-    double lognvocab = log(nvocab);
-    for (int j = 0; j < ntag; j++) 
-      for (int k = 0; k < ntag; k++) 
-        defaultProb[j][k] = log(trans[j][k]) - lognvocab;
   }
 
   public void checkSanity() {
+    backoffHmm.checkSanity();
     for (int t1 = 0; t1 < prob.length; t1++) {
       double sum = 0;
       for (int w = 0; w < prob[t1].length; w++) 
@@ -135,13 +80,6 @@ public class CombinedProb {
           sum += exp(prob[t1][w][t2]);
           assert !Double.isNaN(sum);
         }
-      assert abs(sum-1) < 1e-5;
-    }
-    
-    for (int t = 0; t < lastTok.length; t++) {
-      double sum = 0;
-      for (int w = 0; w < lastTok[t].length; w++) 
-        sum += exp(lastTok[t][w]);
       assert abs(sum-1) < 1e-5;
     }
   }
