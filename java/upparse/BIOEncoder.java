@@ -9,6 +9,8 @@ import java.io.*;
  */
 public abstract class BIOEncoder {
   
+  public static enum GPOpt { NOGP, GP, NOSTOP }
+
   static final String EOS = "__eos__";
   
   final int stopv;
@@ -19,11 +21,21 @@ public abstract class BIOEncoder {
     stopv = alpha.getCode(stop);
   }
   
-  public static BIOEncoder getBIOEncoder(boolean gp, String stop, Alpha alpha) {
-    if (gp)
-      return new GrandparentBIOEncoder(stop, alpha);
-    else
-      return new SimpleBIOEncoder(stop, alpha);
+  public static BIOEncoder getBIOEncoder(
+      final GPOpt gp, final String stop, final Alpha alpha) throws EncoderError {
+    switch (gp) {
+      case NOGP:
+        return new SimpleBIOEncoder(stop, alpha);
+        
+      case GP:
+        return new GrandparentBIOEncoder(stop, alpha);
+        
+      case NOSTOP:
+        return new GrandparentWithStopBIOEncoder(stop, alpha);
+        
+      default:
+        throw new EncoderError("Unexpected GP option " + gp);
+    }
   }
   
   public final int[] tokensFromFile(final String fname) throws IOException {

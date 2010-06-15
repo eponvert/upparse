@@ -8,7 +8,7 @@ import java.util.*;
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class CLArgs {
-
+  
   public String output = null;
   public String factor = "2";
   public int iter;
@@ -17,7 +17,7 @@ public class CLArgs {
   public String tagContraints = null;
   public String cmethod = null;
   public String stopv = "__stop__";
-  public boolean grandparents = false;
+  public BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
   public String goldStandards = null;
   private ChunkingEval[] evals = null;
   public String evalType = "PR"; 
@@ -79,7 +79,10 @@ public class CLArgs {
           stopv = args[i++];
 
         else if (arg.equals("-G") || arg.equals("-grandparents"))
-          grandparents = true;
+          grandparents = BIOEncoder.GPOpt.GP;
+        
+        else if (arg.equals("-GG") || arg.equals("-grandparentsN"))
+          grandparents = BIOEncoder.GPOpt.NOSTOP;
 
         else if (arg.equals("-g") || arg.equals("-goldstandards"))
           goldStandards = args[i++];
@@ -127,6 +130,7 @@ public class CLArgs {
         "  -F|-factor N1,N2...        Mult factors for baseline chunking\n" +
         "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
         "  -G|-grandparents           Use pseudo 2nd order tagset\n" +
+        "  -GG|-grandparentsN         Use pseudo 2nd order tagset without altering STOP tag\n" +
         "  -i|-iterations N           Iterations of EM\n" +
         "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +

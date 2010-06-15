@@ -21,7 +21,7 @@ public class Main {
   }
   
   private static BIOEncoder getBIOEncoder(
-      ChunkedSegmentedCorpus corpus, CLArgs clargs) {
+      ChunkedSegmentedCorpus corpus, CLArgs clargs) throws EncoderError {
     return 
     BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, corpus.alpha); 
   }
