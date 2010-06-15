@@ -24,8 +24,8 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String testCorpus = null;
-  public double scaleFactor = 1e-2;
-  public double scaleFactor2 = 1e-2;
+  public double scaleFactor = 1;
+  public double scaleFactor2 = 1;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
