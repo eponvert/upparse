@@ -24,6 +24,7 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String testCorpus = null;
+  public double scaleFactor = 1e-2;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -48,6 +49,9 @@ public class CLArgs {
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
+        
+        else if (arg.equals("-S") || arg.equals("-scale"))
+          scaleFactor = Double.parseDouble(args[i++]);
 
         else if (arg.equals("-t") || arg.equals("-test"))
           testCorpus = args[i++];

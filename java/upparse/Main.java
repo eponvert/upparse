@@ -80,7 +80,7 @@ public class Main {
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder);
+      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder, clargs.scaleFactor);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -178,7 +178,7 @@ public class Main {
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder);
+      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder, clargs.scaleFactor);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)

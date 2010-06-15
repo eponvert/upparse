@@ -108,7 +108,8 @@ public class HMM extends SequenceModel {
   }
 
   private static EmissionProbs getEmiss(
-      final int[] tokens, final int[] tags, Ipredicate isStop) {
+      final int[] tokens, final int[] tags, 
+      Ipredicate isStop, double scaleFactor) {
     assert tokens.length == tags.length;
 
     final int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1;
@@ -124,7 +125,7 @@ public class HMM extends SequenceModel {
       for (w = 0; w < nterm; w++)
         emissCountD[j][w] = (double) emissCount[j][w];
     
-    return EmissionProbs.fromCounts(emissCountD, isStop);
+    return EmissionProbs.fromCounts(emissCountD, isStop, scaleFactor);
   }
 
   static double[] getInitTag(final int[] tag, final int ntag) {
@@ -166,8 +167,10 @@ public class HMM extends SequenceModel {
   public static HMM mleEstimate(
       final int[] tokens, 
       final int[] tags, 
-      final BIOEncoder encoder) {
-    final EmissionProbs emiss = getEmiss(tokens, tags, encoder.isStopPred());
+      final BIOEncoder encoder, 
+      double scaleFactor) {
+    final EmissionProbs emiss = 
+      getEmiss(tokens, tags, encoder.isStopPred(), scaleFactor);
     int ntag = emiss.numTags();
     final double[] initTag = getInitTag(tags, ntag);
     final double[][] trans = getTrans(tags, ntag);
@@ -175,10 +178,12 @@ public class HMM extends SequenceModel {
   }
 
   public static HMM mleEstimate(
-      final ChunkedSegmentedCorpus corpus, final BIOEncoder encoder) 
+      final ChunkedSegmentedCorpus corpus, 
+      final BIOEncoder encoder,
+      final double scaleFactor) 
   throws HMMError, EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder);
+    return mleEstimate(tokens, bioTrain, encoder, scaleFactor);
   }
 }

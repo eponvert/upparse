@@ -66,27 +66,30 @@ public class RRG extends SequenceModel {
   /**
    * @param corpus Corpus output by a separate model
    * @param encoder A {@link BIOEncoder} for encoding data-sets
+   * @param scaleFactor 
    * @return A new right-regular grammar model
    */
   public static RRG mleEstimate(
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder) throws EncoderError {
+      final BIOEncoder encoder, double scaleFactor) throws EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder);
+    return mleEstimate(tokens, bioTrain, encoder, scaleFactor);
   }
 
   /**
    * @param tokens Corpus tokens
    * @param train Tag training set
    * @param _encoder A {@link BIOEncoder} for creating corpus datasets
+   * @param scaleFactor 
    * @return
    */
   public static RRG mleEstimate(
       final int[] tokens, 
       final int[] train, 
-      final BIOEncoder _encoder) {
-    final HMM backoffHmm = HMM.mleEstimate(tokens, train, _encoder);
+      final BIOEncoder _encoder, 
+      double scaleFactor) {
+    final HMM backoffHmm = HMM.mleEstimate(tokens, train, _encoder, scaleFactor);
     final CombinedProb combined = getCombinedProb(tokens, train, backoffHmm);
     assert tokens.length == train.length;
     return new RRG(_encoder, tokens, combined);
