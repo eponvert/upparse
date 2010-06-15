@@ -80,7 +80,8 @@ public class Main {
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
       BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder, clargs.scaleFactor);
+      RRG rrg = RRG.mleEstimate(
+          baselineCorpus, encoder, clargs.scaleFactor2, clargs.scaleFactor);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)

@@ -67,14 +67,15 @@ public class RRG extends SequenceModel {
    * @param corpus Corpus output by a separate model
    * @param encoder A {@link BIOEncoder} for encoding data-sets
    * @param scaleFactor 
+   * @param scaleFactor2 
    * @return A new right-regular grammar model
    */
   public static RRG mleEstimate(
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder, double scaleFactor) throws EncoderError {
+      final BIOEncoder encoder, double scaleFactor2, double scaleFactor) throws EncoderError {
     int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
     int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder, scaleFactor);
+    return mleEstimate(tokens, bioTrain, encoder, scaleFactor2, scaleFactor);
   }
 
   /**
@@ -82,15 +83,17 @@ public class RRG extends SequenceModel {
    * @param train Tag training set
    * @param _encoder A {@link BIOEncoder} for creating corpus datasets
    * @param scaleFactor 
+   * @param scaleFactor2 
    * @return
    */
   public static RRG mleEstimate(
       final int[] tokens, 
       final int[] train, 
       final BIOEncoder _encoder, 
-      double scaleFactor) {
+      double scaleFactor2, double scaleFactor) {
     final HMM backoffHmm = HMM.mleEstimate(tokens, train, _encoder, scaleFactor);
-    final CombinedProb combined = getCombinedProb(tokens, train, backoffHmm);
+    final CombinedProb combined = 
+      getCombinedProb(tokens, train, backoffHmm, scaleFactor2);
     assert tokens.length == train.length;
     return new RRG(_encoder, tokens, combined);
   }
@@ -98,12 +101,13 @@ public class RRG extends SequenceModel {
   /**
    * @param tokens
    * @param train
+   * @param scaleFactor 
    * @return
    */
   private static CombinedProb getCombinedProb(
       final int[] tokens, 
       final int[] train,
-      final HMM backoffHmm) {
+      final HMM backoffHmm, double scaleFactor) {
     final int 
       nterm = arrayMax(tokens) + 1,
       ntag = arrayMax(train) + 1;
@@ -119,6 +123,6 @@ public class RRG extends SequenceModel {
         for (int k = 0; k < ntag; k++)
           countsD[j][w][k] = (double) counts[j][w][k];
     
-    return CombinedProb.fromCounts(countsD, backoffHmm);
+    return CombinedProb.fromCounts(countsD, backoffHmm, scaleFactor);
   }
 }

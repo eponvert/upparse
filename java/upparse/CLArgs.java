@@ -25,6 +25,7 @@ public class CLArgs {
   public boolean verbose = false;
   public String testCorpus = null;
   public double scaleFactor = 1e-2;
+  public double scaleFactor2 = 1e-2;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -52,6 +53,9 @@ public class CLArgs {
         
         else if (arg.equals("-S") || arg.equals("-scale"))
           scaleFactor = Double.parseDouble(args[i++]);
+
+        else if (arg.equals("-S2") || arg.equals("-scale2"))
+          scaleFactor2 = Double.parseDouble(args[i++]);
 
         else if (arg.equals("-t") || arg.equals("-test"))
           testCorpus = args[i++];
@@ -118,6 +122,8 @@ public class CLArgs {
         "\n" +
         "Options:\n" +
         "  -o|-output FILE            Set output file/template\n" +
+        "  -S|-scaleFactor N          HMM smoothing scaling factor\n" +
+        "  -S2|-scaleFactor2 N        RRG smoothing scaling factor\n" +
         "  -F|-factor N1,N2...        Mult factors for baseline chunking\n" +
         "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
         "  -G|-grandparents           Use pseudo 2nd order tagset\n" +
