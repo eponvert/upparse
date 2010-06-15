@@ -82,4 +82,7 @@ public abstract class BIOEncoder {
   /** Return a clumped corpus from BIO encoded HMM output */ 
   public abstract ChunkedSegmentedCorpus clumpedCorpusFromBIOOutput(
       int[] tokens, int[] output) throws EncoderError;
+  
+  /** Predicate for whether a tag is a stop tag */
+  public abstract Ipredicate isStopPred();
 }

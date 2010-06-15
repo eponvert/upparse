@@ -83,11 +83,17 @@ public abstract class SequenceModel {
       }
     }
     
+    double forwTotal = neginf;
+    for (int t: getTagdict(data[last])) {
+      forwTotal = Util.logadd(forwTotal, forward[last][t]);
+      backward[last][t] = 0;
+    }
+    
     // TODO check end conditions
     // for now assuming last tag is STOP with index 0
     // 
-    final double forwTotal = forward[last][0];
-    backward[last][0] = 0;
+    // final double forwTotal = forward[last][0];
+    // backward[last][0] = 0;
     
     // Backward probabilities. Also collecting new training counts as we go
     final double[][][] counts = new double[ntag][nvocab][ntag];
@@ -121,7 +127,7 @@ public abstract class SequenceModel {
     checkSanity();
 
     // Get perplexity
-    setPerplex(exp(-forward[last][0]/ndata));
+    setPerplex(exp(-forwTotal/ndata));
   }
   
   public void updateTagDict() {
@@ -164,8 +170,8 @@ public abstract class SequenceModel {
     MaxVals mv;
     
     viterbi[0] = new double[_tags.length];
-    for (int j: _tags) 
-      viterbi[0][j] = initTagProb(j);
+    for (int j = 0; j < _tags.length; j++)
+      viterbi[0][j] = initTagProb(_tags[j]);
 
     for (int t = 1; t < ndata; t++) {
       tags = getTagdict(tokens[t]);
@@ -194,8 +200,9 @@ public abstract class SequenceModel {
     }
     
     final int last = ndata - 1;
-    for (int t: getTagdict(tokens[last]))
-      viterbi[last][t] += termProb(t, tokens[last]);
+    final int[] lastTags = getTagdict(tokens[last]); 
+    for (int t = 0; t < lastTags.length; t++)
+      viterbi[last][t] += termProb(lastTags[t], tokens[last]);
    
     mv = new MaxVals(viterbi[last]);
     assert mv.argmax != -1;

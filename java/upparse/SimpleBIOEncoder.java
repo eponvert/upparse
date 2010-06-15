@@ -160,4 +160,14 @@ public class SimpleBIOEncoder extends BIOEncoder {
     
     return ChunkedSegmentedCorpus.fromArrays(clumpedCorpus, alpha);
   }
+
+  @Override
+  public Ipredicate isStopPred() {
+    return new Ipredicate() {
+      @Override
+      public boolean pred(final int t) {
+        return t == STOP_STATE;
+      }
+    };
+  }
 }

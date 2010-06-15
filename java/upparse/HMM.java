@@ -107,7 +107,8 @@ public class HMM extends SequenceModel {
     super.checkSanity();
   }
 
-  private static EmissionProbs getEmiss(final int[] tokens, final int[] tags) {
+  private static EmissionProbs getEmiss(
+      final int[] tokens, final int[] tags, Ipredicate isStop) {
     assert tokens.length == tags.length;
 
     final int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1;
@@ -123,7 +124,7 @@ public class HMM extends SequenceModel {
       for (w = 0; w < nterm; w++)
         emissCountD[j][w] = (double) emissCount[j][w];
     
-    return EmissionProbs.fromCounts(emissCountD);
+    return EmissionProbs.fromCounts(emissCountD, isStop);
   }
 
   static double[] getInitTag(final int[] tag, final int ntag) {
@@ -166,7 +167,7 @@ public class HMM extends SequenceModel {
       final int[] tokens, 
       final int[] tags, 
       final BIOEncoder encoder) {
-    final EmissionProbs emiss = getEmiss(tokens, tags);
+    final EmissionProbs emiss = getEmiss(tokens, tags, encoder.isStopPred());
     int ntag = emiss.numTags();
     final double[] initTag = getInitTag(tags, ntag);
     final double[][] trans = getTrans(tags, ntag);

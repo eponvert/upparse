@@ -10,15 +10,17 @@ public class GrandparentBIOEncoder extends BIOEncoder {
   private final SimpleBIOEncoder simpleEncoder;
   
   public static final int 
-    STOP_STATE      = 0,
-    STOP_B_STATE    = 1,
-    STOP_O_STATE    = 2,
-    B_I_STATE       = 3,
-    I_B_STATE       = 4,
-    I_I_STATE       = 5,
-    I_O_STATE       = 6,
-    O_B_STATE       = 7,
-    O_O_STATE       = 8;
+    STOP_B_STATE    = 0,
+    STOP_O_STATE    = 1,
+    B_I_STATE       = 2,
+    I_B_STATE       = 3,
+    I_I_STATE       = 4,
+    I_O_STATE       = 5,
+    O_B_STATE       = 6,
+    O_O_STATE       = 7,
+    I_STOP_STATE    = 8,
+    O_STOP_STATE    = 9,
+    STOP_STOP_STATE = 10;
     
   public GrandparentBIOEncoder(String stop, Alpha alpha) {
     super(stop, alpha);
@@ -31,18 +33,19 @@ public class GrandparentBIOEncoder extends BIOEncoder {
     int[] train = new int[simpTrain.length];
     
     assert simpTrain[0] == SimpleBIOEncoder.STOP_STATE;
-    train[0] = STOP_STATE;
+    train[0] = O_STOP_STATE;
     
     for (int i = 1; i < simpTrain.length; i++) {
-      if (simpTrain[i] == SimpleBIOEncoder.STOP_STATE) {
-        train[i] = STOP_STATE;
-      } else if (simpTrain[i-1] == SimpleBIOEncoder.STOP_STATE) {
+      if (simpTrain[i-1] == SimpleBIOEncoder.STOP_STATE) {
         switch (simpTrain[i]) {
           case SimpleBIOEncoder.B_STATE:
             train[i] = STOP_B_STATE; break;
             
           case SimpleBIOEncoder.O_STATE:
             train[i] = STOP_O_STATE; break;
+            
+          case SimpleBIOEncoder.STOP_STATE:
+            train[i] = STOP_STOP_STATE; break;
             
           default: 
             throw new EncoderError("Unexpected tag sequence");
@@ -51,7 +54,7 @@ public class GrandparentBIOEncoder extends BIOEncoder {
         switch (simpTrain[i]) {
           case SimpleBIOEncoder.I_STATE:
             train[i] = B_I_STATE; break;
-
+            
           default: 
             throw new EncoderError("Unexpected tag sequence");
         }    
@@ -66,6 +69,9 @@ public class GrandparentBIOEncoder extends BIOEncoder {
           case SimpleBIOEncoder.O_STATE:
             train[i] = I_O_STATE; break;
             
+          case SimpleBIOEncoder.STOP_STATE:
+            train[i] = I_STOP_STATE; break;
+            
           default: 
             throw new EncoderError("Unexpected tag sequence");
         }
@@ -76,6 +82,9 @@ public class GrandparentBIOEncoder extends BIOEncoder {
           
           case SimpleBIOEncoder.O_STATE:
             train[i] = O_O_STATE; break;
+            
+          case SimpleBIOEncoder.STOP_STATE:
+            train[i] = O_STOP_STATE; break;
           
           default: 
             throw new EncoderError("Unexpected tag sequence");
@@ -92,7 +101,9 @@ public class GrandparentBIOEncoder extends BIOEncoder {
     int[] simpleOutput = new int[output.length];
     for (int i = 0; i < output.length; i++) {
       switch (output[i]) {
-        case (STOP_STATE):  
+        case (O_STOP_STATE):  
+        case (I_STOP_STATE):  
+        case (STOP_STOP_STATE):  
           simpleOutput[i] = SimpleBIOEncoder.STOP_STATE; break; 
         
         case (STOP_B_STATE):
@@ -117,5 +128,15 @@ public class GrandparentBIOEncoder extends BIOEncoder {
     }
 
     return simpleEncoder.clumpedCorpusFromBIOOutput(tokens, simpleOutput);
+  }
+
+  @Override
+  public Ipredicate isStopPred() {
+    return new Ipredicate() {
+      @Override
+      public boolean pred(final int t) {
+        return t == O_STOP_STATE || t == I_STOP_STATE || t == STOP_STOP_STATE;
+      }
+    };
   }
 }
