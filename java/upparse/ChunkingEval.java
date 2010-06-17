@@ -222,12 +222,16 @@ public class ChunkingEval {
         
         terms = termsFromSent(gold);
         _terms = termsFromSent(outp);
-        assert Arrays.equals(terms, _terms):
-          String.format(
-              "Terms do not match:\nGold: %s\nOutp: %s\n[%d]",
-              termStr(terms),
-              termStr(termsFromSent(outp)),
-              i);
+        
+        if (checkTerms)
+          assert Arrays.equals(terms, _terms):
+            String.format(
+                "Terms do not match:\nGold: %s\nOutp: %s\n[%d]",
+                termStr(terms),
+                termStr(termsFromSent(outp)),
+                i);
+        else 
+          assert terms.length == _terms.length;
               
         
         final ChunkSet 
