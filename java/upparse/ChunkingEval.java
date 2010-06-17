@@ -14,16 +14,25 @@ public class ChunkingEval {
   private final ChunkedCorpus goldCorpus;
   private final String evalName;
   private final List<Experiment> experiments = new ArrayList<Experiment>();
+  private final boolean checkTerms;
 
-  private ChunkingEval(final String name, final ChunkedCorpus chunkedCorpus) {
+  private ChunkingEval(
+      final String name, 
+      final ChunkedCorpus chunkedCorpus, 
+      final boolean _checkTerms) {
     evalName = name;
     goldCorpus = chunkedCorpus;
+    checkTerms = _checkTerms;
   }
 
-  public static ChunkingEval fromCorpusFile(final String filename, final Alpha alpha) 
+  public static ChunkingEval fromCorpusFile(
+      final String filename, 
+      final Alpha alpha,
+      final boolean checkTerms) 
   throws IOException {
     final String name = new File(filename).getName();
-    return new ChunkingEval(name, ChunkedCorpus.fromFile(filename, alpha));
+    return new ChunkingEval(
+        name, ChunkedCorpus.fromFile(filename, alpha), checkTerms);
   }
 
   public void eval(String string, ChunkedCorpus outputCorpus) throws EvalError {
@@ -183,7 +192,7 @@ public class ChunkingEval {
     private final String expName;
     
     private final int[] len = new int[3];
-    
+
     Experiment(String name, ChunkedCorpus outputCorpus) throws EvalError {
       expName = name;
       
@@ -197,7 +206,10 @@ public class ChunkingEval {
         for (int i = 0; i < Math.min(goldIndices.length, outpIndices.length); i++) {
           int[] g = termsFromSent(goldIndices[i]);
           int[] o = termsFromSent(outpIndices[i]);
-          assert Arrays.equals(g, o);
+          if (checkTerms)
+            assert Arrays.equals(g, o);
+          else
+            assert g.length == o.length;
         }
         throw new EvalError(
             String.format("Different corpus len: Gold = %d Output = %d",

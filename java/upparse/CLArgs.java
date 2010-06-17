@@ -26,6 +26,7 @@ public class CLArgs {
   public String testCorpus = null;
   public double scaleFactor = 1;
   public double scaleFactor2 = 1;
+  public boolean checkTerms = true;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -50,6 +51,9 @@ public class CLArgs {
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
+        
+        else if (arg.equals("-T") || arg.equals("-dontCheckTerms"))
+          checkTerms = false;
         
         else if (arg.equals("-S") || arg.equals("-scale"))
           scaleFactor = Double.parseDouble(args[i++]);
@@ -135,7 +139,8 @@ public class CLArgs {
         "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
         "  -C|-constraintmethod M     Use specified method for enforcing constraints\n" +
-        "  -t|-test F                 Use this data set as test"
+        "  -t|-test F                 Use this data set as test\n" +
+        "  -T|-dontCheckTerms         Don't check that the eval and output terms are equal"
     );
   }
 
@@ -150,7 +155,7 @@ public class CLArgs {
         String[] gs = goldStandards.split(",");
         evals = new ChunkingEval[gs.length];
         for (int i = 0; i < gs.length; i++) {
-          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha);
+          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha, checkTerms);
         }
       } else {
         evals = new ChunkingEval[0];
