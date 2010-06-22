@@ -86,7 +86,7 @@ public abstract class SequenceModel {
     double forwTotal = neginf;
     for (int t: getTagdict(data[last])) {
       forwTotal = Util.logadd(forwTotal, forward[last][t]);
-      backward[last][t] = 0;
+      backward[last][t] = termProb(t, data[last]);
     }
     
     // TODO check end conditions
