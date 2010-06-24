@@ -66,6 +66,9 @@ public class ChunkingEval {
     else if (evalType.equals("PRLcsv"))
       experiment.writeSummaryWithLenCSV(out);
 
+    else if (evalType.equals("NamePRLcsv"))
+      experiment.writeSummaryWithLenAndNameCSV(out);
+
     else if (evalType.equals("PRL")) 
       experiment.writeSummaryWithLen(out);
 
@@ -312,6 +315,31 @@ public class ChunkingEval {
           len[FN] += c.end - c.start;
         }
       }
+    }
+
+    public void writeSummaryWithLenAndNameCSV(PrintStream out) {
+      int 
+      tp = sum(counts[TP]), 
+      fp = sum(counts[FP]), 
+      fn = sum(counts[FN]),
+      predCount = tp + fp,
+      predLen = len[TP] + len[FP];
+    
+    double
+      predCountF = (double) predCount,
+      predLenF = (double) predLen,
+      predLenAvg = predLenF / predCountF,
+      tpF = (double) tp, 
+      fpF = (double) fp, 
+      fnF = (double) fn,
+      prec = 100 * tpF / (tpF + fpF),
+      rec = 100 * tpF / (tpF + fnF),
+      f = 2 * prec * rec / (prec + rec);
+      
+    String[] pieces = expName.split(" ");
+    String last = pieces[pieces.length-1];
+    out.println(String.format(
+      "%s,%.1f,%.1f,%.1f,%.2f", last, prec, rec, f, predLenAvg));
     }
 
     private String termStr(int[] terms) {
