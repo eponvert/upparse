@@ -39,32 +39,46 @@ public class ChunkingEval {
     experiments.add(new Experiment(string, outputCorpus));
   }
   
-  public void writeSummary(final String evalType) throws EvalError {
-    writeSummary(evalType, System.out);
+  public void writeSummary(final String evalType, final boolean onlyLast) 
+  throws EvalError {
+    writeSummary(evalType, System.out, onlyLast);
   }
 
-  public void writeSummary(String evalType, PrintStream out) throws EvalError {
-    for (Experiment experiment: experiments) {
-      if (evalType.equals("PR"))
-        experiment.writeSummary(out);
-      
-      else if (evalType.equals("PRLcsv"))
-        experiment.writeSummaryWithLenCSV(out);
-      
-      else if (evalType.equals("PRL")) 
-        experiment.writeSummaryWithLen(out);
-      
-      else if (evalType.equals("PRC"))
-        experiment.writeSummaryWithCounts(out);
-      
-      else if (evalType.equals("PRCL"))
-        experiment.writeSummaryWithCountsAndLen(out);
-      
-      else 
-        throw new EvalError("Unknown eval type:: " + evalType);
+  public void writeSummary(
+      final String evalType, final PrintStream out, final boolean onlyLast) 
+  throws EvalError {
+    if (onlyLast) {
+      Experiment exp = experiments.get(experiments.size()-1);
+      writeSummary(exp, evalType, out);
+    } else {
+      for (Experiment experiment: experiments) {
+        writeSummary(experiment, evalType, out);
+      }
     }
   }
   
+  private void writeSummary(
+      Experiment experiment, String evalType, PrintStream out) 
+  throws EvalError {
+    if (evalType.equals("PR"))
+      experiment.writeSummary(out);
+
+    else if (evalType.equals("PRLcsv"))
+      experiment.writeSummaryWithLenCSV(out);
+
+    else if (evalType.equals("PRL")) 
+      experiment.writeSummaryWithLen(out);
+
+    else if (evalType.equals("PRC"))
+      experiment.writeSummaryWithCounts(out);
+
+    else if (evalType.equals("PRCL"))
+      experiment.writeSummaryWithCountsAndLen(out);
+
+    else 
+      throw new EvalError("Unknown eval type:: " + evalType);
+  }
+
   private static class ChunkSet {
     final int index[][];
     final Chunk[] chunks;

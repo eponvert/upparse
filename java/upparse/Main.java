@@ -49,7 +49,7 @@ public class Main {
     try {
       for (ChunkingEval eval: clargs.getEvals()) {
         eval.eval("Baseline", outputCorpus.toChunkedCorpus());
-        eval.writeSummary(clargs.evalType);
+        eval.writeSummary(clargs.evalType, clargs.onlyLast);
       }
     } catch (EvalError e) {
       System.err.println("Problem with evaluation");
@@ -137,11 +137,8 @@ public class Main {
         if (writeOut) perplexLog.close();
       }
       
-      if (clargs.onlyLast)
-        evals[evals.length-1].writeSummary(clargs.evalType);
-      else
-        for (ChunkingEval eval: evals) 
-          eval.writeSummary(clargs.evalType);
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType, clargs.onlyLast);
 
     } catch (EvalError e) {
       System.err.println("Problem with eval: " + e.getMessage());
@@ -247,11 +244,8 @@ public class Main {
         if (writeOut) perplexLog.close();
       }
       
-      if (clargs.onlyLast)
-        evals[evals.length-1].writeSummary(clargs.evalType);
-      else
-        for (ChunkingEval eval: evals) 
-          eval.writeSummary(clargs.evalType);
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType, clargs.onlyLast);
 
     } catch (SequenceModelError e) {
       System.err.println("Problem initializing HMM: " + e.getMessage());
