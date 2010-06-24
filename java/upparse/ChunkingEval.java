@@ -48,6 +48,9 @@ public class ChunkingEval {
       if (evalType.equals("PR"))
         experiment.writeSummary(out);
       
+      else if (evalType.equals("PRLcsv"))
+        experiment.writeSummaryWithLenCSV(out);
+      
       else if (evalType.equals("PRL")) 
         experiment.writeSummaryWithLen(out);
       
@@ -347,8 +350,36 @@ public class ChunkingEval {
       }
       return ind;
     }
+    
+    public void writeSummaryWithLenCSV(PrintStream out) {
+      int 
+      tp = sum(counts[TP]), 
+      fp = sum(counts[FP]), 
+      fn = sum(counts[FN]),
+      goldCount = tp + fn,
+      predCount = tp + fp,
+      goldLen = len[TP] + len[FN],
+      predLen = len[TP] + len[FP];
+    
+    double
+      goldCountF = (double) goldCount,
+      predCountF = (double) predCount,
+      goldLenF = (double) goldLen,
+      predLenF = (double) predLen,
+      goldLenAvg = goldLenF / goldCountF,
+      predLenAvg = predLenF / predCountF,
+      tpF = (double) tp, 
+      fpF = (double) fp, 
+      fnF = (double) fn,
+      prec = 100 * tpF / (tpF + fpF),
+      rec = 100 * tpF / (tpF + fnF),
+      f = 2 * prec * rec / (prec + rec);
+      
+    out.println(String.format(
+      "%.1f,%.1f,%.1f,%.2f,%.2f", prec, rec, f, goldLenAvg, predLenAvg));
+    }
 
-    void writeSummary(PrintStream out) {
+    public void writeSummary(PrintStream out) {
       int 
         tp = sum(counts[TP]), 
         fp = sum(counts[FP]), 
