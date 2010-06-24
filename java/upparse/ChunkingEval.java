@@ -356,17 +356,12 @@ public class ChunkingEval {
       tp = sum(counts[TP]), 
       fp = sum(counts[FP]), 
       fn = sum(counts[FN]),
-      goldCount = tp + fn,
       predCount = tp + fp,
-      goldLen = len[TP] + len[FN],
       predLen = len[TP] + len[FP];
     
     double
-      goldCountF = (double) goldCount,
       predCountF = (double) predCount,
-      goldLenF = (double) goldLen,
       predLenF = (double) predLen,
-      goldLenAvg = goldLenF / goldCountF,
       predLenAvg = predLenF / predCountF,
       tpF = (double) tp, 
       fpF = (double) fp, 
@@ -376,7 +371,7 @@ public class ChunkingEval {
       f = 2 * prec * rec / (prec + rec);
       
     out.println(String.format(
-      "%.1f,%.1f,%.1f,%.2f,%.2f", prec, rec, f, goldLenAvg, predLenAvg));
+      "%.1f,%.1f,%.1f,%.2f", prec, rec, f, predLenAvg));
     }
 
     public void writeSummary(PrintStream out) {
