@@ -19,7 +19,7 @@ public class BasicCorpus {
     int numS = 0;
     while (br.readLine() != null) numS++;
     if (trainSents > 0)
-      numS = Math.max(numS, trainSents);
+      numS = Math.min(numS, trainSents);
     br.close();
     
     corpus = new String[numS][];
