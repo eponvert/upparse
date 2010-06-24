@@ -45,11 +45,11 @@ public class SimpleChunker {
     return getChunkedCorpus(corpus);
   }
 
-  public ChunkedSegmentedCorpus getChunkedCorpus(String testCorpus) 
+  public ChunkedSegmentedCorpus getChunkedCorpus(
+      final String testCorpus, final int trainSents) 
   throws IOException {
     return getChunkedCorpus(
-        new StopSegmentCorpus(
-            new BasicCorpus(testCorpus).compiledCorpus(alpha), stopv));
+        StopSegmentCorpus.fromFile(testCorpus, alpha, stopv, trainSents));
   }
 
   public ChunkedSegmentedCorpus getChunkedCorpus(StopSegmentCorpus c) {

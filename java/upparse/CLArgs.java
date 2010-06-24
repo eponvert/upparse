@@ -27,6 +27,9 @@ public class CLArgs {
   public double scaleFactor = 1;
   public double scaleFactor2 = 1;
   public boolean checkTerms = true;
+  public String goldStandardTrain;
+  public boolean onlyLast = false;
+  public int trainSents = -1;
 
   public double[] getFactor() {
     String[] fpieces = factor.split(",");
@@ -51,6 +54,9 @@ public class CLArgs {
 
         if (arg.equals("-o") || arg.equals("-output")) 
           output = args[i++];
+        
+        if (arg.equals("-N") || arg.equals("-numTrain"))
+          trainSents = Integer.parseInt(args[i++]);
         
         else if (arg.equals("-T") || arg.equals("-dontCheckTerms"))
           checkTerms = false;
@@ -96,6 +102,12 @@ public class CLArgs {
 
         else if (arg.equals("-v") || arg.equals("-verbose")) 
           verbose = true;
+        
+        else if (arg.equals("-u") || arg.equals("-goldStandardTrain"))
+          goldStandardTrain = args[i++];
+        
+        else if (args.equals("-l") || arg.equals("-onlyLast"))
+          onlyLast = true;
 
         else
           otherArgs.add(arg);
@@ -123,9 +135,9 @@ public class CLArgs {
         "Actions:\n" +
         "  simple-chunk\n" +
         "  hmm1-chunk\n" +
-        "  hmm2-chunk\n" +
+        "  hmm1-chunk-sup\n" +
         "  rrg1-chunk\n" +  
-        "  rrg2-chunk\n" +
+        "  rrg1-chunk-sup\n" +
         "\n" +
         "Options:\n" +
         "  -o|-output FILE            Set output file/template\n" +
@@ -140,7 +152,9 @@ public class CLArgs {
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
         "  -C|-constraintmethod M     Use specified method for enforcing constraints\n" +
         "  -t|-test F                 Use this data set as test\n" +
-        "  -T|-dontCheckTerms         Don't check that the eval and output terms are equal"
+        "  -T|-dontCheckTerms         Don't check that the eval and output terms are equal\n" +
+        "  -u|-goldStandardTrain      Gold standard (or otherwise generated) annotations to train with\n" +
+        "  -l|-onlyLast               Only show last eval"
     );
   }
 

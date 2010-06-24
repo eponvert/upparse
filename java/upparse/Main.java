@@ -17,7 +17,10 @@ public class Main {
   throws IOException {
     return 
     new SimpleChunker(
-        new BasicCorpus(fname), clargs.getFactor(), clargs.stopv, clargs.alpha);
+        new BasicCorpus(fname, clargs.trainSents), 
+        clargs.getFactor(), 
+        clargs.stopv, 
+        clargs.alpha);
   }
   
   private static BIOEncoder getBIOEncoder(
@@ -36,7 +39,7 @@ public class Main {
     final ChunkedSegmentedCorpus outputCorpus;
     final SimpleChunker chunker = getSimpleChunker(fname, clargs);
     if (clargs.testCorpus != null)
-      outputCorpus = chunker.getChunkedCorpus(clargs.testCorpus);
+      outputCorpus = chunker.getChunkedCorpus(clargs.testCorpus, -1);
     else
       outputCorpus = chunker.getChunkedCorpus();
     
@@ -70,7 +73,7 @@ public class Main {
       if (clargs.testCorpus == null)
         evalCorpus = baselineCorpus;
       else
-        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus); 
+        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus, -1); 
       
       if (writeOut)
         evalCorpus.writeTo(clargs.output + ".baseline.txt");
@@ -134,8 +137,11 @@ public class Main {
         if (writeOut) perplexLog.close();
       }
       
-      for (ChunkingEval eval: evals) 
-        eval.writeSummary(clargs.evalType);
+      if (clargs.onlyLast)
+        evals[evals.length-1].writeSummary(clargs.evalType);
+      else
+        for (ChunkingEval eval: evals) 
+          eval.writeSummary(clargs.evalType);
 
     } catch (EvalError e) {
       System.err.println("Problem with eval: " + e.getMessage());
@@ -162,24 +168,33 @@ public class Main {
     boolean writeOut = clargs.output != null;
     
     try {
-      SimpleChunker chunker = getSimpleChunker(fname, clargs); 
-      ChunkedSegmentedCorpus baselineCorpus = chunker.getChunkedCorpus();
-      
+      ChunkedSegmentedCorpus trainCorpus;
       ChunkedSegmentedCorpus evalCorpus;
-      if (clargs.testCorpus == null)
-        evalCorpus = baselineCorpus;
-      else
-        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus); 
-      
-      if (writeOut)
-        evalCorpus.writeTo(clargs.output + ".baseline.txt");
-      
       ChunkingEval[] evals = clargs.getEvals();
-      for (ChunkingEval eval: evals) 
-        eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
-      BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      HMM hmm = HMM.mleEstimate(baselineCorpus, encoder, clargs.scaleFactor);
+      if (clargs.goldStandardTrain == null) {
+        SimpleChunker chunker = getSimpleChunker(fname, clargs); 
+        trainCorpus = chunker.getChunkedCorpus();
+        if (clargs.testCorpus == null)
+          evalCorpus = trainCorpus;
+        else
+          evalCorpus = 
+            chunker.getChunkedCorpus(clargs.testCorpus, clargs.trainSents); 
+        
+        if (writeOut)
+          evalCorpus.writeTo(clargs.output + ".baseline.txt");
+        
+        for (ChunkingEval eval: evals) 
+          eval.eval("Baseline", evalCorpus.toChunkedCorpus());
+        
+      } else {
+        trainCorpus = 
+          ChunkedSegmentedCorpus.fromFiles(
+              fname, clargs.goldStandardTrain, clargs.stopv, clargs.trainSents);
+      }
+      
+      BIOEncoder encoder = getBIOEncoder(trainCorpus, clargs);
+      HMM hmm = HMM.mleEstimate(trainCorpus, encoder, clargs.scaleFactor);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -232,8 +247,11 @@ public class Main {
         if (writeOut) perplexLog.close();
       }
       
-      for (ChunkingEval eval: evals) 
-        eval.writeSummary(clargs.evalType);
+      if (clargs.onlyLast)
+        evals[evals.length-1].writeSummary(clargs.evalType);
+      else
+        for (ChunkingEval eval: evals) 
+          eval.writeSummary(clargs.evalType);
 
     } catch (SequenceModelError e) {
       System.err.println("Problem initializing HMM: " + e.getMessage());
@@ -248,7 +266,6 @@ public class Main {
       usageError();
     }
   }
-  
   public static void main(String[] argv) {
     try {
       CLArgs clargs = new CLArgs(argv);
@@ -278,9 +295,6 @@ public class Main {
         hmm1Chunk(args[1], clargs);
       }
       
-      else if (action.equals("hmm2-chunk"))
-        System.exit(0);
-      
       else if (action.equals("rrg1-chunk")) {
         if (args.length < 2) {
           System.err.println("Training file required");
@@ -288,9 +302,6 @@ public class Main {
         }
         rrg1Chunk(args[1], clargs);
       }
-      
-      else if (action.equals("rrg2-chunk"))
-        System.exit(0);
       
       else {
         System.err.println("Unexpected action: " + action);

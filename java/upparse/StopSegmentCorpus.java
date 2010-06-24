@@ -1,5 +1,6 @@
 package upparse;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -64,5 +65,18 @@ public class StopSegmentCorpus {
     int[] indices = new int[nIndices];
     System.arraycopy(indicesTmp, 0, indices, 0, nIndices);
     return indices;
+  }
+  
+  public static StopSegmentCorpus fromFile(
+      final String fname, final Alpha alpha, final String stopv, final int numS) 
+  throws IOException {
+    return fromFile(fname, alpha, alpha.getCode(stopv), numS);
+  }
+  
+  public static StopSegmentCorpus fromFile(
+      final String fname, final Alpha alpha, final int stopv, final int numS) 
+  throws IOException {
+    return new StopSegmentCorpus(
+        new BasicCorpus(fname, numS).compiledCorpus(alpha), stopv);
   }
 }

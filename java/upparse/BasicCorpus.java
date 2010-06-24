@@ -11,19 +11,22 @@ public class BasicCorpus {
   private final String[][] corpus;
 
   /** Create simple corpus from filename 
+   * @param trainSents The number of sentences to keep
    * @throws IOException if there's any trouble reading the file */
-  public BasicCorpus(String file) throws IOException {
+  public BasicCorpus(String file, int trainSents) throws IOException {
     // count the number of sentences
     BufferedReader br = new BufferedReader(new FileReader(new File(file)));
     int numS = 0;
     while (br.readLine() != null) numS++;
+    if (trainSents > 0)
+      numS = Math.max(numS, trainSents);
     br.close();
     
     corpus = new String[numS][];
     
     br = new BufferedReader(new FileReader(new File(file)));
     int i = 0;
-    for (String s = br.readLine(); s != null; s = br.readLine()) {
+    for (String s = br.readLine(); s != null && i < numS; s = br.readLine()) {
       s = s.trim();
       if (s.equals(""))
         corpus[i++] = new String[0];
