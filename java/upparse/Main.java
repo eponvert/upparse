@@ -179,7 +179,7 @@ public class Main {
           evalCorpus = trainCorpus;
         else
           evalCorpus = 
-            chunker.getChunkedCorpus(clargs.testCorpus, clargs.trainSents); 
+            chunker.getChunkedCorpus(clargs.testCorpus, -1); 
         
         if (writeOut)
           evalCorpus.writeTo(clargs.output + ".baseline.txt");
