@@ -61,7 +61,7 @@ public class ChunkingEval {
         experiment.writeSummaryWithCountsAndLen(out);
       
       else 
-        throw new EvalError("Unknown eval type: " + evalType);
+        throw new EvalError("Unknown eval type:: " + evalType);
     }
   }
   
