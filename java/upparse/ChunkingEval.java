@@ -337,9 +337,14 @@ public class ChunkingEval {
       f = 2 * prec * rec / (prec + rec);
       
     String[] pieces = expName.split(" ");
-    String last = pieces[pieces.length-1];
-    out.println(String.format(
-      "%s,%.1f,%.1f,%.1f,%.2f", last, prec, rec, f, predLenAvg));
+    String name = pieces[pieces.length-1];
+    
+    if (expName.equals("No EM"))
+      name = "000";
+    
+    if (!name.equals("Baseline"))
+      out.println(String.format(
+          "%s,%.1f,%.1f,%.1f,%.2f", name, prec, rec, f, predLenAvg));
     }
 
     private String termStr(int[] terms) {
