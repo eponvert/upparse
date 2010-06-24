@@ -106,7 +106,7 @@ public class CLArgs {
         else if (arg.equals("-u") || arg.equals("-goldStandardTrain"))
           goldStandardTrain = args[i++];
         
-        else if (args.equals("-l") || arg.equals("-onlyLast"))
+        else if (arg.equals("-l") || arg.equals("-onlyLast"))
           onlyLast = true;
 
         else
