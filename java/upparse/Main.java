@@ -88,7 +88,7 @@ public class Main {
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus);
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
       else
         testCorpus = rrg.getOrig();
       
@@ -198,7 +198,7 @@ public class Main {
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus);
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
       else
         testCorpus = hmm.getOrig();
       

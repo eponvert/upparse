@@ -38,9 +38,9 @@ public abstract class BIOEncoder {
     }
   }
   
-  public final int[] tokensFromFile(final String fname) throws IOException {
+  public final int[] tokensFromFile(final String fname, int numS) throws IOException {
     return tokensFromClumpedCorpus(
-        new BasicCorpus(fname).toBaseChunkedSegmentedCorpus(alpha, stopv));
+        new BasicCorpus(fname, numS).toBaseChunkedSegmentedCorpus(alpha, stopv));
   }
   
   public final int[] tokensFromClumpedCorpus(
