@@ -174,10 +174,6 @@ public class ChunkedSegmentedCorpus {
     return fromArrays(chunkedSegments, alpha); 
   }
   
-  private static int[] last(int[][] a) {
-    return a[a.length-1];
-  }
-  
   private static int last(int[] a) {
     return a[a.length-1];
   }

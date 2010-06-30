@@ -74,6 +74,9 @@ public class ChunkingEval {
 
     else if (evalType.equals("PRC"))
       experiment.writeSummaryWithCounts(out);
+    
+    else if (evalType.equals("PRCwc"))
+      experiment.writeSummaryWithCountsWC(out);
 
     else if (evalType.equals("PRCL"))
       experiment.writeSummaryWithCountsAndLen(out);
@@ -198,7 +201,7 @@ public class ChunkingEval {
     private static final int 
       TP = 0, 
       FP = 1, 
-      FN = 2, 
+      FN = 2,
       
       NO_OVERLAP = 0,
       TP_SUB = 1,
@@ -209,6 +212,7 @@ public class ChunkingEval {
       MAXLEN = 5;
     
     private final int[][][] counts = new int[3][5][MAXLEN+1];
+    private final int[][][] wcCounts = new int[3][5][MAXLEN+1];
     private final String expName;
     
     private final int[] len = new int[3];
@@ -259,61 +263,77 @@ public class ChunkingEval {
           outpChunks = new ChunkSet(terms.length, chunks(outp)),
           truePos = goldChunks.intersection(outpChunks),
           falsePos = outpChunks.difference(truePos),
-          falseNeg = goldChunks.difference(truePos);
+          falseNeg = goldChunks.difference(truePos),
+          goldWC = new ChunkSet(terms.length, wordChunks(gold)),
+          outpWC = new ChunkSet(terms.length, wordChunks(outp)),
+          wcTP = goldWC.intersection(outpWC),
+          wcFP = outpWC.difference(goldWC),
+          wcFN = goldWC.difference(outpWC);
 
         
-        int closestI, errorType;
-        Chunk closest;
+        updateCounts(counts, truePos, falsePos, falseNeg);
+        updateCounts(wcCounts, wcTP, wcFP, wcFN);
         
-        for (Chunk c: truePos.chunks) {
-          counts[TP][NA][lenNorm(c)]++;
-          len[TP] += c.end - c.start;
-        }
+      }
+    }
+    
+    private void updateCounts(
+        final int[][][] counts, 
+        final ChunkSet tp, 
+        final ChunkSet fp, 
+        final ChunkSet fn) {
+      
+      int closestI, errorType;
+      Chunk closest;
+      
+      for (Chunk c: tp.chunks) {
+        counts[TP][NA][lenNorm(c)]++;
+        len[TP] += c.end - c.start;
+      }
+      
+      for (Chunk c: fp.chunks) {
+        closestI = Arrays.binarySearch(tp.chunks, c);
         
-        for (Chunk c: falsePos.chunks) {
-          closestI = Arrays.binarySearch(truePos.chunks, c);
+        if (closestI < 0) 
+          errorType = NO_OVERLAP;
           
-          if (closestI < 0) 
-            errorType = NO_OVERLAP;
-            
-          else {
-            closest = truePos.chunks[closestI];
+        else {
+          closest = tp.chunks[closestI];
 
-            if (closest.contains(c)) 
-              errorType = TP_SUP;
-            else if (c.contains(closest)) 
-              errorType = TP_SUB;
-            else
-              errorType = CROSSING;
-            
-          }
-
-          counts[FP][errorType][lenNorm(c)]++;
-          len[FP] += c.end - c.start;
+          if (closest.contains(c)) 
+            errorType = TP_SUP;
+          else if (c.contains(closest)) 
+            errorType = TP_SUB;
+          else
+            errorType = CROSSING;
+          
         }
-        
-        for (Chunk c: falseNeg.chunks) {
-          closestI = Arrays.binarySearch(falsePos.chunks, c);
 
-          if (closestI < 0) 
-            errorType = NO_OVERLAP;
-            
-          else {
-            closest = falsePos.chunks[closestI];
-            
-            if (closest.contains(c)) 
-              errorType = TP_SUB;
-            
-            else if (c.contains(closest)) 
-              errorType = TP_SUP;
-            
-            else
-              errorType = CROSSING;
-          }
-              
-          counts[FN][errorType][lenNorm(c)]++;
-          len[FN] += c.end - c.start;
+        counts[FP][errorType][lenNorm(c)]++;
+        len[FP] += c.end - c.start;
+      }
+      
+      for (Chunk c: fn.chunks) {
+        closestI = Arrays.binarySearch(fp.chunks, c);
+
+        if (closestI < 0) 
+          errorType = NO_OVERLAP;
+          
+        else {
+          closest = fp.chunks[closestI];
+          
+          if (closest.contains(c)) 
+            errorType = TP_SUB;
+          
+          else if (c.contains(closest)) 
+            errorType = TP_SUP;
+          
+          else
+            errorType = CROSSING;
         }
+            
+        counts[FN][errorType][lenNorm(c)]++;
+        len[FN] += c.end - c.start;
       }
     }
 
@@ -398,6 +418,18 @@ public class ChunkingEval {
       return ind;
     }
     
+    final Chunk[] wordChunks(int[][] sent) {
+      final int nChunks = sent.length;
+      Chunk[] ind = new Chunk[nChunks];
+      int i = 0, start = 0, end;
+      for (int[] chunk: sent) {
+        end = start + chunk.length;
+        ind[i++] = new Chunk(start,end);
+        start = end;
+      }
+      return ind;
+    }
+    
     public void writeSummaryWithLenCSV(PrintStream out) {
       int 
       tp = sum(counts[TP]), 
@@ -468,6 +500,25 @@ public class ChunkingEval {
         evalName, expName, prec, rec, f, goldLenAvg, predLenAvg));
     }
 
+    public void writeSummaryWithCountsWC(PrintStream out) {
+      int 
+      tp = sum(wcCounts[TP]), 
+      fp = sum(wcCounts[FP]), 
+      fn = sum(wcCounts[FN]);
+    
+    double
+      tpF = (double) tp, 
+      fpF = (double) fp, 
+      fnF = (double) fn,
+      prec = 100 * tpF / (tpF + fpF),
+      rec = 100 * tpF / (tpF + fnF),
+      f = 2 * prec * rec / (prec + rec);
+    
+    out.println(String.format(
+        "%25s %10s : %.1f / %.1f / %.1f ( %6d / %6d / %6d )", 
+        evalName, expName, prec, rec, f, tp, fp, fn));
+      
+    }
 
     public void writeSummaryWithCounts(PrintStream out) {
       int 

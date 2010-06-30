@@ -135,9 +135,7 @@ public class CLArgs {
         "Actions:\n" +
         "  simple-chunk\n" +
         "  hmm1-chunk\n" +
-        "  hmm1-chunk-sup\n" +
         "  rrg1-chunk\n" +  
-        "  rrg1-chunk-sup\n" +
         "\n" +
         "Options:\n" +
         "  -o|-output FILE            Set output file/template\n" +
@@ -147,6 +145,7 @@ public class CLArgs {
         "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
         "  -G|-grandparents           Use pseudo 2nd order tagset\n" +
         "  -GG|-grandparentsN         Use pseudo 2nd order tagset without altering STOP tag\n" +
+        "  -e|-evaltype EVAL          Evaluation type\n" +
         "  -i|-iterations N           Iterations of EM\n" +
         "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
         "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
