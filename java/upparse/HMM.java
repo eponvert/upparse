@@ -1,7 +1,6 @@
 package upparse;
 
 import static java.lang.Math.*;
-import static upparse.MaxVals.*;
 
 /**
  * Hidden Markov model 
@@ -106,26 +105,12 @@ public class HMM extends SequenceModel {
     
     super.checkSanity();
   }
-
-  private static EmissionProbs getEmiss(
-      final int[] tokens, final int[] tags, 
-      Ipredicate isStop, double scaleFactor) {
-    assert tokens.length == tags.length;
-
-    final int nterm = arrayMax(tokens) + 1, ntag = arrayMax(tags) + 1;
-    
-    int i, j, w;
-
-    final int[][] emissCount = new int[ntag][nterm];
-    for (i = 0; i < tokens.length; i++)
-      emissCount[tags[i]][tokens[i]]++;
-
-    double[][] emissCountD = new double[ntag][nterm];
-    for (j = 0; j < ntag; j++) 
-      for (w = 0; w < nterm; w++)
-        emissCountD[j][w] = (double) emissCount[j][w];
-    
-    return EmissionProbs.fromCounts(emissCountD, isStop, scaleFactor);
+  
+  private static double[] logs(final double[] p) {
+    final double[] lp = new double[p.length];
+    for (int i = 0; i < p.length; i++)
+      lp[i] = log(p[i]);
+    return lp;
   }
 
   static double[] getInitTag(final int[] tag, final int ntag) {
@@ -136,28 +121,16 @@ public class HMM extends SequenceModel {
     return initTag;
   }
 
-  private static double[][] getTrans(final int[] tags, final int ntag) {
-
-    int[][] transCount = new int[ntag][ntag];
-    int i, j, k;
-    double sum;
-
-    for (i = 1; i < tags.length; i++)
-      transCount[tags[i-1]][tags[i]]++;
-
-    double[][] transCountD = new double[ntag][ntag];
-    for (j = 0; j < ntag; j++)
-      for (k = 0; k < ntag; k++)
-        transCountD[j][k] = (double) transCount[j][k];
-
-    double[][] trans = new double[ntag][ntag];
-    for (j = 0; j < ntag; j++) {
-      sum = 0.;
-      for (k = 0; k < ntag; k++) 
-        sum += transCountD[j][k];
+  private static double[][] getTrans(final double[][] transCount) {
+    final int nTag = transCount.length;
+    double[][] trans = new double[nTag][nTag];
+    for (int j = 0; j < nTag; j++) {
+      double sum = 0;
+      for (int k = 0; k < nTag; k++) 
+        sum += transCount[j][k];
       sum = log(sum);
 
-      for (k = 0; k < ntag; k++)
+      for (int k = 0; k < nTag; k++)
         trans[j][k] = log(transCount[j][k]) - sum;
     }
 
@@ -165,25 +138,38 @@ public class HMM extends SequenceModel {
   }
 
   public static HMM mleEstimate(
-      final int[] tokens, 
-      final int[] tags, 
-      final BIOEncoder encoder, 
-      double scaleFactor) {
-    final EmissionProbs emiss = 
-      getEmiss(tokens, tags, encoder.isStopPred(), scaleFactor);
-    int ntag = emiss.numTags();
-    final double[] initTag = getInitTag(tags, ntag);
-    final double[][] trans = getTrans(tags, ntag);
-    return new HMM(encoder, tokens, emiss, trans, initTag);
+      final ChunkedSegmentedCorpus corpus, final BIOEncoder encoder)
+  throws EncoderError {
+    return fromCounts(
+        encoder.hardCounts(corpus), 
+        encoder, 
+        encoder.tokensFromClumpedCorpus(corpus));
   }
 
-  public static HMM mleEstimate(
-      final ChunkedSegmentedCorpus corpus, 
+  public static HMM fromCounts(
+      final double[][][] counts, 
       final BIOEncoder encoder,
-      final double scaleFactor) 
-  throws HMMError, EncoderError {
-    int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
-    int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder, scaleFactor);
+      final int[] tokens) {
+    
+    assert counts.length != 0;
+    final int nTag = encoder.numTags(), nTerm = counts[0].length;
+    assert counts.length == nTag;
+    double[][] 
+      emissCount = new double[nTag][nTerm], 
+      transCount = new double[nTag][nTag];
+    for (int t = 0; t < nTag; t++)
+      for (int w = 0; w < nTerm; w++)
+        for (int _t = 0; _t < nTag; _t++) {
+          final double c = counts[t][w][_t];
+          transCount[t][_t] += c;
+          emissCount[t][w] += c;
+        }
+    
+    final double[] initTag = logs(encoder.getInitTagProb());
+    final EmissionProbs emiss = 
+      EmissionProbs.fromCounts(emissCount, encoder.isStopPred());
+    final double[][] trans = getTrans(transCount);
+    
+    return new HMM(encoder, tokens, emiss, trans, initTag);
   }
 }

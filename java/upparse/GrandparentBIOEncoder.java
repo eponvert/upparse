@@ -7,7 +7,7 @@ package upparse;
  */
 public class GrandparentBIOEncoder extends BIOEncoder {
   
-  private final SimpleBIOEncoder simpleEncoder;
+  private final BIOEncoder simpleEncoder;
   
   public static final int 
     STOP_B_STATE    = 0,
@@ -21,6 +21,54 @@ public class GrandparentBIOEncoder extends BIOEncoder {
     I_STOP_STATE    = 8,
     O_STOP_STATE    = 9,
     STOP_STOP_STATE = 10;
+  
+  private static final boolean[][] CONSTRAINTS = new boolean[11][11];
+
+  private static final double ATHIRD = 1.0/3.0;
+
+  private static final double ASIXTH = 1.0/6.0;
+
+  private static final double[] INIT_TAG_PROB = new double[11];
+
+  private static final int[] NON_STOP_TAGS = new int[] { 
+    STOP_B_STATE, 
+    STOP_O_STATE,  
+    B_I_STATE, 
+    I_B_STATE, 
+    I_I_STATE, 
+    I_O_STATE, 
+    O_B_STATE, 
+    O_O_STATE };
+
+  static {
+    INIT_TAG_PROB[O_STOP_STATE] = 1;
+    
+    for (int i = 0; i < CONSTRAINTS.length; i++)
+      for (int j = 0; j < CONSTRAINTS.length; j++)
+        CONSTRAINTS[i][j] = true;
+    
+    int[]
+        stop1states = new int[] { STOP_B_STATE, STOP_O_STATE, STOP_STOP_STATE },
+        b1states = new int[] { B_I_STATE },
+        i1states = new int[] { I_B_STATE, I_I_STATE, I_O_STATE, I_STOP_STATE },
+        o1states = new int[] { O_B_STATE, O_O_STATE, O_STOP_STATE },
+        stop2states = new int[] { I_STOP_STATE, O_STOP_STATE, STOP_STOP_STATE },
+        b2states = new int[] { STOP_B_STATE, I_B_STATE, O_B_STATE },
+        i2states = new int[] { B_I_STATE, I_I_STATE },
+        o2states = new int[] { STOP_O_STATE, I_O_STATE, O_O_STATE };
+    
+    int[][][] pairs = new int[][][] {
+        new int[][] { stop2states, stop1states },
+        new int[][] { b2states, b1states },
+        new int[][] { i2states, i1states },
+        new int[][] { o2states, o1states }
+    };
+    
+    for (int[][] pair: pairs)
+      for (int i: pair[0])
+        for (int j: pair[1])
+          CONSTRAINTS[i][j] = false;
+  }
     
   public GrandparentBIOEncoder(String stop, Alpha alpha) {
     super(stop, alpha);
@@ -138,5 +186,68 @@ public class GrandparentBIOEncoder extends BIOEncoder {
         return t == O_STOP_STATE || t == I_STOP_STATE || t == STOP_STOP_STATE;
       }
     };
+  }
+
+  @Override
+  public double[][] softTrain(final int[] train) {
+    final double[][] tags = new double[train.length][numTags()];
+    assert train[0] == stopv;
+    tags[0][O_STOP_STATE] = 1;
+    
+    for (int i = 1; i < train.length; i++)
+      if (train[i] == stopv && train[i-1] == stopv)
+        tags[i][STOP_STOP_STATE] = 1;
+    
+      else if (train[i] == stopv && i > 1 && train[i-2] == stopv) 
+        tags[i][O_STOP_STATE] = 1;
+    
+      else if (train[i] == stopv)
+        tags[i][O_STOP_STATE] = tags[i][I_STOP_STATE] = .5;
+    
+      else {
+        assert i + 1 < train.length;
+        if (train[i-1] == stopv && train[i+1] == stopv)
+          tags[i][STOP_O_STATE] = 1;
+        
+        else if (train[i-1] == stopv) 
+          tags[i][STOP_O_STATE] = tags[i][STOP_B_STATE] = .5;
+        
+        else {
+          assert i > 1;
+          
+          if (train[i-2] == stopv && train[i+1] == stopv)
+            tags[i][O_O_STATE] = tags[i][B_I_STATE] = .5;
+
+          else if (train[i-2] == stopv)
+            tags[i][O_B_STATE] = tags[i][O_O_STATE] = tags[i][B_I_STATE] = 
+              ATHIRD;
+
+          else
+            tags[i][B_I_STATE] = tags[i][I_B_STATE] = tags[i][I_I_STATE] = 
+              tags[i][I_O_STATE] = tags[i][O_B_STATE] = tags[i][O_O_STATE] = 
+                ASIXTH;
+        }
+      }
+    return tags;
+  }
+
+  @Override
+  public int numTags() {
+    return 11;
+  }
+
+  @Override
+  public boolean[][] constraints() {
+    return CONSTRAINTS;
+  }
+
+  @Override
+  public double[] getInitTagProb() {
+    return INIT_TAG_PROB;
+  }
+
+  @Override
+  public int[] allNonStopTags() {
+    return NON_STOP_TAGS;
   }
 }

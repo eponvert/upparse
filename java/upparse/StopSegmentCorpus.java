@@ -79,4 +79,12 @@ public class StopSegmentCorpus {
     return new StopSegmentCorpus(
         new BasicCorpus(fname, numS).compiledCorpus(alpha), stopv);
   }
+
+  /**
+   * @return
+   */
+  public int[] tokens() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

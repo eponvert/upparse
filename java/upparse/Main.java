@@ -23,10 +23,10 @@ public class Main {
         clargs.alpha);
   }
   
-  private static BIOEncoder getBIOEncoder(
-      ChunkedSegmentedCorpus corpus, CLArgs clargs) throws EncoderError {
+  private static BIOEncoder getBIOEncoder(CLArgs clargs, Alpha alpha) 
+  throws EncoderError {
     return 
-    BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, corpus.alpha); 
+    BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, alpha); 
   }
 
   /** Execute simple chunking model 
@@ -82,9 +82,8 @@ public class Main {
       for (ChunkingEval eval: evals) 
         eval.eval("Baseline", evalCorpus.toChunkedCorpus());
       
-      BIOEncoder encoder = getBIOEncoder(baselineCorpus, clargs);
-      RRG rrg = RRG.mleEstimate(
-          baselineCorpus, encoder, clargs.scaleFactor2, clargs.scaleFactor);
+      BIOEncoder encoder = getBIOEncoder(clargs, baselineCorpus.alpha);
+      RRG rrg = RRG.mleEstimate(baselineCorpus, encoder);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -154,6 +153,172 @@ public class Main {
     }
   }
   
+  private static void hmm2Chunk(String fname, CLArgs clargs) throws IOException {
+    boolean writeOut = clargs.output != null;
+    
+    try {
+
+      final BIOEncoder encoder = getBIOEncoder(clargs, clargs.alpha);
+      final StopSegmentCorpus corpus = 
+        StopSegmentCorpus.fromFile(
+            fname, clargs.alpha, clargs.alpha.getCode(clargs.stopv), 
+            clargs.trainSents);
+      final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
+      final HMM hmm = 
+        HMM.fromCounts(encoder.softCounts(tokens), encoder, tokens);
+      
+      ChunkingEval[] evals = clargs.getEvals();
+      int[] testCorpus;
+      if (clargs.testCorpus != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      else
+        testCorpus = hmm.getOrig();
+
+      ChunkedSegmentedCorpus evalCorpus = hmm.tagCC(testCorpus);
+
+      if (writeOut)
+        evalCorpus.writeTo(clargs.output + ".noem.txt");
+      
+      for (ChunkingEval eval: evals)
+        eval.eval("No EM", 
+            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+
+      if (clargs.iter != 0) {
+        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+        
+        final CSVFileWriter perplexLog = 
+          writeOut ?  
+              new CSVFileWriter(clargs.output + ".perplex.csv") :
+              null;
+
+        for (int i = 0;
+             i < clargs.iter && lastPerplexChange > clargs.emdelta;
+             i++) {
+          
+          hmm.emUpdateFromTrain();
+          currPerplex = hmm.currPerplex();
+          if (clargs.verbose)
+            System.out.println(String.format(
+                "Iteration %d: Perplexity = %f", i+1, currPerplex));
+          if (writeOut)
+            perplexLog.write(i+1, currPerplex);
+          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+          lastPerplex = currPerplex;
+
+          evalCorpus = hmm.tagCC(testCorpus);
+          
+          if (writeOut)
+            evalCorpus.writeTo(
+                String.format("%s.iter%03d.txt", clargs.output, i+1));
+
+          for (ChunkingEval eval: evals)
+            eval.eval(String.format("Iter %03d", i+1), 
+                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+        }
+
+        if (writeOut) perplexLog.close();
+      }
+
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType, clargs.onlyLast);
+
+    } catch (SequenceModelError e) {
+      System.err.println("Problem initializing HMM: " + e.getMessage());
+      usageError();
+      
+    } catch (EvalError e) {
+      System.err.println("Problem with eval: " + e.getMessage());
+      System.exit(1);
+      
+    } catch (EncoderError e) {
+      System.err.println("Problem with BIO encoding: " + e.getMessage());
+      usageError();
+    }
+  }
+  
+  private static void rrg2Chunk(String fname, CLArgs clargs) throws IOException {
+    boolean writeOut = clargs.output != null;
+    
+    try {
+
+      final BIOEncoder encoder = getBIOEncoder(clargs, clargs.alpha);
+      final StopSegmentCorpus corpus = 
+        StopSegmentCorpus.fromFile(
+            fname, clargs.alpha, clargs.alpha.getCode(clargs.stopv), 
+            clargs.trainSents);
+      final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
+      final RRG hmm = 
+        RRG.fromCounts(encoder.softCounts(tokens), encoder, tokens);
+      
+      ChunkingEval[] evals = clargs.getEvals();
+      int[] testCorpus;
+      if (clargs.testCorpus != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      else
+        testCorpus = hmm.getOrig();
+
+      ChunkedSegmentedCorpus evalCorpus = hmm.tagCC(testCorpus);
+
+      if (writeOut)
+        evalCorpus.writeTo(clargs.output + ".noem.txt");
+      
+      for (ChunkingEval eval: evals)
+        eval.eval("No EM", 
+            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+
+      if (clargs.iter != 0) {
+        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+        
+        final CSVFileWriter perplexLog = 
+          writeOut ?  
+              new CSVFileWriter(clargs.output + ".perplex.csv") :
+              null;
+
+        for (int i = 0;
+             i < clargs.iter && lastPerplexChange > clargs.emdelta;
+             i++) {
+          
+          hmm.emUpdateFromTrain();
+          currPerplex = hmm.currPerplex();
+          if (clargs.verbose)
+            System.out.println(String.format(
+                "Iteration %d: Perplexity = %f", i+1, currPerplex));
+          if (writeOut)
+            perplexLog.write(i+1, currPerplex);
+          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+          lastPerplex = currPerplex;
+
+          evalCorpus = hmm.tagCC(testCorpus);
+          
+          if (writeOut)
+            evalCorpus.writeTo(
+                String.format("%s.iter%03d.txt", clargs.output, i+1));
+
+          for (ChunkingEval eval: evals)
+            eval.eval(String.format("Iter %03d", i+1), 
+                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+        }
+
+        if (writeOut) perplexLog.close();
+      }
+
+      for (ChunkingEval eval: evals) 
+        eval.writeSummary(clargs.evalType, clargs.onlyLast);
+
+    } catch (SequenceModelError e) {
+      System.err.println("Problem initializing HMM: " + e.getMessage());
+      usageError();
+      
+    } catch (EvalError e) {
+      System.err.println("Problem with eval: " + e.getMessage());
+      System.exit(1);
+      
+    } catch (EncoderError e) {
+      System.err.println("Problem with BIO encoding: " + e.getMessage());
+      usageError();
+    }
+  }
+  
   /** Execute HMM chunking model based on baseline output training
    * @param fname File name of training/eval data
    * @param clargs Command-line arguments
@@ -190,8 +355,8 @@ public class Main {
               fname, clargs.goldStandardTrain, clargs.stopv, clargs.trainSents);
       }
       
-      BIOEncoder encoder = getBIOEncoder(trainCorpus, clargs);
-      HMM hmm = HMM.mleEstimate(trainCorpus, encoder, clargs.scaleFactor);
+      BIOEncoder encoder = getBIOEncoder(clargs, trainCorpus.alpha);
+      HMM hmm = HMM.mleEstimate(trainCorpus, encoder);
       
       int[] testCorpus;
       if (clargs.testCorpus != null)
@@ -289,12 +454,28 @@ public class Main {
         hmm1Chunk(args[1], clargs);
       }
       
+      else if (action.equals("hmm2-chunk")) {
+        if (args.length < 2) {
+          System.err.println("Training file required");
+          usageError();
+        }
+        hmm2Chunk(args[1], clargs);
+      }
+      
       else if (action.equals("rrg1-chunk")) {
         if (args.length < 2) {
           System.err.println("Training file required");
           usageError();
         }
         rrg1Chunk(args[1], clargs);
+      }
+      
+      else if (action.equals("rrg2-chunk")) {
+        if (args.length < 2) {
+          System.err.println("Training file required");
+          usageError();
+        }
+        rrg2Chunk(args[1], clargs);
       }
       
       else {

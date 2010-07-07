@@ -1,7 +1,5 @@
 package upparse;
 
-import static upparse.MaxVals.*;
-
 /**
  * Right-regular grammar model
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
@@ -72,57 +70,16 @@ public class RRG extends SequenceModel {
    */
   public static RRG mleEstimate(
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder, double scaleFactor2, double scaleFactor) throws EncoderError {
-    int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
-    int[] bioTrain = encoder.bioTrain(corpus, tokens.length);
-    return mleEstimate(tokens, bioTrain, encoder, scaleFactor2, scaleFactor);
+      final BIOEncoder encoder) throws EncoderError {
+    final double[][][] counts = encoder.hardCounts(corpus);
+    final int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
+    return fromCounts(counts, encoder, tokens);
   }
 
-  /**
-   * @param tokens Corpus tokens
-   * @param train Tag training set
-   * @param _encoder A {@link BIOEncoder} for creating corpus datasets
-   * @param scaleFactor 
-   * @param scaleFactor2 
-   * @return
-   */
-  public static RRG mleEstimate(
-      final int[] tokens, 
-      final int[] train, 
-      final BIOEncoder _encoder, 
-      double scaleFactor2, double scaleFactor) {
-    final HMM backoffHmm = HMM.mleEstimate(tokens, train, _encoder, scaleFactor);
-    final CombinedProb combined = 
-      getCombinedProb(tokens, train, backoffHmm, scaleFactor2);
-    assert tokens.length == train.length;
-    return new RRG(_encoder, tokens, combined);
-  }
-
-  /**
-   * @param tokens
-   * @param train
-   * @param scaleFactor 
-   * @return
-   */
-  private static CombinedProb getCombinedProb(
-      final int[] tokens, 
-      final int[] train,
-      final HMM backoffHmm, double scaleFactor) {
-    final int 
-      nterm = arrayMax(tokens) + 1,
-      ntag = arrayMax(train) + 1;
-    
-    final int[][][] counts = new int[ntag][nterm][ntag];
-    assert tokens.length == train.length;
-    for (int t = 1; t < tokens.length; t++) 
-      counts[train[t-1]][tokens[t-1]][train[t]]++;
-    
-    final double[][][] countsD = new double[ntag][nterm][ntag];
-    for (int j = 0; j < ntag; j++)
-      for (int w = 0; w < nterm; w++)
-        for (int k = 0; k < ntag; k++)
-          countsD[j][w][k] = (double) counts[j][w][k];
-    
-    return CombinedProb.fromCounts(countsD, backoffHmm, scaleFactor);
+  public static RRG fromCounts(
+      double[][][] counts, BIOEncoder encoder, int[] tokens) {
+    final HMM backoff = HMM.fromCounts(counts, encoder, tokens);
+    final CombinedProb combined = CombinedProb.fromCounts(counts, backoff);
+    return new RRG(encoder, tokens, combined);
   }
 }

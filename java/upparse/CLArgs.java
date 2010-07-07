@@ -24,8 +24,6 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String testCorpus = null;
-  public double scaleFactor = 1;
-  public double scaleFactor2 = 1;
   public boolean checkTerms = true;
   public String goldStandardTrain;
   public boolean onlyLast = false;
@@ -61,12 +59,6 @@ public class CLArgs {
         else if (arg.equals("-T") || arg.equals("-dontCheckTerms"))
           checkTerms = false;
         
-        else if (arg.equals("-S") || arg.equals("-scale"))
-          scaleFactor = Double.parseDouble(args[i++]);
-
-        else if (arg.equals("-S2") || arg.equals("-scale2"))
-          scaleFactor2 = Double.parseDouble(args[i++]);
-
         else if (arg.equals("-t") || arg.equals("-test"))
           testCorpus = args[i++];
 
@@ -139,8 +131,6 @@ public class CLArgs {
         "\n" +
         "Options:\n" +
         "  -o|-output FILE            Set output file/template\n" +
-        "  -S|-scaleFactor N          HMM smoothing scaling factor\n" +
-        "  -S2|-scaleFactor2 N        RRG smoothing scaling factor\n" +
         "  -F|-factor N1,N2...        Mult factors for baseline chunking\n" +
         "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
         "  -G|-grandparents           Use pseudo 2nd order tagset\n" +

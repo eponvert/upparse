@@ -149,8 +149,11 @@ public abstract class SequenceModel {
     emUpdateFrom(orig);
   }
 
-  public final int[] getTagdict(int tag) {
-    return tagdict[tag];
+  public final int[] getTagdict(int term) {
+    if (term >= tagdict.length)
+      return encoder.allNonStopTags();
+    else
+      return tagdict[term];
   }
 
   /** Viterbi tagger for right-regular grammars */

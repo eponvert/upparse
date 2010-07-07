@@ -4,7 +4,7 @@ package upparse;
  * Simple class for managing the maximum of a set of double
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class MaxVals {
+public final class MaxVals {
   int argmax = -1;
   double max = Double.NEGATIVE_INFINITY;
   public MaxVals(final double[] vals) {

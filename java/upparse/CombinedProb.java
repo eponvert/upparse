@@ -11,16 +11,15 @@ public class CombinedProb {
 
   private final double[][][] prob;
   private final double[] logSum;
-  private final double scaleFactor;
   final HMM backoffHmm;
 
   private CombinedProb(
-      final double[][][] _prob, final double[] _logSum,  
-      final HMM _backoffHmm, double _scaleFactor) {
+      final double[][][] _prob, 
+      final double[] _logSum,  
+      final HMM _backoffHmm) {
     prob = _prob;
     logSum = _logSum;
     backoffHmm = _backoffHmm;
-    scaleFactor = _scaleFactor;
   }
 
   public int numTags() {
@@ -45,13 +44,12 @@ public class CombinedProb {
   }
 
   public static CombinedProb fromCounts(
-      double[][][] countsD, final HMM backoffHmm, double scaleFactor) {
+      double[][][] countsD, final HMM backoffHmm) {
     
     final int ntag = countsD.length, nterm = countsD[0].length;
     final double[][][] prob = new double[ntag][nterm][ntag];
     final double[] logSum = new double[ntag];
-    final CombinedProb c = 
-      new CombinedProb(prob, logSum, backoffHmm, scaleFactor);
+    final CombinedProb c = new CombinedProb(prob, logSum, backoffHmm);
     c.update(countsD);
     return c;
   }
@@ -62,11 +60,11 @@ public class CombinedProb {
   public void update(double[][][] counts) {
     backoffHmm.update(counts); 
     for (int t = 0; t < numTags(); t++) {
-      logSum[t] = log(sum(counts[t]) + scaleFactor);
+      logSum[t] = log(sum(counts[t]) + 1);
       for (int w = 0; w < numTerms(); w++) {
         for (int _t = 0; _t < numTags(); _t++) {
           prob[t][w][_t] = 
-            log(counts[t][w][_t] + scaleFactor * exp(backoffHmm.arcprob(t, w, _t))) 
+            log(counts[t][w][_t] + exp(backoffHmm.arcprob(t, w, _t))) 
             - logSum[t];
         }
       }
