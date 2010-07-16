@@ -9,7 +9,7 @@ import static java.lang.Math.*;
  * Class for evaluating chunker output
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class ChunkingEval {
+public class ChunkingEval implements Eval {
   
   private final ChunkedCorpus goldCorpus;
   private final String evalName;
@@ -35,6 +35,7 @@ public class ChunkingEval {
         name, ChunkedCorpus.fromFile(filename, alpha), checkTerms);
   }
 
+  @Override
   public void eval(String string, ChunkedCorpus outputCorpus) throws EvalError {
     experiments.add(new Experiment(string, outputCorpus));
   }
@@ -66,7 +67,7 @@ public class ChunkingEval {
     else if (evalType.equals("PRLcsv"))
       experiment.writeSummaryWithLenCSV(out);
 
-    else if (evalType.equals("NamePRLcsv"))
+    else if (evalType.equals("nPRLcsv"))
       experiment.writeSummaryWithLenAndNameCSV(out);
 
     else if (evalType.equals("PRL")) 
@@ -83,6 +84,18 @@ public class ChunkingEval {
 
     else 
       throw new EvalError("Unknown eval type:: " + evalType);
+  }
+  
+  public static String evalTypesHelp() {
+    return
+    "Evaluation types:\n" +
+    "  PR      : Precision / recall / F-score\n" +
+    "  PRL     : Prec / rec / F plus chunk length info\n" +
+    "  PRC     : Prec / rec/ F plus raw counts for tp, fp and fn\n" +
+    "  PRCL    : PRL output with raw counts\n" +
+    "  PRLcsv  : PRL output in CSV format\n" +
+    "  nPRLcsv : PRLcsv with experiment name column\n" +
+    "  PRCwc   : PRC output, including stats for single tokens + chunks";
   }
 
   private static class ChunkSet {
@@ -578,5 +591,10 @@ public class ChunkingEval {
       for (int n: a) s += n;
       return s;
     }
+  }
+
+  public static Eval fromChunkedCorpus(
+      final String name, final ChunkedCorpus gold) {
+    return new ChunkingEval(name, gold, false);
   }
 }

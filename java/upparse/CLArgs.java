@@ -10,34 +10,27 @@ import java.util.*;
 public class CLArgs {
   
   public String output = null;
-  public String factor = "2";
-  public int iter;
+  public String factor = "2,1,1";
+  public int iter = -1;
   public double emdelta = 1;
   public String[] args = new String[0];
-  public String tagContraints = null;
-  public String cmethod = null;
-  public String stopv = "__stop__";
   public BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
-  public String goldStandards = null;
-  private ChunkingEval[] evals = null;
-  public String evalType = "PR"; 
+  public String evalReport = "PR";
+  public String[] evalType = new String[] { "clump" };
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
-  public String testCorpus = null;
+  public String[] testCorpusString = null;
+  public String testFileType = null;
+  public String[] trainCorpusString = null;
+  public String trainFileType = "wsj";
   public boolean checkTerms = true;
   public String goldStandardTrain;
   public boolean onlyLast = false;
+  public boolean outputAll = false;
   public int trainSents = -1;
-
-  public double[] getFactor() {
-    String[] fpieces = factor.split(",");
-
-    double[] f = new double[fpieces.length];
-    for (int i = 0; i < fpieces.length; i++) 
-      f[i] = Double.parseDouble(fpieces[i]);
-
-    return f;
-  }
+  private StopSegmentCorpus trainStopSegmentCorpus;
+  private StopSegmentCorpus testStopSegmentCorpus;
+  private Eval[] evals;
 
   public CLArgs(String[] args) throws BadCLArgsException, IOException {
 
@@ -50,35 +43,41 @@ public class CLArgs {
       while (i < args.length) {
         arg = args[i++];
 
-        if (arg.equals("-o") || arg.equals("-output")) 
+        if (arg.equals("-output")) 
           output = args[i++];
         
-        if (arg.equals("-N") || arg.equals("-numTrain"))
+        if (arg.equals("-numtrain"))
           trainSents = Integer.parseInt(args[i++]);
         
-        else if (arg.equals("-T") || arg.equals("-dontCheckTerms"))
+        else if (arg.equals("-dontCheckTerms"))
           checkTerms = false;
         
-        else if (arg.equals("-t") || arg.equals("-test"))
-          testCorpus = args[i++];
+        else if (arg.equals("-test")) {
+          List<String> sb = new ArrayList<String>();
+          while (i < args.length && args[i].charAt(0) != '-') sb.add(args[i++]); 
+          testCorpusString = sb.toArray(new String[0]);
+        }
+        
+        else if (arg.equals("-train")) {
+          List<String> sb = new ArrayList<String>();
+          while (i < args.length && args[i].charAt(0) != '-') sb.add(args[i++]); 
+          trainCorpusString = sb.toArray(new String[0]);
+        }
+        
+        else if (args.equals("-testFileType"))
+          testFileType = args[i++];
+        
+        else if (arg.equals("-trainFileType"))
+          trainFileType = args[i++];
 
-        else if (arg.equals("-F") || arg.equals("-factor")) 
+        else if (arg.equals("-factor")) 
           factor = args[i++];
 
-        else if (arg.equals("-i") || arg.equals("-iterations")) 
+        else if (arg.equals("-iterations")) 
           iter = Integer.parseInt(args[i++]);
 
-        else if (arg.equals("-D") || arg.equals("-emdelta")) 
+        else if (arg.equals("-emdelta")) 
           emdelta = Float.parseFloat(args[i++]);
-
-        else if (arg.equals("-c") || arg.equals("-constraints"))
-          tagContraints = args[i++];
-
-        else if (arg.equals("-C") || arg.equals("-constraintmethod")) 
-          cmethod = args[i++];
-
-        else if (arg.equals("-S") || arg.equals("-stopsymbol"))
-          stopv = args[i++];
 
         else if (arg.equals("-G") || arg.equals("-grandparents"))
           grandparents = BIOEncoder.GPOpt.GP;
@@ -86,20 +85,20 @@ public class CLArgs {
         else if (arg.equals("-GG") || arg.equals("-grandparentsN"))
           grandparents = BIOEncoder.GPOpt.NOSTOP;
 
-        else if (arg.equals("-g") || arg.equals("-goldstandards"))
-          goldStandards = args[i++];
-
-        else if (arg.equals("-E") || arg.equals("-evaltype"))
-          evalType = args[i++];
+        else if (arg.equals("-E") || arg.equals("-evalreport"))
+          evalReport = args[i++];
+        
+        else if (arg.equals("-evaltypes"))
+          evalType = args[i++].split(",");
 
         else if (arg.equals("-v") || arg.equals("-verbose")) 
           verbose = true;
         
-        else if (arg.equals("-u") || arg.equals("-goldStandardTrain"))
-          goldStandardTrain = args[i++];
-        
-        else if (arg.equals("-l") || arg.equals("-onlyLast"))
+        else if (arg.equals("-onlyLast"))
           onlyLast = true;
+        
+        else if (arg.equals("-outputAll"))
+          outputAll = true;
 
         else
           otherArgs.add(arg);
@@ -111,8 +110,19 @@ public class CLArgs {
       if (iter < 0) iter = 200;
     }
     catch (ArrayIndexOutOfBoundsException e) {
+      e.printStackTrace(System.err);
       throw new BadCLArgsException();
     }
+  }
+
+  public double[] getFactor() {
+    String[] fpieces = factor.split(",");
+
+    double[] f = new double[fpieces.length];
+    for (int i = 0; i < fpieces.length; i++) 
+      f[i] = Double.parseDouble(fpieces[i]);
+
+    return f;
   }
 
   /**
@@ -125,45 +135,182 @@ public class CLArgs {
         "Usage: java " + prog + " action [options] [args]\n" +
         "\n" +
         "Actions:\n" +
-        "  simple-chunk\n" +
+        "  stage1-chunk\n" +
         "  hmm1-chunk\n" +
-        "  rrg1-chunk\n" +  
+        "  prlg1-chunk\n" +  
+        "  hmm2-chunk\n" +
+        "  prlg2-chunk\n" +  
         "\n" +
         "Options:\n" +
-        "  -o|-output FILE            Set output file/template\n" +
-        "  -F|-factor N1,N2...        Mult factors for baseline chunking\n" +
-        "  -g|-goldstandards F1,F2... Use specified gold-standard corpora for eval\n" +
-        "  -G|-grandparents           Use pseudo 2nd order tagset\n" +
-        "  -GG|-grandparentsN         Use pseudo 2nd order tagset without altering STOP tag\n" +
-        "  -e|-evaltype EVAL          Evaluation type\n" +
-        "  -i|-iterations N           Iterations of EM\n" +
-        "  -D|-emdelta D              Halt EM when data perplexity change is less than\n" +
-        "  -c|-tagconstraints FILE    Use tag-pair constraint spec\n" +
-        "  -C|-constraintmethod M     Use specified method for enforcing constraints\n" +
-        "  -t|-test F                 Use this data set as test\n" +
-        "  -T|-dontCheckTerms         Don't check that the eval and output terms are equal\n" +
-        "  -u|-goldStandardTrain      Gold standard (or otherwise generated) annotations to train with\n" +
-        "  -l|-onlyLast               Only show last eval"
+        "  -train FILES        Train using specified files\n" +
+        "  -test FILES         Evaluated on specified files\n" +
+        "  -trainFileType X    Train files file type (eg wsj)\n" +
+        "  -testFileType X     Test files file type (eg wsj)\n" +
+        "  -output FILE        Set output file/template\n" +
+        "  -outputAll          Produce model output for all EM iterations\n"+
+        "  -F|-factor N1,N2... Factors for Stage 1 chunking\n" +
+        "  -G|-grandparents    Use pseudo 2nd order tagset\n" +
+        "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n" +
+        "  -E|-evaltype EVAL   Evaluation type (eg PRL)\n" +
+        "  -iterations N       Iterations of EM\n" +
+        "  -emdelta D          Halt EM when data perplexity change is less than\n" +
+        "  -dontCheckTerms     Don't check that the eval and output terms are equal\n" +
+        "  -onlyLast           Only show evaluation of last itertation of EM\n" +
+        "\n" +
+        "File types:\n" +
+        "  wsj    : WSJ/Penn Treebank corpus\n" +
+        "  negra  : Negra Treebank (Penn Treebank like)\n" +
+        "  ctb    : Penn Chinese Treebank corpus\n" + 
+        "  spl    : Sentence per line\n" +
+        "  wpl    : Word per line (sentences seperated by blank lines)\n" +
+        "\n" + 
+        ChunkingEval.evalTypesHelp()
     );
   }
+  
+  private StopSegmentCorpus getStopSegmentCorpus(
+      final String[] corpusStr, final String fileType) 
+  throws BadCLArgsException {
+    
+    if (fileType.equals("wsj"))
+      return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr);
+    
+    else
+      throw new BadCLArgsException("Unexpected file-type: " + fileType);
+  }
+  
+  private StopSegmentCorpus getTrainStopSegmentCorpus() 
+  throws BadCLArgsException {
+    if (trainStopSegmentCorpus == null)
+      trainStopSegmentCorpus = 
+        getStopSegmentCorpus(trainCorpusString, trainFileType);
+    return trainStopSegmentCorpus;
+  }
 
-  /**
-   * @return An array of evaluation objects for each gold standard corpus 
-   * provided
-   * @throws IOException If there is any problem opening one of the corpus files 
-   */
-  public ChunkingEval[] getEvals() throws IOException {
-    if (evals == null)
-      if (goldStandards != null) {
-        String[] gs = goldStandards.split(",");
-        evals = new ChunkingEval[gs.length];
-        for (int i = 0; i < gs.length; i++) {
-          evals[i] = ChunkingEval.fromCorpusFile(gs[i], alpha, checkTerms);
-        }
-      } else {
-        evals = new ChunkingEval[0];
-      }
+  private StopSegmentCorpus getTestStopSegmentCorpus() 
+  throws BadCLArgsException {
+    if (testStopSegmentCorpus == null)
+      testStopSegmentCorpus = 
+        getStopSegmentCorpus(testCorpusString, testFileType);
+    return testStopSegmentCorpus;
+  }
+
+  public Eval[] getEvals() throws IOException, BadCLArgsException {
+    if (evals == null) {
+      evals = new Eval[evalType.length];
+      int i = 0;
+      for (String etype: evalType)
+        if (etype.equals("clump"))
+          evals[i++] = 
+            ChunkingEval.fromChunkedCorpus("Clumps", getClumpGoldStandard()); 
+      
+        else if (etype.equals("nps"))
+          evals[i++] = 
+            ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard());
+      
+        else if (etype.equals("treebank-prec"))
+          evals[i++] = 
+            TreebankPrecisionEval.fromUnlabeledBracketSets(
+                getGoldUnlabeledBracketSets());
+      
+        else if (etype.equals("treebank-flat"))
+          evals[i++] = 
+            TreebankFlatEval.fromUnlabeledBracketSets(
+                getGoldUnlabeledBracketSets());
+      
+        else if (etype.equals("treebank-rb"))
+          evals[i++] =
+            RBConversionTreebankEval.fromUnlabeledBracketSets(
+                getGoldUnlabeledBracketSets());
+      
+        else
+          throw new BadCLArgsException("Unexpected eval type: " + etype);
+
+    }
 
     return evals;
+  }
+
+  private UnlabeledBracketSet[] getGoldUnlabeledBracketSets() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private ChunkedCorpus getNPsGoldStandard() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private ChunkedCorpus getClumpGoldStandard() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public SimpleChunker getSimpleChunker() throws BadCLArgsException {
+    return SimpleChunker.fromStopSegmentCorpus(
+        alpha,
+        getTrainStopSegmentCorpus(),
+        getFactor());
+  }
+  
+  private boolean isSubsetExperiment() {
+    return testCorpusString.length == 1 && 
+    testCorpusString[0].startsWith("subset"); 
+  }
+  
+  private StopSegmentCorpus getSubsetStopSegmentCorpus() 
+  throws BadCLArgsException {
+    final int num = Integer.parseInt(testCorpusString[0].substring(6));
+    return getTrainStopSegmentCorpus().filterLen(num);
+  }
+  
+  private ChunkedSegmentedCorpus getGoldCorpus() {
+    if (testCorpusString == null) 
+      return getTrainGoldCorpus();
+        
+    else if (isSubsetExperiment())
+      return getSubsetGoldCorpus();
+    
+    else
+      return getTestGoldCorpus();
+  }
+
+  private ChunkedSegmentedCorpus getTestGoldCorpus() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private ChunkedSegmentedCorpus getSubsetGoldCorpus() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private ChunkedSegmentedCorpus getTrainGoldCorpus() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private StopSegmentCorpus getEvalCorpus() throws BadCLArgsException {
+    if (testCorpusString == null)
+      return getTrainStopSegmentCorpus();
+    
+    else if (isSubsetExperiment()) 
+      return getSubsetStopSegmentCorpus();
+    
+    else 
+      return getTestStopSegmentCorpus();
+  }
+
+  public void eval(final String comment, final Chunker chunker) 
+  throws BadCLArgsException, IOException, EvalError {
+    
+    if (evalType == null || 
+        (evalType.length == 1 && evalType[0].equals("none"))) return;
+    
+    // TODO simplify getChunkedCorpus 
+    final ChunkedCorpus output =  
+      chunker.getChunkedCorpus(getEvalCorpus()).toChunkedCorpus();
+    
+    for (Eval eval: getEvals()) eval.eval(comment, output);
   }
 }

@@ -12,34 +12,36 @@ public class Main {
     CLArgs.printUsage(System.err);
     System.exit(1);
   }
-  
-  private static SimpleChunker getSimpleChunker(String fname, CLArgs clargs) 
-  throws IOException {
-    return 
-    new SimpleChunker(
-        new BasicCorpus(fname, clargs.trainSents), 
-        clargs.getFactor(), 
-        clargs.stopv, 
-        clargs.alpha);
-  }
-  
+
+  // TODO
+  /*
   private static BIOEncoder getBIOEncoder(CLArgs clargs, Alpha alpha) 
   throws EncoderError {
     return 
     BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, alpha); 
   }
+  */
 
-  /** Execute simple chunking model 
-   * @param fname File name of training/eval data
+  /** Execute and evaluate simple chunking model 
    * @throws IOException If there's a problem reading the training data
+   * @throws EvalError 
    */
-  private static void simpleChunk(String fname, CLArgs clargs) 
-  throws IOException {
+  private static void stage1Chunk(CLArgs clargs) 
+  throws IOException, EvalError {
+    try {
+      Chunker chunker = clargs.getSimpleChunker();
+      clargs.eval("stage-1", chunker);
+    } catch (BadCLArgsException e) {
+      e.printStackTrace(System.err);
+      System.exit(1);
+    }
     
+    // TODO
+    /*
     final ChunkedSegmentedCorpus outputCorpus;
     final SimpleChunker chunker = getSimpleChunker(fname, clargs);
-    if (clargs.testCorpus != null)
-      outputCorpus = chunker.getChunkedCorpus(clargs.testCorpus, -1);
+    if (clargs.testCorpusString != null)
+      outputCorpus = chunker.getChunkedCorpus(clargs.testCorpusString, -1);
     else
       outputCorpus = chunker.getChunkedCorpus();
     
@@ -55,14 +57,17 @@ public class Main {
       System.err.println("Problem with evaluation");
       System.err.println(e.getMessage());
     }
+    */
   }
 
   /** Execute right-regular grammar model based on output training
-   * @param fname File name of training/eval data
    * @param clargs Command-line arguments
    */
-  private static void rrg1Chunk(String fname, CLArgs clargs) 
+  private static void prlg1Chunk(CLArgs clargs) 
   throws IOException {
+
+    // TODO
+    /*
     boolean writeOut = clargs.output != null;
     
     try {
@@ -70,10 +75,10 @@ public class Main {
       ChunkedSegmentedCorpus baselineCorpus = chunker.getChunkedCorpus();
       
       ChunkedSegmentedCorpus evalCorpus;
-      if (clargs.testCorpus == null)
+      if (clargs.testCorpusString == null)
         evalCorpus = baselineCorpus;
       else
-        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpus, -1); 
+        evalCorpus = chunker.getChunkedCorpus(clargs.testCorpusString, -1); 
       
       if (writeOut)
         evalCorpus.writeTo(clargs.output + ".baseline.txt");
@@ -86,8 +91,8 @@ public class Main {
       RRG rrg = RRG.mleEstimate(baselineCorpus, encoder);
       
       int[] testCorpus;
-      if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      if (clargs.testCorpusString != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
       else
         testCorpus = rrg.getOrig();
       
@@ -151,9 +156,13 @@ public class Main {
       System.err.println("Problem with BIO encoding: " + e.getMessage());
       usageError();
     }
+    */
   }
   
-  private static void hmm2Chunk(String fname, CLArgs clargs) throws IOException {
+  private static void hmm2Chunk(CLArgs clargs) throws IOException {
+    
+    // TODO
+    /*
     boolean writeOut = clargs.output != null;
     
     try {
@@ -169,8 +178,8 @@ public class Main {
       
       ChunkingEval[] evals = clargs.getEvals();
       int[] testCorpus;
-      if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      if (clargs.testCorpusString != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
       else
         testCorpus = hmm.getOrig();
 
@@ -234,9 +243,13 @@ public class Main {
       System.err.println("Problem with BIO encoding: " + e.getMessage());
       usageError();
     }
+    */
   }
   
-  private static void rrg2Chunk(String fname, CLArgs clargs) throws IOException {
+  private static void prlg2Chunk(String fname, CLArgs clargs) throws IOException {
+    
+    //TODO
+    /*
     boolean writeOut = clargs.output != null;
     
     try {
@@ -252,8 +265,8 @@ public class Main {
       
       ChunkingEval[] evals = clargs.getEvals();
       int[] testCorpus;
-      if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      if (clargs.testCorpusString != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
       else
         testCorpus = hmm.getOrig();
 
@@ -317,16 +330,18 @@ public class Main {
       System.err.println("Problem with BIO encoding: " + e.getMessage());
       usageError();
     }
+    */
   }
   
   /** Execute HMM chunking model based on baseline output training
-   * @param fname File name of training/eval data
    * @param clargs Command-line arguments
    * @throws IOException If there's a problem reading the training data
    */
-  private static void hmm1Chunk(String fname, CLArgs clargs) 
+  private static void hmm1Chunk(CLArgs clargs) 
   throws IOException {
     
+    // TODO
+    /*
     boolean writeOut = clargs.output != null;
     
     try {
@@ -337,11 +352,11 @@ public class Main {
       if (clargs.goldStandardTrain == null) {
         SimpleChunker chunker = getSimpleChunker(fname, clargs); 
         trainCorpus = chunker.getChunkedCorpus();
-        if (clargs.testCorpus == null)
+        if (clargs.testCorpusString == null)
           evalCorpus = trainCorpus;
         else
           evalCorpus = 
-            chunker.getChunkedCorpus(clargs.testCorpus, -1); 
+            chunker.getChunkedCorpus(clargs.testCorpusString, -1); 
         
         if (writeOut)
           evalCorpus.writeTo(clargs.output + ".baseline.txt");
@@ -359,8 +374,8 @@ public class Main {
       HMM hmm = HMM.mleEstimate(trainCorpus, encoder);
       
       int[] testCorpus;
-      if (clargs.testCorpus != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpus, -1);
+      if (clargs.testCorpusString != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
       else
         testCorpus = hmm.getOrig();
       
@@ -424,7 +439,9 @@ public class Main {
       System.err.println("Problem with BIO encoding: " + e.getMessage());
       usageError();
     }
+    */
   }
+  
   public static void main(String[] argv) {
     try {
       CLArgs clargs = new CLArgs(argv);
@@ -438,45 +455,20 @@ public class Main {
 
       String action = args[0];
       
-      if (action.equals("simple-chunk")) { 
-        if (args.length < 2) {
-          System.err.println("Training file required\n");
-          usageError();
-        }
-        simpleChunk(args[1], clargs);
-      }
+      if (action.equals("stage1-chunk"))  
+        stage1Chunk(clargs);
       
-      else if (action.equals("hmm1-chunk")) {
-        if (args.length < 2) {
-          System.err.println("Training file required");
-          usageError();
-        }
-        hmm1Chunk(args[1], clargs);
-      }
+      else if (action.equals("hmm1-chunk")) 
+        hmm1Chunk(clargs);
       
-      else if (action.equals("hmm2-chunk")) {
-        if (args.length < 2) {
-          System.err.println("Training file required");
-          usageError();
-        }
-        hmm2Chunk(args[1], clargs);
-      }
+      else if (action.equals("hmm2-chunk")) 
+        hmm2Chunk(clargs);
       
-      else if (action.equals("rrg1-chunk")) {
-        if (args.length < 2) {
-          System.err.println("Training file required");
-          usageError();
-        }
-        rrg1Chunk(args[1], clargs);
-      }
+      else if (action.equals("prlg1-chunk")) 
+        prlg1Chunk(clargs);
       
-      else if (action.equals("rrg2-chunk")) {
-        if (args.length < 2) {
-          System.err.println("Training file required");
-          usageError();
-        }
-        rrg2Chunk(args[1], clargs);
-      }
+      else if (action.equals("prlg2-chunk")) 
+        prlg2Chunk(args[1], clargs);
       
       else {
         System.err.println("Unexpected action: " + action);
@@ -489,6 +481,11 @@ public class Main {
       
     } catch (IOException e) {
       System.err.println("IO problem");
+      e.printStackTrace(System.err);
+      usageError();
+      
+    } catch (EvalError e) {
+      System.err.println("Eval problem");
       e.printStackTrace(System.err);
       usageError();
     }

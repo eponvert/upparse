@@ -6,7 +6,13 @@ import java.util.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class ChunkedSegmentedCorpus {
+public class ChunkedSegmentedCorpus implements Corpus {
+
+  /** Utilities to convert ChunkedSegmentedCorpus into a set of unlabeled 
+   * bracket sets */
+  public interface BracketConv {
+    Collection<UnlabeledBracket> conv(int[][][] s);
+  }
   
   private final int[][][][] corpus;
   final Alpha alpha;
@@ -18,6 +24,92 @@ public class ChunkedSegmentedCorpus {
 
   public int[][][][] getArrays() {
     return corpus;
+  }
+
+  /** Utility to convert this corpus into sets of just the chunks */
+  private static BracketConv CHUNKCONV = new BracketConv() {
+    @Override
+    public Collection<UnlabeledBracket> conv(int[][][] s) {
+      List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
+      int m = 0;
+      for (int[][] seg: s)
+        for (int[] chunk: seg) {
+          if (chunk.length > 1)
+            b.add(new UnlabeledBracket(m, m + chunk.length));
+          m += chunk.length;
+        }
+      
+      return b;
+    }
+  };
+
+  public UnlabeledBracketSet[] asChunked() {
+    return conv(CHUNKCONV);
+  }
+  
+  /** Utility to convert this corpus into a right-branching baseline */ 
+  private static BracketConv RBCONV = new BracketConv() {
+    @Override
+    public Collection<UnlabeledBracket> conv(int[][][] s) {
+      List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
+      int m = 0;
+      for (int[][] seg: s) {
+        final int seglen = segLen(seg);
+        if (seglen > 1) {
+          b.add(new UnlabeledBracket(m, m + seglen));
+          if (seg.length > 1) {
+            for (int[] chunk: seg) {
+              for (int n = 0; n < chunk.length - 2; n++)
+                b.add(new UnlabeledBracket(m + n, m + chunk.length));
+              m += chunk.length;
+            }
+          }
+        }
+      }
+      
+      return b;
+    }
+  };
+  
+  public UnlabeledBracketSet[] asRB() {
+    return conv(RBCONV);
+  }
+  
+  private static BracketConv FLATCONV = new BracketConv() {
+    @Override
+    public Collection<UnlabeledBracket> conv(int[][][] s) {
+      List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
+      int m = 0;
+      for (int[][] seg: s) {
+        final int seglen = segLen(seg);
+        if (seglen > 1) {
+          b.add(new UnlabeledBracket(m, m + seglen));
+          if (seg.length > 1) {
+            for (int[] chunk: seg) {
+              if (chunk.length > 1)
+                b.add(new UnlabeledBracket(m, m + chunk.length));
+              m += chunk.length;
+            }
+          }
+        }
+      }
+      return b;
+    }
+  };
+
+  public UnlabeledBracketSet[] asFlat() {
+    return conv(FLATCONV);
+  }
+  
+  
+  private UnlabeledBracketSet[] conv(BracketConv b) {
+    UnlabeledBracketSet[] outputUB = 
+      new UnlabeledBracketSet[nSentences()];
+    
+    for (int i = 0; i < nSentences(); i++) 
+      outputUB[i] = new UnlabeledBracketSet(tokens(i), b.conv(corpus[i]));
+    
+    return outputUB;
   }
 
   /**
@@ -102,89 +194,42 @@ public class ChunkedSegmentedCorpus {
     return ChunkedCorpus.fromChunkedSegmentedCorpus(this);
   }
 
-  /**
-   * @param fname
-   * @param goldStandardTrain
-   * @param stopv 
-   * @return
-   * @throws IOException 
-   */
-  public static ChunkedSegmentedCorpus fromFiles(
-        final String fname,
-        final String goldStandardTrain, 
-        final String stopv,
-        final int numS) throws IOException {
-    Alpha alpha = new Alpha();
-    int[][][] chunks = 
-      ChunkedCorpus.fromFile(goldStandardTrain, alpha).getArrays();
-    int[][][] segments = 
-      StopSegmentCorpus.fromFile(fname, alpha, stopv, numS).corpus;
-    
-    assert segments.length == chunks.length;
-    
-    int[][][][] chunkedSegments = new int[segments.length][][][];
-    for (int sent = 0; sent < chunkedSegments.length; sent++) {
-      int[][] segRepr = indices(segments[sent]);
-      int[][] chnkRepr = indices(chunks[sent]);
-      
-      int chunkI = 0;
-      chunkedSegments[sent] = new int[segRepr.length][][];
-      
-      for (int segI = 0; segI < segRepr.length; segI++) {
-        int preNumChunks = 0;
-        if (last(chnkRepr[chunkI]) < segRepr[segI][0]) {
-          int last = chnkRepr[chunkI].length-1;
-          assert chnkRepr[chunkI][last] >= segRepr[segI][0];
-          while (chnkRepr[chunkI][last-preNumChunks] >= segRepr[segI][0])
-            preNumChunks++;
-          chunkI++;
-        }
-        
-        assert last(chnkRepr[chunkI]) > segRepr[segI][0];
-        
-        int numChunks = 0;
-        while (last(chnkRepr[chunkI+numChunks]) <= last(segRepr[segI])) 
-          numChunks++;
-        
-        int postNumChunks = 0;
-        while (chnkRepr[chunkI+numChunks][postNumChunks] <= 
-               last(segRepr[segI])) {
-          postNumChunks++;
-        }
+  @Override
+  public int nSentences() {
+    return corpus.length;
+  }
 
-        if (preNumChunks != 0) {
-          int start = chnkRepr[chunkI-1].length-preNumChunks-1;
-          for (int i = 0; i < preNumChunks; i++) 
-            chunkedSegments[sent][segI][i] = 
-              new int[] { chunks[sent][chunkI-1][start+i] };
-        }
-        
-        chunkedSegments[sent][segI] = new int[numChunks][];
-        for (int i = 0; i < numChunks; i++) 
-          chunkedSegments[sent][segI][preNumChunks+i] = chunks[sent][chunkI+i];
-        
-        chunkI += numChunks;
-        
-        for (int j = 0; j < postNumChunks; j++) {
-          chunkedSegments[sent][segI][preNumChunks+numChunks+j] = 
-            new int[] { chunks[sent][chunkI][j] };
-        }
+  public String[] tokens(int i) {
+    int n = 0;
+    for (int[][] seg: corpus[i]) n += segLen(seg);
+    
+    final String[] tokens = new String[n];
+    int j = 0;
+    for (int[][] seg: corpus[i])
+      for (int[] chunk: seg)
+        for (int w: chunk)
+          tokens[j++] = alpha.getString(w);
+    
+    return tokens;
+  }
+
+  public Collection<UnlabeledBracket> chunkBrackets(int i) {
+    final List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
+    int curr = 0;
+    for (int[][] seg: corpus[i]) {
+      b.add(new UnlabeledBracket(curr, curr + segLen(seg)));
+      for (int[] chunk: seg) {
+        final int next = curr + chunk.length;
+        b.add(new UnlabeledBracket(curr, next));
+        curr = next;
       }
     }
-    return fromArrays(chunkedSegments, alpha); 
+    return b;
   }
-  
-  private static int last(int[] a) {
-    return a[a.length-1];
-  }
-  
-  private static int[][] indices(final int[][] chunks) {
-    int w = 0;
-    int[][] r = new int[chunks.length][];
-    for (int i = 0; i < r.length; i++) { 
-      r[i] = new int[chunks[i].length];
-      for (int j = 0; j < r[i].length; j++) r[i][j] = w++;
-    }
-    return r;
+
+  private static int segLen(int[][] seg) {
+    int n = 0;
+    for (int[] chunk: seg) n += chunk.length;
+    return n;
   }
 }

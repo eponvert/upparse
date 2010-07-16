@@ -1,8 +1,5 @@
 package upparse;
 
-import java.io.*;
-
-
 /**
  * Utility for encoding a clumped corpus as a BIO-tagged training set 
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
@@ -36,11 +33,6 @@ public abstract class BIOEncoder {
       default:
         throw new EncoderError("Unexpected GP option " + gp);
     }
-  }
-  
-  public final int[] tokensFromFile(final String fname, int numS) throws IOException {
-    return tokensFromClumpedCorpus(
-        new BasicCorpus(fname, numS).toBaseChunkedSegmentedCorpus(alpha, stopv));
   }
   
   public final int[] tokensFromClumpedCorpus(

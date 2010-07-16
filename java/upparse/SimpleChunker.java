@@ -1,57 +1,51 @@
 package upparse;
 
-import java.io.*;
 import java.util.*;
 
 /**
  * Simple count oriented clumper
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class SimpleChunker {
+public class SimpleChunker implements Chunker {
 
+  public static final String STOP = "__stop__"; 
   final Alpha alpha;
-  private final StopSegmentCorpus corpus;
-  private final NgramCounts bigramCounts = new NgramCounts();
+  private final NgramCounts bigramCounts;
   private final int stopv;
   private final double[] factor;
-
-  public SimpleChunker(
-      BasicCorpus basicCorpus, double[] factor, String stop, Alpha a) {
-    
-    alpha = a == null ? new Alpha() : a;
-    stopv = alpha.getCode(stop);
-    corpus = new StopSegmentCorpus(basicCorpus.compiledCorpus(alpha), stopv);
-    this.factor = factor;
-
-    int[][][] _corpus = corpus.corpus;
-    int last, j;
-
-    for (int[][] s: _corpus) {
+  
+  public static SimpleChunker fromStopSegmentCorpus(
+      final Alpha alpha,
+      final StopSegmentCorpus corpus, 
+      final double[] factor) {
+    final NgramCounts bigramCounts = new NgramCounts();
+    final int stopv = alpha.getCode(STOP); 
+    for (int[][] s: corpus.corpus) {
       for (int[] seg: s) {
-        last = seg.length - 1;
+        final int last = seg.length - 1;
         bigramCounts.incr(stopv, seg[0]);
         bigramCounts.incr(seg[last], stopv);
-        for (j = 0; j < last; j++) {
+        for (int j = 0; j < last; j++) {
           bigramCounts.incr(seg[j], seg[j+1]);
         }
       }
     }
+    
+    return new SimpleChunker(alpha, bigramCounts, stopv, factor);
   }
   
-  /**
-   * Create clumped version of the original training corpus
-   */
-  public ChunkedSegmentedCorpus getChunkedCorpus() {
-    return getChunkedCorpus(corpus);
+  private SimpleChunker(
+      final Alpha _alpha, 
+      final NgramCounts _bigramCounts, 
+      final int _stopv,
+      final double[] _factor) {
+    alpha = _alpha;
+    bigramCounts = _bigramCounts;
+    stopv = _stopv;
+    factor = _factor;
   }
 
-  public ChunkedSegmentedCorpus getChunkedCorpus(
-      final String testCorpus, final int trainSents) 
-  throws IOException {
-    return getChunkedCorpus(
-        StopSegmentCorpus.fromFile(testCorpus, alpha, stopv, trainSents));
-  }
-
+  @Override
   public ChunkedSegmentedCorpus getChunkedCorpus(StopSegmentCorpus c) {
     int[][][] _corpus = c.corpus;
     int[][] _segments;
