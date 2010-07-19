@@ -3,7 +3,22 @@ package upparse;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public abstract class KeepStop implements CorpusConstraints {
+public class KeepStop implements CorpusConstraints {
+  
+  private final CorpusConstraints standard;
+  
+  private KeepStop(CorpusConstraints _standard) {
+    standard = _standard;
+  }
+  
+  public static final KeepStop wsjKeepStop =
+    new KeepStop(WSJCorpusStandard.instance);
+  
+  public static final KeepStop negraKeepStop =
+    new KeepStop(NegraCorpusStandard.instance);
+  
+  public static final KeepStop ctbKeepStop =
+    new KeepStop(CTBCorpusStandard.instance);
   
   String[] STOPPING_PUNC = new String[] {
     ".", "?", "!", ";", ",", "--", 
@@ -33,5 +48,13 @@ public abstract class KeepStop implements CorpusConstraints {
     }
 
     return sb.toString();
+  }
+
+  @Override
+  public String getToken(String token, String pos) {
+    if (isStoppingPunc(token))
+      return STOP;
+    else
+      return standard.getToken(token, pos);
   }
 }

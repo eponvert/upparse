@@ -8,13 +8,14 @@ public class RBConversionTreebankEval extends TreebankEval {
   private RBConversionTreebankEval() { }
 
   @Override
-  public void eval(String string, ChunkedCorpus outputCorpus) throws EvalError {
+  public void eval(String string, ChunkedSegmentedCorpus outputCorpus) 
+  throws EvalError {
     // TODO Auto-generated method stub
 
   }
 
   public static Eval fromUnlabeledBracketSets(
-      UnlabeledBracketSet[] goldUnlabeledBracketSets) {
+      UnlabeledBracketSetCorpus unlabeledBracketSetCorpus) {
     // TODO Auto-generated method stub
     return null;
   }

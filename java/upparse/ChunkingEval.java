@@ -36,8 +36,9 @@ public class ChunkingEval implements Eval {
   }
 
   @Override
-  public void eval(String string, ChunkedCorpus outputCorpus) throws EvalError {
-    experiments.add(new Experiment(string, outputCorpus));
+  public void eval(String string, ChunkedSegmentedCorpus outputCorpus) 
+  throws EvalError {
+    experiments.add(new Experiment(string, outputCorpus.toChunkedCorpus()));
   }
   
   public void writeSummary(final String evalType, final boolean onlyLast) 

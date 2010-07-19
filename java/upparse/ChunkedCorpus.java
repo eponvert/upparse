@@ -1,6 +1,7 @@
 package upparse;
 
 import java.io.*;
+import java.util.*;
 
 /**
  * Stucture representing a corpus -- which has clumps, but may not include 
@@ -136,5 +137,26 @@ public class ChunkedCorpus {
       corpus[i++] = clumpS;
     }
     return new ChunkedCorpus(corpus, alpha);
+  }
+
+  public ChunkedCorpus filterBySentenceLength(int n) {
+    List<Integer> sentences = new ArrayList<Integer>();
+    for (int i = 0; i < corpus.length; i++)
+      if (sentenceLen(corpus[i]) <= n)
+        sentences.add(i);
+
+    final int[][][] newCorpus = new int[sentences.size()][][];
+    int i = 0;
+    for (Integer j: sentences)
+      newCorpus[i++] = corpus[j];
+    
+    return new ChunkedCorpus(newCorpus, alpha);
+  }
+  
+  private static int sentenceLen(final int[][] sentence) {
+    int len = 0;
+    for (int[] chunk: sentence)
+      len += chunk.length;
+    return len;
   }
 }

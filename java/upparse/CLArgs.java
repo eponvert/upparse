@@ -31,6 +31,9 @@ public class CLArgs {
   private StopSegmentCorpus trainStopSegmentCorpus;
   private StopSegmentCorpus testStopSegmentCorpus;
   private Eval[] evals;
+  private ChunkedCorpus clumpGoldStandard;
+  private UnlabeledBracketSetCorpus goldUnlabeledBracketSet;
+  private ChunkedCorpus npsGoldStandard;
 
   public CLArgs(String[] args) throws BadCLArgsException, IOException {
 
@@ -175,6 +178,18 @@ public class CLArgs {
     if (fileType.equals("wsj"))
       return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr);
     
+    else if (fileType.equals("negra"))
+      return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr);
+    
+    else if (fileType.equals("ctb"))
+      return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr);
+    
+    else if (fileType.equals("spl"))
+      return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr);
+    
+    else if (fileType.equals("wpl"))
+      return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr);
+    
     else
       throw new BadCLArgsException("Unexpected file-type: " + fileType);
   }
@@ -231,19 +246,122 @@ public class CLArgs {
     return evals;
   }
 
-  private UnlabeledBracketSet[] getGoldUnlabeledBracketSets() {
-    // TODO Auto-generated method stub
-    return null;
+  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
+      final String[] corpusFiles, final String fileType) 
+  throws BadCLArgsException { 
+    if (fileType.equals("wsj"))
+      return CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
+    
+    else if (fileType.equals("negra"))
+      return CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
+    
+    else if (fileType.equals("ctb"))
+      return CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
+    
+    else
+      throw new BadCLArgsException(
+          "Unexpected file type for unlabeled bracket sets: " + fileType);
+  }
+  
+  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
+      final String[] corpusFiles, final String fileType, final int n) 
+  throws BadCLArgsException { 
+    return getGoldUnlabeledBracketSets(corpusFiles, fileType)
+    .filterBySentenceLength(n);
+  }
+  
+  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
+  throws BadCLArgsException {
+    if (goldUnlabeledBracketSet == null) 
+      if (testCorpusString == null)
+        goldUnlabeledBracketSet = 
+          getGoldUnlabeledBracketSets(trainCorpusString, trainFileType);
+  
+      else if (isSubsetExperiment()) 
+        goldUnlabeledBracketSet = 
+          getGoldUnlabeledBracketSets(
+              trainCorpusString, trainFileType, getSubsetN());
+            
+    return goldUnlabeledBracketSet;
+  }
+  
+  private ChunkedCorpus getNPsGoldStandard(
+      final String[] corpusFiles, final String fileType, final int n) 
+  throws BadCLArgsException {
+    return getNPsGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
+  }
+  
+  private ChunkedCorpus getNPsGoldStandard(
+      final String[] corpusFiles, final String fileType) 
+  throws BadCLArgsException {
+    if (fileType.equals("wsj"))
+      return CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
+    
+    else if (fileType.equals("negra"))
+      return CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
+    
+    else if (fileType.equals("ctb"))
+      return CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
+    
+    else
+      throw new BadCLArgsException(
+          "Unexpected file type for NPs gold standard: " + fileType);
   }
 
-  private ChunkedCorpus getNPsGoldStandard() {
-    // TODO Auto-generated method stub
-    return null;
+  private ChunkedCorpus getNPsGoldStandard() throws BadCLArgsException {
+    if (npsGoldStandard == null)
+      if (testCorpusString == null)
+        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType);
+    
+      else if (isSubsetExperiment())
+        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType, getSubsetN());
+    
+      else
+        npsGoldStandard = getNPsGoldStandard(testCorpusString, testFileType);
+    
+    return npsGoldStandard;
+  }
+  
+  private ChunkedCorpus getClumpGoldStandard(
+      final String[] corpusFiles, final String fileType) 
+  throws BadCLArgsException {
+    
+    if (fileType.equals("wsj")) 
+      return CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
+    
+    else if (fileType.equals("negra"))
+      return CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
+    
+    else if (fileType.equals("ctb"))
+      return CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
+    
+    else 
+      throw new BadCLArgsException(
+          "Unexpected file type for clumping gold standard: " + fileType);
+      
   }
 
-  private ChunkedCorpus getClumpGoldStandard() {
-    // TODO Auto-generated method stub
-    return null;
+  private ChunkedCorpus getClumpGoldStandard(
+      final String[] corpusFiles, final String fileType, final int n) 
+  throws BadCLArgsException {
+    return 
+    getClumpGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
+  }
+
+  private ChunkedCorpus getClumpGoldStandard() throws BadCLArgsException {
+    if (clumpGoldStandard == null) 
+      if (testCorpusString == null) 
+        clumpGoldStandard = 
+          getClumpGoldStandard(trainCorpusString, trainFileType);
+    
+      else if (isSubsetExperiment())
+        clumpGoldStandard =
+          getClumpGoldStandard(args, testFileType, getSubsetN());
+    
+      else 
+        clumpGoldStandard = 
+          getClumpGoldStandard(testCorpusString, testFileType);
+    return clumpGoldStandard;
   }
 
   public SimpleChunker getSimpleChunker() throws BadCLArgsException {
@@ -264,32 +382,12 @@ public class CLArgs {
     return getTrainStopSegmentCorpus().filterLen(num);
   }
   
-  private ChunkedSegmentedCorpus getGoldCorpus() {
-    if (testCorpusString == null) 
-      return getTrainGoldCorpus();
-        
-    else if (isSubsetExperiment())
-      return getSubsetGoldCorpus();
-    
-    else
-      return getTestGoldCorpus();
+  private int getSubsetN() {
+    assert trainCorpusString.length == 1;
+    assert trainCorpusString[0].startsWith("subset");
+    return Integer.parseInt(trainCorpusString[0].substring(6));
   }
-
-  private ChunkedSegmentedCorpus getTestGoldCorpus() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  private ChunkedSegmentedCorpus getSubsetGoldCorpus() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  private ChunkedSegmentedCorpus getTrainGoldCorpus() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
+  
   private StopSegmentCorpus getEvalCorpus() throws BadCLArgsException {
     if (testCorpusString == null)
       return getTrainStopSegmentCorpus();
@@ -307,9 +405,8 @@ public class CLArgs {
     if (evalType == null || 
         (evalType.length == 1 && evalType[0].equals("none"))) return;
     
-    // TODO simplify getChunkedCorpus 
-    final ChunkedCorpus output =  
-      chunker.getChunkedCorpus(getEvalCorpus()).toChunkedCorpus();
+    final ChunkedSegmentedCorpus output =  
+      chunker.getChunkedCorpus(getEvalCorpus());
     
     for (Eval eval: getEvals()) eval.eval(comment, output);
   }

@@ -5,14 +5,14 @@ import java.io.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class WSJFileTreeStringIter extends FileTreeStringIter {
+public class NegraFileTreeStringIter extends FileTreeStringIter {
 
-  public WSJFileTreeStringIter(String file) throws IOException {
+  public NegraFileTreeStringIter(String file) throws IOException {
     super(file);
   }
-  
+
   @Override
   protected boolean skipLine(String line) {
-    return false;
+    return line.trim().charAt(0) == '%';
   }
 }

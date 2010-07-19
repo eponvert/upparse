@@ -9,12 +9,13 @@ public class TreebankPrecisionEval extends TreebankEval {
   }
 
   @Override
-  public void eval(String string, ChunkedCorpus outputCorpus) throws EvalError {
+  public void eval(String string, ChunkedSegmentedCorpus outputCorpus) 
+  throws EvalError {
     // TODO Auto-generated method stub
   }
   
   public static TreebankPrecisionEval fromUnlabeledBracketSets(
-      final UnlabeledBracketSet[] tree) {
+      final UnlabeledBracketSetCorpus tree) {
     // TODO
     return null;
   }

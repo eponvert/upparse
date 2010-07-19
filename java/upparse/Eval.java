@@ -5,11 +5,6 @@ package upparse;
  */
 public interface Eval {
 
-  /**
-   * @param string
-   * @param outputCorpus
-   * @throws EvalError
-   */
-  void eval(String string, ChunkedCorpus outputCorpus) throws EvalError;
+  void eval(String string, ChunkedSegmentedCorpus output) throws EvalError;
 
 }
