@@ -4,7 +4,7 @@ import java.util.*;
 
 import org.junit.*;
 
-import upparse.*;
+import upparse.corpus.*;
 
 import static org.junit.Assert.*;
 

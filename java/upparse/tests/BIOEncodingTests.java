@@ -2,9 +2,9 @@ package upparse.tests;
 
 import org.junit.*;
 
-import upparse.*;
+import upparse.corpus.*;
 import static org.junit.Assert.*;
-import static upparse.SimpleBIOEncoder.*;
+import static upparse.corpus.SimpleBIOEncoder.*;
 
 /**
  * Unit tests for HMM BIO encoding methods
