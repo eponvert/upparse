@@ -24,7 +24,7 @@ public class CLArgs {
   public final Alpha alpha = new Alpha();
   public boolean verbose = false;
   public String[] testCorpusString = null;
-  public String testFileType = null;
+  public String testFileType = "wsj";
   public String[] trainCorpusString = null;
   public String trainFileType = "wsj";
   public boolean checkTerms = true;
@@ -38,8 +38,11 @@ public class CLArgs {
   private ChunkedCorpus clumpGoldStandard;
   private UnlabeledBracketSetCorpus goldUnlabeledBracketSet;
   private ChunkedCorpus npsGoldStandard;
+  private List<ChunkedSegmentedCorpus>  writeOutput = 
+    new ArrayList<ChunkedSegmentedCorpus>();
+  private String outputType = "clumps";
 
-  public CLArgs(String[] args) throws BadCLArgsException, IOException {
+  protected CLArgs(String[] args) throws BadCLArgsException, IOException {
 
     int i = 0;
     String arg;
@@ -77,7 +80,7 @@ public class CLArgs {
         else if (arg.equals("-trainFileType"))
           trainFileType = args[i++];
 
-        else if (arg.equals("-factor")) 
+        else if (arg.equals("-factor") || arg.equals("-F")) 
           factor = args[i++];
 
         else if (arg.equals("-iterations")) 
@@ -136,7 +139,7 @@ public class CLArgs {
    * Print program usage to stream
    * @param stream
    */
-  public static void printUsage(PrintStream stream) {
+  protected static void printUsage(PrintStream stream) {
     String prog = Main.class.getName();
     stream.println(
         "Usage: java " + prog + " action [options] [args]\n" +
@@ -214,7 +217,7 @@ public class CLArgs {
     return testStopSegmentCorpus;
   }
 
-  public Eval[] getEvals() throws IOException, BadCLArgsException {
+  protected Eval[] getEvals() throws IOException, BadCLArgsException {
     if (evals == null) {
       evals = new Eval[evalType.length];
       int i = 0;
@@ -368,7 +371,7 @@ public class CLArgs {
     return clumpGoldStandard;
   }
 
-  public SimpleChunker getSimpleChunker() throws BadCLArgsException {
+  protected SimpleChunker getSimpleChunker() throws BadCLArgsException {
     return SimpleChunker.fromStopSegmentCorpus(
         alpha,
         getTrainStopSegmentCorpus(),
@@ -403,15 +406,42 @@ public class CLArgs {
       return getTestStopSegmentCorpus();
   }
 
-  public void eval(final String comment, final Chunker chunker) 
+  protected void eval(final String comment, final Chunker chunker) 
   throws BadCLArgsException, IOException, EvalError {
     
     if (evalType == null || 
         (evalType.length == 1 && evalType[0].equals("none"))) return;
     
-    final ChunkedSegmentedCorpus output =  
+    final ChunkedSegmentedCorpus chunkerOutput =  
       chunker.getChunkedCorpus(getEvalCorpus());
     
-    for (Eval eval: getEvals()) eval.eval(comment, output);
+    for (Eval eval: getEvals()) 
+      eval.eval(comment, chunkerOutput);
+    
+    if (output != null)
+      if (outputAll || writeOutput.isEmpty())
+        writeOutput.add(chunkerOutput);
+    
+      else 
+        writeOutput.set(0, chunkerOutput);
+      
+  }
+
+  public void writeEval(PrintStream out) 
+  throws IOException, BadCLArgsException, EvalError {
+    for (Eval eval: getEvals()) {
+      eval.writeSummary(evalReport, out, onlyLast);
+      out.println();
+    }
+    
+    if (output != null) {
+      if (writeOutput.size() == 1)
+        writeOutput.get(0).writeTo(output, outputType);
+      else
+        for (int i = 0; i < writeOutput.size(); i++) {
+          final String outputIter = output + "-" + Integer.toString(i);
+          writeOutput.get(i).writeTo(outputIter, outputType);
+        }
+    }
   }
 }

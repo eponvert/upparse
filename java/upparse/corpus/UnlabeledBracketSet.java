@@ -48,6 +48,16 @@ public class UnlabeledBracketSet {
   public String[] getTokens() {
     return tokens;
   }
+  
+  private List<String> tokenParenList() {
+    final List<String> l = new ArrayList<String>();
+    for (int i = 0; i < tokens.length; i++) {
+      for (int j = 0; j < firstInd.get(i).size(); j++) l.add("(");
+      l.add(tokens[i]);
+      for (int j = 0; j < lastInd.get(i).size(); j++) l.add(")");
+    }
+    return l;
+  }
 
   @Override
   public String toString() {
@@ -89,5 +99,74 @@ public class UnlabeledBracketSet {
       }
     }
     return new UnlabeledBracketSet(tokens.toArray(new String[0]), brackets);
+  }
+
+  public int[][] clumps(final Alpha alpha) {
+    int n = 0;
+    int lastOpen = -1;
+    final List<Integer> 
+      open = new ArrayList<Integer>(), 
+      closed = new ArrayList<Integer>();
+    for (String item: tokenParenList()) {
+      if (item.equals("(")) 
+        lastOpen = n;
+      
+      else if (item.equals(")")) {
+        if (lastOpen != -1) {
+          open.add(lastOpen);
+          closed.add(n);
+          lastOpen = -1;
+        }
+      }
+      
+      else 
+        n++;
+    }
+    
+    assert n == tokens.length;
+    assert open.size() == closed.size();
+    assert open.get(0) >= 0;
+    for (int k = 0; k < open.size() - 1; k++) 
+      assert closed.get(k) <= open.get(k+1);
+    assert closed.get(closed.size()-1) <= tokens.length;
+    
+    int i = 0, j = 0;
+    final List<Integer> 
+      openC = new ArrayList<Integer>(), 
+      closeC = new ArrayList<Integer>(); 
+    while (i < n) {
+      if (j < open.size() && open.get(j) == i) {
+        assert i == 0 || i == closeC.get(closeC.size() - 1);
+        openC.add(i);
+        i = closed.get(j++);
+        assert i <= tokens.length;
+        closeC.add(i);
+      } 
+      
+      else {
+        assert i == 0 || i == closeC.get(closeC.size() - 1);
+        openC.add(i++);
+        assert i <= tokens.length;
+        closeC.add(i);
+      }
+    }
+    
+    assert openC.size() == closeC.size();
+    assert openC.get(0).intValue() == 0;
+    for (int l = 0; l < openC.size() - 1; l++) 
+      assert closeC.get(l).intValue() == openC.get(l+1).intValue();
+    assert closeC.get(closeC.size()-1).intValue() == tokens.length;
+    
+    int[][] clumps = new int[openC.size()][];
+    
+    int m = 0;
+    for (int k = 0; k < openC.size(); k++) {
+      final int start = openC.get(k), end = closeC.get(k), len = end-start;
+      int[] clump = new int[len];
+      for (int l = 0; l < len; l++) 
+        clump[l] = alpha.getCode(tokens[start+l]);
+      clumps[m++] = clump;
+    }
+    return clumps;
   }
 }

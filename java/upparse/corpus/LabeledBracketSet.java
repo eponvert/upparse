@@ -118,4 +118,13 @@ public class LabeledBracketSet {
     }
     return new LabeledBracketSet(tokens.toArray(new String[0]), brackets);
   }
+
+  public int[][] lowestChunksOfType(String cat, Alpha alpha) {
+    List<LabeledBracket> newBraks = new ArrayList<LabeledBracket>();
+    for (LabeledBracket b: brackets)
+      if (b.getLabel().startsWith(cat))
+        newBraks.add(b);
+    
+    return new LabeledBracketSet(tokens, newBraks).unlabeled().clumps(alpha);
+  }
 }

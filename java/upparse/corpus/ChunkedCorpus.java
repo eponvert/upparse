@@ -163,4 +163,8 @@ public class ChunkedCorpus {
   public String getString(int i) {
     return alpha.getString(i);
   }
+
+  public static ChunkedCorpus fromArrays(int[][][] arrays, Alpha alpha) {
+    return new ChunkedCorpus(arrays, alpha);
+  }
 }

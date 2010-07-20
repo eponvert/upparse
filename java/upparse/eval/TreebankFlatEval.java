@@ -1,5 +1,7 @@
 package upparse.eval;
 
+import java.io.*;
+
 import upparse.corpus.*;
 
 /**
@@ -22,5 +24,18 @@ public class TreebankFlatEval extends TreebankEval {
       UnlabeledBracketSetCorpus unlabeledBracketSetCorpus) {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public String getName() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void writeSummary(String evalType, PrintStream out, boolean onlyLast)
+      throws EvalError {
+    // TODO Auto-generated method stub
+    
   }
 }

@@ -34,6 +34,7 @@ public class Main {
     try {
       Chunker chunker = clargs.getSimpleChunker();
       clargs.eval("stage-1", chunker);
+      clargs.writeEval(System.out);
     } catch (BadCLArgsException e) {
       e.printStackTrace(System.err);
       System.exit(1);

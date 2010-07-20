@@ -48,19 +48,12 @@ public class CorpusUtil {
     return null;
   }
 
-  private static LabeledBracketSet[] lbsArrayFromIter(
-      Iterable<LabeledBracketSet> iter) {
-    List<LabeledBracketSet> ls = new ArrayList<LabeledBracketSet>();
-    for (LabeledBracketSet l: iter) ls.add(l);
-    return ls.toArray(new LabeledBracketSet[0]);
-  }
-  
   public static StopSegmentCorpus treeIterStopSegmentCorpus(
       final Alpha alpha,
       final Iterable<LabeledBracketSet> treeiter, 
       final CorpusConstraints cc,
       final int numS) {
-    LabeledBracketSet[] lbs = lbsArrayFromIter(treeiter);
+    LabeledBracketSet[] lbs = arrayFromIter(treeiter);
     int[][][] corpus = new int[lbs.length][][];
     int i = 0;
     
@@ -90,49 +83,76 @@ public class CorpusUtil {
   public static UnlabeledBracketSetCorpus wsjUnlabeledBracketSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            WSJCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus negraUnlabeledBrackSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            NegraCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus ctbUnlabeledBracketSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            CTBCorpusStandard.instance));
   }
 
   private static ChunkedCorpus getChunkedCorpusClumps(Alpha alpha,
-      Iterable<UnlabeledBracketSet> unlabeledIter) {
-    // TODO Auto-generated method stub
-    return null;
+      Iterable<UnlabeledBracketSet> iter) {
+    UnlabeledBracketSet[] uBraks = arrayFromIter(iter);
+    int[][][] arrays = new int[uBraks.length][][];
+    int i = 0;
+    for (UnlabeledBracketSet u: uBraks) arrays[i++] = u.clumps(alpha);
+    return ChunkedCorpus.fromArrays(arrays, alpha);
+  }
+
+  private static UnlabeledBracketSet[] arrayFromIter(
+      Iterable<UnlabeledBracketSet> iter) {
+    List<UnlabeledBracketSet> l = new ArrayList<UnlabeledBracketSet>();
+    for (UnlabeledBracketSet s: iter) l.add(s);
+    return l.toArray(new UnlabeledBracketSet[0]);
   }
 
   public static ChunkedCorpus wsjClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            WSJCorpusStandard.instance));
   }
 
   public static ChunkedCorpus negraClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            NegraCorpusStandard.instance));
   }
 
   public static ChunkedCorpus ctbClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter());
+        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+            CTBCorpusStandard.instance));
   }
   
   private static ChunkedCorpus getChunkedCorpusNPs(Alpha alpha,
-      Iterable<LabeledBracketSet> unlabeledIter, String string) {
-    // TODO Auto-generated method stub
-    return null;
+      Iterable<LabeledBracketSet> unlabeledIter, String cat) {
+    LabeledBracketSet[] lBraks = arrayFromIter(unlabeledIter);
+    int[][][] arrays = new int[lBraks.length][][];
+    int i = 0;
+    for (LabeledBracketSet l: lBraks)
+      arrays[i++] = l.lowestChunksOfType(cat, alpha);
+    return ChunkedCorpus.fromArrays(arrays, alpha);
+  }
+
+  private static LabeledBracketSet[] arrayFromIter(
+      Iterable<LabeledBracketSet> unlabeledIter) {
+    List<LabeledBracketSet> l = new ArrayList<LabeledBracketSet>();
+    for (LabeledBracketSet u: unlabeledIter) l.add(u);
+    return l.toArray(new LabeledBracketSet[0]);
   }
 
   public static ChunkedCorpus wsjNPsGoldStandard(Alpha alpha,

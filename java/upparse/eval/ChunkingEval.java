@@ -43,11 +43,7 @@ public class ChunkingEval implements Eval {
     experiments.add(new Experiment(string, outputCorpus.toChunkedCorpus()));
   }
   
-  public void writeSummary(final String evalType, final boolean onlyLast) 
-  throws EvalError {
-    writeSummary(evalType, System.out, onlyLast);
-  }
-
+  @Override
   public void writeSummary(
       final String evalType, final PrintStream out, final boolean onlyLast) 
   throws EvalError {
@@ -599,5 +595,10 @@ public class ChunkingEval implements Eval {
   public static Eval fromChunkedCorpus(
       final String name, final ChunkedCorpus gold) {
     return new ChunkingEval(name, gold, false);
+  }
+
+  @Override
+  public String getName() {
+    return evalName;
   }
 }

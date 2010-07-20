@@ -232,4 +232,9 @@ public class ChunkedSegmentedCorpus implements Corpus {
     for (int[] chunk: seg) n += chunk.length;
     return n;
   }
+
+  public void writeTo(String output, String outputType) throws IOException {
+    if (outputType.equals("clumps"))
+      writeTo(output);
+  }
 }

@@ -13,7 +13,8 @@ public abstract class CorpusTreeIter implements Iterable<LabeledBracketSet> {
     strIter = _strIter;
   }
 
-  public Iterable<UnlabeledBracketSet> toUnlabeledIter() {
+  public Iterable<UnlabeledBracketSet> toUnlabeledIter(
+      final CorpusConstraints cc) {
     return new Iterable<UnlabeledBracketSet>() {
       
       @Override
@@ -29,7 +30,7 @@ public abstract class CorpusTreeIter implements Iterable<LabeledBracketSet> {
           
           @Override
           public UnlabeledBracketSet next() {
-            return iter.next().unlabeled();
+            return iter.next().unlabeled(cc);
           }
           
           @Override

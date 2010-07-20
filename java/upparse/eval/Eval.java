@@ -1,5 +1,7 @@
 package upparse.eval;
 
+import java.io.*;
+
 import upparse.corpus.*;
 
 /**
@@ -8,5 +10,10 @@ import upparse.corpus.*;
 public interface Eval {
 
   void eval(String string, ChunkedSegmentedCorpus output) throws EvalError;
+
+  public String getName();
+
+  void writeSummary(String evalType, PrintStream out, boolean onlyLast)
+      throws EvalError;
 
 }
