@@ -54,7 +54,8 @@ public class LabeledBracketSet {
       for (LabeledBracket b: firstInd.get(i))
         if (b.length() > 1)
           sb.append("(");
-      sb.append(c.getToken(tokens[i], pos[i]));
+      final String tok = c.getToken(tokens[i], pos[i]);
+      sb.append(tok);
       for (LabeledBracket b: lastInd.get(i))
         if (b.length() > 1)
           sb.append(")");
@@ -84,7 +85,8 @@ public class LabeledBracketSet {
   }
   
   public UnlabeledBracketSet unlabeled(CorpusConstraints c) {
-    return UnlabeledBracketSet.fromString(toString(c));
+    final String asString = toString(c);
+    return UnlabeledBracketSet.fromString(asString);
   }
   
   public static LabeledBracketSet fromString(String next) {
@@ -119,12 +121,22 @@ public class LabeledBracketSet {
     return new LabeledBracketSet(tokens.toArray(new String[0]), brackets);
   }
 
-  public int[][] lowestChunksOfType(String cat, Alpha alpha) {
+  public int[][] lowestChunksOfType(
+      final String cat, 
+      final Alpha alpha, 
+      final CorpusConstraints cc) {
     List<LabeledBracket> newBraks = new ArrayList<LabeledBracket>();
+    
+    // Add all the POS
+    for (int i = 0; i < tokens.length; i++) 
+      newBraks.add(firstInd.get(i).get(0));
+    
     for (LabeledBracket b: brackets)
       if (b.getLabel().startsWith(cat))
         newBraks.add(b);
     
-    return new LabeledBracketSet(tokens, newBraks).unlabeled().clumps(alpha);
+    final UnlabeledBracketSet u = 
+      new LabeledBracketSet(tokens, newBraks).unlabeled(cc); 
+    return u.clumps(alpha);
   }
 }

@@ -24,7 +24,7 @@ public class KeepStop implements CorpusConstraints {
     ".", "?", "!", ";", ",", "--", 
     "\uE38081", "\uEFBC8C", "\uE38082"  }; // Chinese stop, comma, enumeration
   
-  static final String STOP = "__stop__";
+  public static final String STOP = "__stop__";
   
   public boolean isStoppingPunc(final String w) {
     for (String p: STOPPING_PUNC)

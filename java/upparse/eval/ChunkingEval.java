@@ -267,7 +267,12 @@ public class ChunkingEval implements Eval {
                 termStr(termsFromSent(outp)),
                 i);
         else 
-          assert terms.length == _terms.length;
+          assert terms.length == _terms.length:
+            String.format(
+                "Terms do not match:\nGold: %s\nOutp: %s\n[%d]",
+                termStr(terms),
+                termStr(termsFromSent(outp)),
+                i);
               
         
         final ChunkSet 

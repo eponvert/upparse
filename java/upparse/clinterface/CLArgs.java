@@ -378,6 +378,115 @@ public class CLArgs {
         getFactor());
   }
   
+
+  private BIOEncoder getBIOEncoder() throws EncoderError {
+    return 
+    BIOEncoder.getBIOEncoder(grandparents, KeepStop.STOP, alpha); 
+  }
+
+  protected SequenceModelChunker getHMMModelChunker() 
+  throws BadCLArgsException, EncoderError {
+    final SimpleChunker c = getSimpleChunker();
+    final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
+    final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
+    final BIOEncoder enco = getBIOEncoder();
+    final SequenceModel hmm = HMM.mleEstimate(outputCorpus, enco);
+    return new SequenceModelChunker(hmm, emdelta);
+
+    /*
+    
+    try {
+      ChunkedSegmentedCorpus trainCorpus;
+      ChunkedSegmentedCorpus evalCorpus;
+      ChunkingEval[] evals = clargs.getEvals();
+      
+      if (clargs.goldStandardTrain == null) {
+        SimpleChunker chunker = getSimpleChunker(fname, clargs); 
+        trainCorpus = chunker.getChunkedCorpus();
+        if (clargs.testCorpusString == null)
+          evalCorpus = trainCorpus;
+        else
+          evalCorpus = 
+            chunker.getChunkedCorpus(clargs.testCorpusString, -1); 
+        
+        if (writeOut)
+          evalCorpus.writeTo(clargs.output + ".baseline.txt");
+        
+        for (ChunkingEval eval: evals) 
+          eval.eval("Baseline", evalCorpus.toChunkedCorpus());
+        
+      } else {
+        trainCorpus = 
+          ChunkedSegmentedCorpus.fromFiles(
+              fname, clargs.goldStandardTrain, clargs.stopv, clargs.trainSents);
+      }
+      
+      BIOEncoder encoder = getBIOEncoder(clargs, trainCorpus.alpha);
+      HMM hmm = HMM.mleEstimate(trainCorpus, encoder);
+      
+      int[] testCorpus;
+      if (clargs.testCorpusString != null)
+        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
+      else
+        testCorpus = hmm.getOrig();
+      
+      evalCorpus = hmm.tagCC(testCorpus);
+      
+      if (writeOut)
+        evalCorpus.writeTo(clargs.output + ".noem.txt");
+      
+      for (ChunkingEval eval: evals)
+        eval.eval("No EM", 
+            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+
+      if (clargs.iter != 0) {
+        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
+        
+        final CSVFileWriter perplexLog = 
+          writeOut ?  
+              new CSVFileWriter(clargs.output + ".perplex.csv") :
+              null;
+
+        for (int i = 0;
+             i < clargs.iter && lastPerplexChange > clargs.emdelta;
+             i++) {
+          
+          hmm.emUpdateFromTrain();
+          currPerplex = hmm.currPerplex();
+          if (clargs.verbose)
+            System.out.println(String.format(
+                "Iteration %d: Perplexity = %f", i+1, currPerplex));
+          if (writeOut)
+            perplexLog.write(i+1, currPerplex);
+          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
+          lastPerplex = currPerplex;
+
+          evalCorpus = hmm.tagCC(testCorpus);
+          
+          if (writeOut)
+            evalCorpus.writeTo(
+                String.format("%s.iter%03d.txt", clargs.output, i+1));
+
+          for (ChunkingEval eval: evals)
+            eval.eval(String.format("Iter %03d", i+1), 
+                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
+        }
+        
+        if (writeOut) perplexLog.close();
+      }
+    */
+  }
+
+  protected SequenceModelChunker getPRLGModelChunker() 
+  throws BadCLArgsException, EncoderError {
+    final SimpleChunker c = getSimpleChunker();
+    final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
+    final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
+    final BIOEncoder enco = getBIOEncoder();
+    final SequenceModel prlg = RRG.mleEstimate(outputCorpus, enco);
+    return new SequenceModelChunker(prlg, emdelta);
+  }
+
   private boolean isSubsetExperiment() {
     return testCorpusString.length == 1 && 
     testCorpusString[0].startsWith("subset"); 
@@ -407,7 +516,7 @@ public class CLArgs {
   }
 
   protected void eval(final String comment, final Chunker chunker) 
-  throws BadCLArgsException, IOException, EvalError {
+  throws BadCLArgsException, IOException, EvalError, ChunkerError {
     
     if (evalType == null || 
         (evalType.length == 1 && evalType[0].equals("none"))) return;
@@ -443,5 +552,12 @@ public class CLArgs {
           writeOutput.get(i).writeTo(outputIter, outputType);
         }
     }
+  }
+
+  public PrintStream getVerbosePrintStream() {
+    if (verbose)
+      return System.err;
+    else
+      return null;
   }
 }

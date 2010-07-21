@@ -139,12 +139,14 @@ public class CorpusUtil {
   }
   
   private static ChunkedCorpus getChunkedCorpusNPs(Alpha alpha,
-      Iterable<LabeledBracketSet> unlabeledIter, String cat) {
-    LabeledBracketSet[] lBraks = arrayFromIter(unlabeledIter);
+      final Iterable<LabeledBracketSet> iter, 
+      final String cat, 
+      final CorpusConstraints cc) {
+    LabeledBracketSet[] lBraks = arrayFromIter(iter);
     int[][][] arrays = new int[lBraks.length][][];
     int i = 0;
     for (LabeledBracketSet l: lBraks)
-      arrays[i++] = l.lowestChunksOfType(cat, alpha);
+      arrays[i++] = l.lowestChunksOfType(cat, alpha, cc);
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
@@ -158,18 +160,24 @@ public class CorpusUtil {
   public static ChunkedCorpus wsjNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
-        WSJCorpusTreeIter.fromFiles(corpusFiles), "NP");
+        WSJCorpusTreeIter.fromFiles(corpusFiles), 
+        "NP", 
+        WSJCorpusStandard.instance);
   }
 
   public static ChunkedCorpus negraNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha, 
-        NegraCorpusTreeIter.fromFiles(corpusFiles), "NP");
+        NegraCorpusTreeIter.fromFiles(corpusFiles), 
+        "NP",
+        NegraCorpusStandard.instance);
   }
 
   public static ChunkedCorpus ctbNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha, 
-        CTBCorpusTreeIter.fromFiles(corpusFiles), "NP");
+        CTBCorpusTreeIter.fromFiles(corpusFiles), 
+        "NP",
+        CTBCorpusStandard.instance);
   }
 }

@@ -7,5 +7,5 @@ import upparse.corpus.*;
  */
 public interface Chunker {
 
-  ChunkedSegmentedCorpus getChunkedCorpus(StopSegmentCorpus c);
+  ChunkedSegmentedCorpus getChunkedCorpus(StopSegmentCorpus c) throws ChunkerError;
 }
