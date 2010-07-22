@@ -4,13 +4,13 @@ package upparse.clinterface;
  * Exception indicating command-line options usage error
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class BadCLArgsException extends Exception {
+public class CommandLineError extends Exception {
 
-  public BadCLArgsException(String string) {
+  public CommandLineError(String string) {
     super(string);
   }
   
-  public BadCLArgsException() {
+  public CommandLineError() {
     super();
   }
 

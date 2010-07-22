@@ -42,7 +42,7 @@ public class Main {
     new ArrayList<ChunkedSegmentedCorpus>();
   private String outputType = "clumps";
 
-  private Main(String[] args) throws BadCLArgsException, IOException {
+  private Main(String[] args) throws CommandLineError, IOException {
 
     int i = 0;
     String arg;
@@ -121,7 +121,7 @@ public class Main {
     }
     catch (ArrayIndexOutOfBoundsException e) {
       e.printStackTrace(System.err);
-      throw new BadCLArgsException();
+      throw new CommandLineError();
     }
   }
 
@@ -180,7 +180,7 @@ public class Main {
   
   private StopSegmentCorpus getStopSegmentCorpus(
       final String[] corpusStr, final String fileType) 
-  throws BadCLArgsException {
+  throws CommandLineError {
     
     if (fileType.equals("wsj"))
       return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr);
@@ -198,11 +198,11 @@ public class Main {
       return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr);
     
     else
-      throw new BadCLArgsException("Unexpected file-type: " + fileType);
+      throw new CommandLineError("Unexpected file-type: " + fileType);
   }
   
   private StopSegmentCorpus getTrainStopSegmentCorpus() 
-  throws BadCLArgsException {
+  throws CommandLineError {
     if (trainStopSegmentCorpus == null)
       trainStopSegmentCorpus = 
         getStopSegmentCorpus(trainCorpusString, trainFileType);
@@ -210,14 +210,14 @@ public class Main {
   }
 
   private StopSegmentCorpus getTestStopSegmentCorpus() 
-  throws BadCLArgsException {
+  throws CommandLineError {
     if (testStopSegmentCorpus == null)
       testStopSegmentCorpus = 
         getStopSegmentCorpus(testCorpusString, testFileType);
     return testStopSegmentCorpus;
   }
 
-  protected Eval[] getEvals() throws IOException, BadCLArgsException {
+  protected Eval[] getEvals() throws IOException, CommandLineError {
     if (evals == null) {
       evals = new Eval[evalType.length];
       int i = 0;
@@ -246,7 +246,7 @@ public class Main {
                 getGoldUnlabeledBracketSets());
       
         else
-          throw new BadCLArgsException("Unexpected eval type: " + etype);
+          throw new CommandLineError("Unexpected eval type: " + etype);
 
     }
 
@@ -255,7 +255,7 @@ public class Main {
 
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
       final String[] corpusFiles, final String fileType) 
-  throws BadCLArgsException { 
+  throws CommandLineError { 
     if (fileType.equals("wsj"))
       return CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
     
@@ -266,19 +266,19 @@ public class Main {
       return CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
     
     else
-      throw new BadCLArgsException(
+      throw new CommandLineError(
           "Unexpected file type for unlabeled bracket sets: " + fileType);
   }
   
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
       final String[] corpusFiles, final String fileType, final int n) 
-  throws BadCLArgsException { 
+  throws CommandLineError { 
     return getGoldUnlabeledBracketSets(corpusFiles, fileType)
     .filterBySentenceLength(n);
   }
   
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
-  throws BadCLArgsException {
+  throws CommandLineError {
     if (goldUnlabeledBracketSet == null) 
       if (testCorpusString == null)
         goldUnlabeledBracketSet = 
@@ -294,13 +294,13 @@ public class Main {
   
   private ChunkedCorpus getNPsGoldStandard(
       final String[] corpusFiles, final String fileType, final int n) 
-  throws BadCLArgsException {
+  throws CommandLineError {
     return getNPsGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
   }
   
   private ChunkedCorpus getNPsGoldStandard(
       final String[] corpusFiles, final String fileType) 
-  throws BadCLArgsException {
+  throws CommandLineError {
     if (fileType.equals("wsj"))
       return CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
     
@@ -311,11 +311,11 @@ public class Main {
       return CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
     
     else
-      throw new BadCLArgsException(
+      throw new CommandLineError(
           "Unexpected file type for NPs gold standard: " + fileType);
   }
 
-  private ChunkedCorpus getNPsGoldStandard() throws BadCLArgsException {
+  private ChunkedCorpus getNPsGoldStandard() throws CommandLineError {
     if (npsGoldStandard == null)
       if (testCorpusString == null)
         npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType);
@@ -331,7 +331,7 @@ public class Main {
   
   private ChunkedCorpus getClumpGoldStandard(
       final String[] corpusFiles, final String fileType) 
-  throws BadCLArgsException {
+  throws CommandLineError {
     
     if (fileType.equals("wsj")) 
       return CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
@@ -343,19 +343,19 @@ public class Main {
       return CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
     
     else 
-      throw new BadCLArgsException(
+      throw new CommandLineError(
           "Unexpected file type for clumping gold standard: " + fileType);
       
   }
 
   private ChunkedCorpus getClumpGoldStandard(
       final String[] corpusFiles, final String fileType, final int n) 
-  throws BadCLArgsException {
+  throws CommandLineError {
     return 
     getClumpGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
   }
 
-  private ChunkedCorpus getClumpGoldStandard() throws BadCLArgsException {
+  private ChunkedCorpus getClumpGoldStandard() throws CommandLineError {
     if (clumpGoldStandard == null) 
       if (testCorpusString == null) 
         clumpGoldStandard = 
@@ -371,7 +371,7 @@ public class Main {
     return clumpGoldStandard;
   }
 
-  protected SimpleChunker getSimpleChunker() throws BadCLArgsException {
+  protected SimpleChunker getSimpleChunker() throws CommandLineError {
     return SimpleChunker.fromStopSegmentCorpus(
         alpha,
         getTrainStopSegmentCorpus(),
@@ -385,7 +385,7 @@ public class Main {
   }
 
   protected SequenceModelChunker getHMMModelChunker() 
-  throws BadCLArgsException, EncoderError {
+  throws CommandLineError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
     final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
@@ -478,7 +478,7 @@ public class Main {
   }
 
   protected SequenceModelChunker getPRLGModelChunker() 
-  throws BadCLArgsException, EncoderError {
+  throws CommandLineError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
     final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
@@ -493,7 +493,7 @@ public class Main {
   }
   
   private StopSegmentCorpus getSubsetStopSegmentCorpus() 
-  throws BadCLArgsException {
+  throws CommandLineError {
     final int num = Integer.parseInt(testCorpusString[0].substring(6));
     return getTrainStopSegmentCorpus().filterLen(num);
   }
@@ -504,7 +504,7 @@ public class Main {
     return Integer.parseInt(trainCorpusString[0].substring(6));
   }
   
-  private StopSegmentCorpus getEvalCorpus() throws BadCLArgsException {
+  private StopSegmentCorpus getEvalCorpus() throws CommandLineError {
     if (testCorpusString == null)
       return getTrainStopSegmentCorpus();
     
@@ -516,7 +516,7 @@ public class Main {
   }
 
   protected void eval(final String comment, final Chunker chunker) 
-  throws BadCLArgsException, IOException, EvalError, ChunkerError {
+  throws CommandLineError, IOException, EvalError, ChunkerError {
     
     if (evalType == null || 
         (evalType.length == 1 && evalType[0].equals("none"))) return;
@@ -537,7 +537,7 @@ public class Main {
   }
 
   public void writeEval(PrintStream out) 
-  throws IOException, BadCLArgsException, EvalError {
+  throws IOException, CommandLineError, EvalError {
     for (Eval eval: getEvals()) {
       eval.writeSummary(evalReport, out, onlyLast);
       out.println();
@@ -576,12 +576,12 @@ public class Main {
   */
   
   /** Execute and evaluate simple chunking model 
-   * @throws BadCLArgsException 
+   * @throws CommandLineError 
    * @throws EvalError 
    * @throws IOException 
    * @throws ChunkerError */ 
   private static void stage1Chunk(Main clargs) 
-  throws BadCLArgsException, IOException, EvalError, ChunkerError {
+  throws CommandLineError, IOException, EvalError, ChunkerError {
     Chunker chunker = clargs.getSimpleChunker();
     clargs.eval("stage-1", chunker);
     clargs.writeEval(System.out);
@@ -591,12 +591,12 @@ public class Main {
    * @param clargs Command-line arguments
    * @throws IOException If there's a problem reading the training data
    * @throws EncoderError 
-   * @throws BadCLArgsException 
+   * @throws CommandLineError 
    * @throws ChunkerError 
    * @throws EvalError 
    */
   private static void hmm1Chunk(Main clargs) 
-  throws IOException, BadCLArgsException, EncoderError, EvalError, ChunkerError {
+  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
     
     SequenceModelChunker model = clargs.getHMMModelChunker();
     clargs.eval("Stage 1", model.getCurrentChunker());
@@ -612,12 +612,12 @@ public class Main {
   /** Execute right-regular grammar model based on output training
    * @param clargs Command-line arguments
    * @throws EncoderError 
-   * @throws BadCLArgsException 
+   * @throws CommandLineError 
    * @throws ChunkerError 
    * @throws EvalError 
    */
   private static void prlg1Chunk(Main clargs) 
-  throws IOException, BadCLArgsException, EncoderError, EvalError, ChunkerError {
+  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
 
     SequenceModelChunker model = clargs.getPRLGModelChunker();
     clargs.eval("Stage 1", model.getCurrentChunker());
@@ -806,11 +806,11 @@ public class Main {
   
   public static void main(String[] argv) {
     try {
-      Main clargs = new Main(argv);
+      Main prog = new Main(argv);
       
-      String[] args = clargs.args;
+      String[] args = prog.args;
 
-      if (clargs.args.length == 0)  {
+      if (prog.args.length == 0)  {
         System.err.println("Please specify an action\n");
         usageError();
       }
@@ -818,26 +818,26 @@ public class Main {
       String action = args[0];
       
       if (action.equals("stage1-chunk"))  
-        stage1Chunk(clargs);
+        stage1Chunk(prog);
       
       else if (action.equals("hmm1-chunk")) 
-        hmm1Chunk(clargs);
+        hmm1Chunk(prog);
       
       else if (action.equals("hmm2-chunk")) 
-        hmm2Chunk(clargs);
+        hmm2Chunk(prog);
       
       else if (action.equals("prlg1-chunk")) 
-        prlg1Chunk(clargs);
+        prlg1Chunk(prog);
       
       else if (action.equals("prlg2-chunk")) 
-        prlg2Chunk(args[1], clargs);
+        prlg2Chunk(args[1], prog);
       
       else {
         System.err.println("Unexpected action: " + action);
         usageError();
       }
       
-    } catch (BadCLArgsException e) {
+    } catch (CommandLineError e) {
       System.err.println("Bad command line error: " + e.getMessage());
       usageError();
       
