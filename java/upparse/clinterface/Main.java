@@ -13,25 +13,24 @@ import upparse.model.*;
  */
 public class Main {
   
-  public String output = null;
-  public String factor = "2,1,1";
-  public int iter = -1;
-  public double emdelta = 1;
-  public String[] args = new String[0];
-  public BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
-  public String evalReport = "PR";
-  public String[] evalType = new String[] { "clump" };
-  public final Alpha alpha = new Alpha();
-  public boolean verbose = false;
-  public String[] testCorpusString = null;
-  public String testFileType = "wsj";
-  public String[] trainCorpusString = null;
-  public String trainFileType = "wsj";
-  public boolean checkTerms = true;
-  public String goldStandardTrain;
-  public boolean onlyLast = false;
-  public boolean outputAll = false;
-  public int trainSents = -1;
+  private String output = null;
+  private String factor = "2,1,1";
+  private int iter = -1;
+  private double emdelta = 1;
+  private String[] args = new String[0];
+  private BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
+  private String evalReport = "PR";
+  private String[] evalType = new String[] { "clump" };
+  private final Alpha alpha = new Alpha();
+  private boolean verbose = false;
+  private String[] testCorpusString = null;
+  private String testFileType = "wsj";
+  private String[] trainCorpusString = null;
+  private String trainFileType = "wsj";
+  private boolean checkTerms = true;
+  private boolean onlyLast = false;
+  private boolean outputAll = false;
+  private int trainSents = -1;
   private StopSegmentCorpus trainStopSegmentCorpus;
   private StopSegmentCorpus testStopSegmentCorpus;
   private Eval[] evals;
@@ -125,7 +124,7 @@ public class Main {
     }
   }
 
-  public double[] getFactor() {
+  private double[] getFactor() {
     String[] fpieces = factor.split(",");
 
     double[] f = new double[fpieces.length];
@@ -139,7 +138,7 @@ public class Main {
    * Print program usage to stream
    * @param stream
    */
-  protected static void printUsage(PrintStream stream) {
+  private static void printUsage(PrintStream stream) {
     String prog = Main.class.getName();
     stream.println(
         "Usage: java " + prog + " action [options] [args]\n" +
@@ -179,33 +178,39 @@ public class Main {
   }
   
   private StopSegmentCorpus getStopSegmentCorpus(
-      final String[] corpusStr, final String fileType) 
+      final String[] corpusStr, final String fileType, final int numSent) 
   throws CommandLineError {
     
     if (fileType.equals("wsj"))
-      return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr);
+      return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
     
     else if (fileType.equals("negra"))
-      return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr);
+      return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
     
     else if (fileType.equals("ctb"))
-      return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr);
+      return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
     
     else if (fileType.equals("spl"))
-      return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr);
+      return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
     
     else if (fileType.equals("wpl"))
-      return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr);
+      return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
     
     else
       throw new CommandLineError("Unexpected file-type: " + fileType);
+  }
+  
+  private StopSegmentCorpus getStopSegmentCorpus(
+      final String[] corpusStr, final String fileType) 
+  throws CommandLineError {
+    return getStopSegmentCorpus(corpusStr, fileType, -1);
   }
   
   private StopSegmentCorpus getTrainStopSegmentCorpus() 
   throws CommandLineError {
     if (trainStopSegmentCorpus == null)
       trainStopSegmentCorpus = 
-        getStopSegmentCorpus(trainCorpusString, trainFileType);
+        getStopSegmentCorpus(trainCorpusString, trainFileType, trainSents);
     return trainStopSegmentCorpus;
   }
 
@@ -217,33 +222,33 @@ public class Main {
     return testStopSegmentCorpus;
   }
 
-  protected Eval[] getEvals() throws IOException, CommandLineError {
+  private Eval[] getEvals() throws IOException, CommandLineError {
     if (evals == null) {
       evals = new Eval[evalType.length];
       int i = 0;
       for (String etype: evalType)
         if (etype.equals("clump"))
           evals[i++] = 
-            ChunkingEval.fromChunkedCorpus("Clumps", getClumpGoldStandard()); 
+            ChunkingEval.fromChunkedCorpus("Clumps", getClumpGoldStandard(), checkTerms); 
       
         else if (etype.equals("nps"))
           evals[i++] = 
-            ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard());
+            ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
       
         else if (etype.equals("treebank-prec"))
           evals[i++] = 
             TreebankPrecisionEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets());
+                getGoldUnlabeledBracketSets(), checkTerms);
       
         else if (etype.equals("treebank-flat"))
           evals[i++] = 
             TreebankFlatEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets());
+                getGoldUnlabeledBracketSets(), checkTerms);
       
         else if (etype.equals("treebank-rb"))
           evals[i++] =
             RBConversionTreebankEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets());
+                getGoldUnlabeledBracketSets(), checkTerms);
       
         else
           throw new CommandLineError("Unexpected eval type: " + etype);
@@ -321,7 +326,8 @@ public class Main {
         npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType);
     
       else if (isSubsetExperiment())
-        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType, getSubsetN());
+        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType, 
+            getSubsetN());
     
       else
         npsGoldStandard = getNPsGoldStandard(testCorpusString, testFileType);
@@ -371,7 +377,7 @@ public class Main {
     return clumpGoldStandard;
   }
 
-  protected SimpleChunker getSimpleChunker() throws CommandLineError {
+  private SimpleChunker getSimpleChunker() throws CommandLineError {
     return SimpleChunker.fromStopSegmentCorpus(
         alpha,
         getTrainStopSegmentCorpus(),
@@ -384,107 +390,38 @@ public class Main {
     BIOEncoder.getBIOEncoder(grandparents, KeepStop.STOP, alpha); 
   }
 
-  protected SequenceModelChunker getHMMModelChunker() 
+  private SequenceModelChunker getHMMModelChunker() 
   throws CommandLineError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
-    final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
+    final StopSegmentCorpus trainCorpus = getTrainStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
     final BIOEncoder enco = getBIOEncoder();
     final SequenceModel hmm = HMM.mleEstimate(outputCorpus, enco);
     return new SequenceModelChunker(hmm, emdelta);
-
-    /*
-    
-    try {
-      ChunkedSegmentedCorpus trainCorpus;
-      ChunkedSegmentedCorpus evalCorpus;
-      ChunkingEval[] evals = clargs.getEvals();
-      
-      if (clargs.goldStandardTrain == null) {
-        SimpleChunker chunker = getSimpleChunker(fname, clargs); 
-        trainCorpus = chunker.getChunkedCorpus();
-        if (clargs.testCorpusString == null)
-          evalCorpus = trainCorpus;
-        else
-          evalCorpus = 
-            chunker.getChunkedCorpus(clargs.testCorpusString, -1); 
-        
-        if (writeOut)
-          evalCorpus.writeTo(clargs.output + ".baseline.txt");
-        
-        for (ChunkingEval eval: evals) 
-          eval.eval("Baseline", evalCorpus.toChunkedCorpus());
-        
-      } else {
-        trainCorpus = 
-          ChunkedSegmentedCorpus.fromFiles(
-              fname, clargs.goldStandardTrain, clargs.stopv, clargs.trainSents);
-      }
-      
-      BIOEncoder encoder = getBIOEncoder(clargs, trainCorpus.alpha);
-      HMM hmm = HMM.mleEstimate(trainCorpus, encoder);
-      
-      int[] testCorpus;
-      if (clargs.testCorpusString != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
-      else
-        testCorpus = hmm.getOrig();
-      
-      evalCorpus = hmm.tagCC(testCorpus);
-      
-      if (writeOut)
-        evalCorpus.writeTo(clargs.output + ".noem.txt");
-      
-      for (ChunkingEval eval: evals)
-        eval.eval("No EM", 
-            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-
-      if (clargs.iter != 0) {
-        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
-        
-        final CSVFileWriter perplexLog = 
-          writeOut ?  
-              new CSVFileWriter(clargs.output + ".perplex.csv") :
-              null;
-
-        for (int i = 0;
-             i < clargs.iter && lastPerplexChange > clargs.emdelta;
-             i++) {
-          
-          hmm.emUpdateFromTrain();
-          currPerplex = hmm.currPerplex();
-          if (clargs.verbose)
-            System.out.println(String.format(
-                "Iteration %d: Perplexity = %f", i+1, currPerplex));
-          if (writeOut)
-            perplexLog.write(i+1, currPerplex);
-          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
-          lastPerplex = currPerplex;
-
-          evalCorpus = hmm.tagCC(testCorpus);
-          
-          if (writeOut)
-            evalCorpus.writeTo(
-                String.format("%s.iter%03d.txt", clargs.output, i+1));
-
-          for (ChunkingEval eval: evals)
-            eval.eval(String.format("Iter %03d", i+1), 
-                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-        }
-        
-        if (writeOut) perplexLog.close();
-      }
-    */
   }
 
-  protected SequenceModelChunker getPRLGModelChunker() 
+  private SequenceModelChunker getPRLGModelChunker() 
   throws CommandLineError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
-    final StopSegmentCorpus trainCorpus = getTestStopSegmentCorpus();
+    final StopSegmentCorpus trainCorpus = getTrainStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
     final BIOEncoder enco = getBIOEncoder();
     final SequenceModel prlg = RRG.mleEstimate(outputCorpus, enco);
     return new SequenceModelChunker(prlg, emdelta);
+  }
+  
+  private SequenceModelChunker getHMMSoftModelChunker() 
+  throws CommandLineError, EncoderError {
+    return new SequenceModelChunker(
+        HMM.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder()), 
+        emdelta);
+  }
+
+  private SequenceModelChunker getPRLGSoftModelChunker() 
+  throws CommandLineError, EncoderError {
+    return new SequenceModelChunker(
+        RRG.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder()), 
+        emdelta);
   }
 
   private boolean isSubsetExperiment() {
@@ -515,7 +452,7 @@ public class Main {
       return getTestStopSegmentCorpus();
   }
 
-  protected void eval(final String comment, final Chunker chunker) 
+  private void eval(final String comment, final Chunker chunker) 
   throws CommandLineError, IOException, EvalError, ChunkerError {
     
     if (evalType == null || 
@@ -536,7 +473,7 @@ public class Main {
       
   }
 
-  public void writeEval(PrintStream out) 
+  private void writeEval(final PrintStream out) 
   throws IOException, CommandLineError, EvalError {
     for (Eval eval: getEvals()) {
       eval.writeSummary(evalReport, out, onlyLast);
@@ -554,7 +491,7 @@ public class Main {
     }
   }
 
-  public PrintStream getVerbosePrintStream() {
+  private PrintStream getVerbosePrintStream() {
     if (verbose)
       return System.err;
     else
@@ -566,242 +503,75 @@ public class Main {
     System.exit(1);
   }
 
-  // TODO
-  /*
-  private static BIOEncoder getBIOEncoder(Main clargs, Alpha alpha) 
-  throws EncoderError {
-    return 
-    BIOEncoder.getBIOEncoder(clargs.grandparents, clargs.stopv, alpha); 
-  }
-  */
-  
   /** Execute and evaluate simple chunking model 
    * @throws CommandLineError 
    * @throws EvalError 
    * @throws IOException 
    * @throws ChunkerError */ 
-  private static void stage1Chunk(Main clargs) 
+  private static void stage1Chunk(final Main prog) 
   throws CommandLineError, IOException, EvalError, ChunkerError {
-    Chunker chunker = clargs.getSimpleChunker();
-    clargs.eval("stage-1", chunker);
-    clargs.writeEval(System.out);
+    Chunker chunker = prog.getSimpleChunker();
+    prog.eval("stage-1", chunker);
+    prog.writeEval(System.out);
+  }
+  
+  private static void stagedModelEval(
+      final Main prog, final SequenceModelChunker model) 
+  throws CommandLineError, IOException, EvalError, ChunkerError {
+    prog.eval("Stage 1", model.getCurrentChunker());
+    while (model.anotherIteration()) {
+      model.updateWithEM(prog.getVerbosePrintStream());
+      prog.eval(
+          String.format("Iter %d", model.getCurrentIter()),
+          model.getCurrentChunker());
+    }
   }
 
   /** Execute HMM chunking model based on baseline output training
-   * @param clargs Command-line arguments
+   * @param prog Command-line arguments
    * @throws IOException If there's a problem reading the training data
    * @throws EncoderError 
    * @throws CommandLineError 
    * @throws ChunkerError 
    * @throws EvalError 
    */
-  private static void hmm1Chunk(Main clargs) 
+  private static void hmm1Chunk(final Main prog) 
   throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
-    
-    SequenceModelChunker model = clargs.getHMMModelChunker();
-    clargs.eval("Stage 1", model.getCurrentChunker());
-    while (model.anotherIteration()) {
-      model.updateWithEM(clargs.getVerbosePrintStream());
-      clargs.eval(
-          String.format("Iter %d", model.getCurrentIter()),
-          model.getCurrentChunker());
-          
-    }
+    stagedModelEval(prog, prog.getHMMModelChunker());
   }
   
   /** Execute right-regular grammar model based on output training
-   * @param clargs Command-line arguments
+   * @param prog Command-line arguments
    * @throws EncoderError 
    * @throws CommandLineError 
    * @throws ChunkerError 
    * @throws EvalError 
    */
-  private static void prlg1Chunk(Main clargs) 
+  private static void prlg1Chunk(final Main prog) 
   throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
-
-    SequenceModelChunker model = clargs.getPRLGModelChunker();
-    clargs.eval("Stage 1", model.getCurrentChunker());
+    stagedModelEval(prog, prog.getPRLGModelChunker());
+  }
+  
+  private static void softModelEval(
+      final Main prog, final SequenceModelChunker model) 
+  throws IOException, IOException, EvalError, ChunkerError, CommandLineError {
+    prog.eval("Iter 0", model.getCurrentChunker());
     while (model.anotherIteration()) {
-      model.updateWithEM(clargs.getVerbosePrintStream());
-      clargs.eval(
+      model.updateWithEM(prog.getVerbosePrintStream());
+      prog.eval(
           String.format("Iter %d", model.getCurrentIter()),
           model.getCurrentChunker());
-          
     }
   }
   
-  private static void hmm2Chunk(Main clargs) throws IOException {
-    
-    // TODO
-    /*
-    boolean writeOut = clargs.output != null;
-    
-    try {
-
-      final BIOEncoder encoder = getBIOEncoder(clargs, clargs.alpha);
-      final StopSegmentCorpus corpus = 
-        StopSegmentCorpus.fromFile(
-            fname, clargs.alpha, clargs.alpha.getCode(clargs.stopv), 
-            clargs.trainSents);
-      final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
-      final HMM hmm = 
-        HMM.fromCounts(encoder.softCounts(tokens), encoder, tokens);
-      
-      ChunkingEval[] evals = clargs.getEvals();
-      int[] testCorpus;
-      if (clargs.testCorpusString != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
-      else
-        testCorpus = hmm.getOrig();
-
-      ChunkedSegmentedCorpus evalCorpus = hmm.tagCC(testCorpus);
-
-      if (writeOut)
-        evalCorpus.writeTo(clargs.output + ".noem.txt");
-      
-      for (ChunkingEval eval: evals)
-        eval.eval("No EM", 
-            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-
-      if (clargs.iter != 0) {
-        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
-        
-        final CSVFileWriter perplexLog = 
-          writeOut ?  
-              new CSVFileWriter(clargs.output + ".perplex.csv") :
-              null;
-
-        for (int i = 0;
-             i < clargs.iter && lastPerplexChange > clargs.emdelta;
-             i++) {
-          
-          hmm.emUpdateFromTrain();
-          currPerplex = hmm.currPerplex();
-          if (clargs.verbose)
-            System.out.println(String.format(
-                "Iteration %d: Perplexity = %f", i+1, currPerplex));
-          if (writeOut)
-            perplexLog.write(i+1, currPerplex);
-          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
-          lastPerplex = currPerplex;
-
-          evalCorpus = hmm.tagCC(testCorpus);
-          
-          if (writeOut)
-            evalCorpus.writeTo(
-                String.format("%s.iter%03d.txt", clargs.output, i+1));
-
-          for (ChunkingEval eval: evals)
-            eval.eval(String.format("Iter %03d", i+1), 
-                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-        }
-
-        if (writeOut) perplexLog.close();
-      }
-
-      for (ChunkingEval eval: evals) 
-        eval.writeSummary(clargs.evalType, clargs.onlyLast);
-
-    } catch (SequenceModelError e) {
-      System.err.println("Problem initializing HMM: " + e.getMessage());
-      usageError();
-      
-    } catch (EvalError e) {
-      System.err.println("Problem with eval: " + e.getMessage());
-      System.exit(1);
-      
-    } catch (EncoderError e) {
-      System.err.println("Problem with BIO encoding: " + e.getMessage());
-      usageError();
-    }
-    */
+  private static void hmm2Chunk(final Main prog) 
+  throws IOException, CommandLineError, EvalError, ChunkerError, EncoderError {
+    softModelEval(prog, prog.getHMMSoftModelChunker());
   }
   
-  private static void prlg2Chunk(String fname, Main clargs) throws IOException {
-    
-    //TODO
-    /*
-    boolean writeOut = clargs.output != null;
-    
-    try {
-
-      final BIOEncoder encoder = getBIOEncoder(clargs, clargs.alpha);
-      final StopSegmentCorpus corpus = 
-        StopSegmentCorpus.fromFile(
-            fname, clargs.alpha, clargs.alpha.getCode(clargs.stopv), 
-            clargs.trainSents);
-      final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
-      final RRG hmm = 
-        RRG.fromCounts(encoder.softCounts(tokens), encoder, tokens);
-      
-      ChunkingEval[] evals = clargs.getEvals();
-      int[] testCorpus;
-      if (clargs.testCorpusString != null)
-        testCorpus = encoder.tokensFromFile(clargs.testCorpusString, -1);
-      else
-        testCorpus = hmm.getOrig();
-
-      ChunkedSegmentedCorpus evalCorpus = hmm.tagCC(testCorpus);
-
-      if (writeOut)
-        evalCorpus.writeTo(clargs.output + ".noem.txt");
-      
-      for (ChunkingEval eval: evals)
-        eval.eval("No EM", 
-            ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-
-      if (clargs.iter != 0) {
-        double lastPerplex = 0., currPerplex, lastPerplexChange = 1e10;
-        
-        final CSVFileWriter perplexLog = 
-          writeOut ?  
-              new CSVFileWriter(clargs.output + ".perplex.csv") :
-              null;
-
-        for (int i = 0;
-             i < clargs.iter && lastPerplexChange > clargs.emdelta;
-             i++) {
-          
-          hmm.emUpdateFromTrain();
-          currPerplex = hmm.currPerplex();
-          if (clargs.verbose)
-            System.out.println(String.format(
-                "Iteration %d: Perplexity = %f", i+1, currPerplex));
-          if (writeOut)
-            perplexLog.write(i+1, currPerplex);
-          lastPerplexChange = Math.abs(currPerplex - lastPerplex);
-          lastPerplex = currPerplex;
-
-          evalCorpus = hmm.tagCC(testCorpus);
-          
-          if (writeOut)
-            evalCorpus.writeTo(
-                String.format("%s.iter%03d.txt", clargs.output, i+1));
-
-          for (ChunkingEval eval: evals)
-            eval.eval(String.format("Iter %03d", i+1), 
-                ChunkedCorpus.fromChunkedSegmentedCorpus(evalCorpus));
-        }
-
-        if (writeOut) perplexLog.close();
-      }
-
-      for (ChunkingEval eval: evals) 
-        eval.writeSummary(clargs.evalType, clargs.onlyLast);
-
-    } catch (SequenceModelError e) {
-      System.err.println("Problem initializing HMM: " + e.getMessage());
-      usageError();
-      
-    } catch (EvalError e) {
-      System.err.println("Problem with eval: " + e.getMessage());
-      System.exit(1);
-      
-    } catch (EncoderError e) {
-      System.err.println("Problem with BIO encoding: " + e.getMessage());
-      usageError();
-    }
-    */
+  private static void prlg2Chunk(Main prog) 
+  throws IOException, EvalError, ChunkerError, CommandLineError, EncoderError {
+    softModelEval(prog, prog.getPRLGSoftModelChunker());
   }
   
   public static void main(String[] argv) {
@@ -830,7 +600,7 @@ public class Main {
         prlg1Chunk(prog);
       
       else if (action.equals("prlg2-chunk")) 
-        prlg2Chunk(args[1], prog);
+        prlg2Chunk(prog);
       
       else {
         System.err.println("Unexpected action: " + action);

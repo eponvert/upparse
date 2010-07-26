@@ -147,6 +147,14 @@ public class HMM extends SequenceModel {
         encoder, 
         encoder.tokensFromClumpedCorpus(corpus));
   }
+  
+  public static HMM softCountEstimate(
+      final StopSegmentCorpus corpus, final BIOEncoder encoder) 
+  {
+    final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
+    final double[][][] counts = encoder.softCounts(tokens);
+    return fromCounts(counts, encoder, tokens);
+  }
 
   public static HMM fromCounts(
       final double[][][] counts, 

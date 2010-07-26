@@ -84,4 +84,11 @@ public class RRG extends SequenceModel {
     final CombinedProb combined = CombinedProb.fromCounts(counts, backoff);
     return new RRG(encoder, tokens, combined);
   }
+
+  public static SequenceModel softCountEstimate(
+      StopSegmentCorpus corpus, BIOEncoder encoder) {
+    final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
+    final double[][][] counts = encoder.softCounts(tokens);
+    return fromCounts(counts, encoder, tokens);
+  }
 }

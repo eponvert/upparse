@@ -598,8 +598,8 @@ public class ChunkingEval implements Eval {
   }
 
   public static Eval fromChunkedCorpus(
-      final String name, final ChunkedCorpus gold) {
-    return new ChunkingEval(name, gold, false);
+      final String name, final ChunkedCorpus gold, boolean checkTerms) {
+    return new ChunkingEval(name, gold, checkTerms);
   }
 
   @Override

@@ -21,7 +21,7 @@ public class TreebankFlatEval extends TreebankEval {
   }
 
   public static Eval fromUnlabeledBracketSets(
-      UnlabeledBracketSetCorpus unlabeledBracketSetCorpus) {
+      UnlabeledBracketSetCorpus unlabeledBracketSetCorpus, boolean checkTerms) {
     // TODO Auto-generated method stub
     return null;
   }

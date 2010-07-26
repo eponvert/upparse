@@ -12,24 +12,27 @@ public class CorpusUtil {
 
   public static StopSegmentCorpus wsjStopSegmentCorpus(
       final Alpha alpha,
-      final String[] corpusFiles) {
+      final String[] corpusFiles, 
+      final int numSent) {
     Iterable<LabeledBracketSet> 
       treeiter = WSJCorpusTreeIter.fromFiles(corpusFiles);
     return 
-      treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.wsjKeepStop, 0);
+      treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.wsjKeepStop, numSent);
   }
   
   public static StopSegmentCorpus negraStopSegmentCorpus(
-      final Alpha alpha, final String[] corpusFiles) {
+      final Alpha alpha, final String[] corpusFiles, final int numSent) {
     Iterable<LabeledBracketSet>
       treeiter = NegraCorpusTreeIter.fromFiles(corpusFiles);
     return
-      treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.negraKeepStop, 0);
+      treeIterStopSegmentCorpus(
+          alpha, treeiter, KeepStop.negraKeepStop, numSent);
   }
 
   public static StopSegmentCorpus ctbStopSegmentCorpus(
       final Alpha alpha,
-      final String[] corpusFiles) {
+      final String[] corpusFiles, 
+      final int numSent) {
     Iterable<LabeledBracketSet>
       treeiter = CTBCorpusTreeIter.fromFiles(corpusFiles);
     return
@@ -37,13 +40,13 @@ public class CorpusUtil {
   }
 
   public static StopSegmentCorpus splStopSegmentCorpus(Alpha alpha,
-      String[] corpusStr) {
+      String[] corpusStr, final int numSent) {
     // TODO Auto-generated method stub
     return null;
   }
 
   public static StopSegmentCorpus wplStopSegmentCorpus(Alpha alpha,
-      String[] corpusStr) {
+      String[] corpusStr, final int numSent) {
     // TODO Auto-generated method stub
     return null;
   }
@@ -53,27 +56,34 @@ public class CorpusUtil {
       final Iterable<LabeledBracketSet> treeiter, 
       final CorpusConstraints cc,
       final int numS) {
-    LabeledBracketSet[] lbs = arrayFromIter(treeiter);
-    int[][][] corpus = new int[lbs.length][][];
+    final LabeledBracketSet[] lbs = arrayFromIter(treeiter);
+    final int len; 
+    if (numS == -1 || numS > lbs.length) len = lbs.length;
+    else len = numS;
+    int[][][] corpus = new int[len][][];
     int i = 0;
     
-    for (LabeledBracketSet s: lbs) {
-      final String str = s.tokenString(cc);
-      final String[] segments = str.split(KeepStop.STOP); 
-      int m = 0;
-      for (String seg: segments) if (seg.trim().length() > 0) m++;
-      corpus[i] = new int[m][];
-      int j = 0;
-      for (String seg: segments) {
-        if (seg.trim().length() > 0) {
-          String[] tokens = seg.trim().split(" +");
-          corpus[i][j] = new int[tokens.length];
-          for (int k = 0; k < tokens.length; k++)
-            corpus[i][j][k] = alpha.getCode(tokens[k]);
-          j++;
+    if (len > 0) {
+      for (LabeledBracketSet s: lbs) {
+        final String str = s.tokenString(cc);
+        final String[] segments = str.split(KeepStop.STOP); 
+        int m = 0;
+        for (String seg: segments) if (seg.trim().length() > 0) m++;
+        corpus[i] = new int[m][];
+        int j = 0;
+        for (String seg: segments) {
+          if (seg.trim().length() > 0) {
+            String[] tokens = seg.trim().split(" +");
+            corpus[i][j] = new int[tokens.length];
+            for (int k = 0; k < tokens.length; k++)
+              corpus[i][j][k] = alpha.getCode(tokens[k]);
+            j++;
+          }
         }
+        i++;
+        if (i >= len)
+          break;
       }
-      i++;
     }
     
     return StopSegmentCorpus.fromArrays(corpus);

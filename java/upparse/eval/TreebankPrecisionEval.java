@@ -19,7 +19,7 @@ public class TreebankPrecisionEval extends TreebankEval {
   }
   
   public static TreebankPrecisionEval fromUnlabeledBracketSets(
-      final UnlabeledBracketSetCorpus tree) {
+      final UnlabeledBracketSetCorpus tree, boolean checkTerms) {
     // TODO
     return null;
   }
