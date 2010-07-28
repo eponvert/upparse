@@ -1,5 +1,6 @@
 package upparse.corpus;
 
+import java.io.*;
 import java.util.*;
 
 
@@ -10,13 +11,16 @@ import java.util.*;
 public class StopSegmentCorpus {
   
   final int[][][] corpus;
+  private final Alpha alpha;
   
-  private StopSegmentCorpus(final int[][][] _corpus) {
+  private StopSegmentCorpus(final Alpha _alpha, final int[][][] _corpus) {
+    alpha = _alpha;
     corpus = _corpus;
   }
   
-  public static StopSegmentCorpus fromArrays(int[][][] corpus) {
-    return new StopSegmentCorpus(corpus);
+  public static StopSegmentCorpus fromArrays(
+      final Alpha alpha, final int[][][] corpus) {
+    return new StopSegmentCorpus(alpha, corpus);
   }
   
   public ChunkedSegmentedCorpus toBaseChunkedSegmentedCorpus(Alpha alpha) {
@@ -55,7 +59,7 @@ public class StopSegmentCorpus {
       if (filt[j])
         _corpus[i++] = corpus[j];
     
-    return fromArrays(_corpus);
+    return fromArrays(alpha, _corpus);
   }
 
   public Iterable<int[][]> arrayIter() {
@@ -87,5 +91,21 @@ public class StopSegmentCorpus {
 
   public int[][][] getArrays() {
     return corpus;
+  }
+
+  public void writeTo(String output) throws IOException {
+    BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+    for (int[][] sent: corpus) { 
+      bw.write("__stop__");
+      for (int[] seg: sent) {
+        for (int w: seg) {
+          bw.write(" ");
+          bw.write(alpha.getString(w));
+        }
+        bw.write(" __stop__");
+      }
+      bw.write("\n");
+    }
+    bw.close();
   }
 }

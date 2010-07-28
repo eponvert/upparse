@@ -1,5 +1,6 @@
 package upparse.corpus;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -33,5 +34,26 @@ public class UnlabeledBracketSetCorpus {
       trees.add(tree);
     return new UnlabeledBracketSetCorpus(
         trees.toArray(new UnlabeledBracketSet[0]));
+  }
+  
+  public int size() {
+    return trees.length;
+  }
+  
+  public UnlabeledBracketSet get(int i) {
+    return trees[i];
+  }
+
+  public static UnlabeledBracketSetCorpus fromArrays(
+      final UnlabeledBracketSet[] a) {
+    return new UnlabeledBracketSetCorpus(a);
+  }
+
+  public void writeTo(String output) throws IOException {
+    PrintWriter writer = new PrintWriter(new BufferedWriter(
+        new FileWriter(new File(output))));
+    for (int i = 0; i < trees.length; i++)
+      writer.println(trees[i].toString());
+    writer.close();
   }
 }

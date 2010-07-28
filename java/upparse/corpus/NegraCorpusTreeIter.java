@@ -6,11 +6,14 @@ package upparse.corpus;
  */
 public class NegraCorpusTreeIter extends CorpusTreeIter {
 
-  private NegraCorpusTreeIter(final NegraCorpusTreeStringIter strIter) {
-    super(strIter);
+  private NegraCorpusTreeIter(
+      final NegraCorpusTreeStringIter strIter, final Alpha _alpha) {
+    super(strIter, _alpha);
   }
 
-  public static NegraCorpusTreeIter fromFiles(final String[] files) {
-    return new NegraCorpusTreeIter(NegraCorpusTreeStringIter.fromFiles(files));
+  public static NegraCorpusTreeIter fromFiles(
+      final String[] files, final Alpha alpha) {
+    return new NegraCorpusTreeIter(
+        NegraCorpusTreeStringIter.fromFiles(files), alpha);
   }
 }

@@ -39,7 +39,7 @@ public class Main {
   private ChunkedCorpus npsGoldStandard;
   private List<ChunkedSegmentedCorpus>  writeOutput = 
     new ArrayList<ChunkedSegmentedCorpus>();
-  private String outputType = "clumps";
+  private String outputType = "clump";
 
   private Main(String[] args) throws CommandLineError, IOException {
 
@@ -55,7 +55,10 @@ public class Main {
         if (arg.equals("-output")) 
           output = args[i++];
         
-        if (arg.equals("-numtrain"))
+        else if (arg.equals("-outputtype"))
+          outputType = args[i++];
+        
+        else if (arg.equals("-numtrain"))
           trainSents = Integer.parseInt(args[i++]);
         
         else if (arg.equals("-dontCheckTerms"))
@@ -97,7 +100,7 @@ public class Main {
         else if (arg.equals("-E") || arg.equals("-evalreport"))
           evalReport = args[i++];
         
-        else if (arg.equals("-evaltypes"))
+        else if (arg.equals("-e") || arg.equals("-evaltypes"))
           evalType = args[i++].split(",");
 
         else if (arg.equals("-v") || arg.equals("-verbose")) 
@@ -156,11 +159,13 @@ public class Main {
         "  -trainFileType X    Train files file type (eg wsj)\n" +
         "  -testFileType X     Test files file type (eg wsj)\n" +
         "  -output FILE        Set output file/template\n" +
+        "  -outputType T       Output type (see eval types)\n" +
         "  -outputAll          Produce model output for all EM iterations\n"+
         "  -F|-factor N1,N2... Factors for Stage 1 chunking\n" +
         "  -G|-grandparents    Use pseudo 2nd order tagset\n" +
         "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n" +
-        "  -E|-evaltype EVAL   Evaluation type (eg PRL)\n" +
+        "  -E|-evalreort EVAL  Evaluation report (eg PRL)\n" +
+        "  -e|-evaltypes E1,E2 Evaluation types \n" +
         "  -iterations N       Iterations of EM\n" +
         "  -emdelta D          Halt EM when data perplexity change is less than\n" +
         "  -dontCheckTerms     Don't check that the eval and output terms are equal\n" +
@@ -173,7 +178,9 @@ public class Main {
         "  spl    : Sentence per line\n" +
         "  wpl    : Word per line (sentences seperated by blank lines)\n" +
         "\n" + 
-        ChunkingEval.evalTypesHelp()
+        evalTypesHelp() + 
+        "\n\n" +
+        Eval.evalReportHelp()
     );
   }
   
@@ -221,38 +228,52 @@ public class Main {
         getStopSegmentCorpus(testCorpusString, testFileType);
     return testStopSegmentCorpus;
   }
+  
+  private static String evalTypesHelp() {
+    return 
+    "Evaluation types:\n" +
+    "  clump\n" + 
+    "  nps\n"+
+    "  treebank-prec\n"+
+    "  treebank-flat\n"+
+    "  treebank-rb";
+  }
 
   private Eval[] getEvals() throws IOException, CommandLineError {
     if (evals == null) {
-      evals = new Eval[evalType.length];
-      int i = 0;
-      for (String etype: evalType)
-        if (etype.equals("clump"))
-          evals[i++] = 
-            ChunkingEval.fromChunkedCorpus("Clumps", getClumpGoldStandard(), checkTerms); 
+      if (evalType.length == 1 && evalType[0].equals("none"))
+        evals = new Eval[0];
       
-        else if (etype.equals("nps"))
-          evals[i++] = 
-            ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
-      
-        else if (etype.equals("treebank-prec"))
-          evals[i++] = 
-            TreebankPrecisionEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets(), checkTerms);
-      
-        else if (etype.equals("treebank-flat"))
-          evals[i++] = 
-            TreebankFlatEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets(), checkTerms);
-      
-        else if (etype.equals("treebank-rb"))
-          evals[i++] =
-            RBConversionTreebankEval.fromUnlabeledBracketSets(
-                getGoldUnlabeledBracketSets(), checkTerms);
-      
-        else
-          throw new CommandLineError("Unexpected eval type: " + etype);
+      else {
+        evals = new Eval[evalType.length];
+        int i = 0;
+        for (String etype: evalType)
+          if (etype.equals("clump"))
+            evals[i++] = 
+              ChunkingEval.fromChunkedCorpus("clumps", getClumpGoldStandard(), checkTerms); 
 
+          else if (etype.equals("nps"))
+            evals[i++] = 
+              ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
+
+          else if (etype.equals("treebank-prec"))
+            evals[i++] = 
+              TreebankPrecisionEval.fromUnlabeledBracketSets(
+                  "Prec", getGoldUnlabeledBracketSets(), checkTerms);
+
+          else if (etype.equals("treebank-flat"))
+            evals[i++] = 
+              TreebankFlatEval.fromUnlabeledBracketSets(
+                  "Flat", getGoldUnlabeledBracketSets(), checkTerms);
+
+          else if (etype.equals("treebank-rb"))
+            evals[i++] =
+              TreebankRBEval.fromUnlabeledBracketSets(
+                  "RB", getGoldUnlabeledBracketSets(), checkTerms);
+
+          else
+            throw new CommandLineError("Unexpected eval type: " + etype);
+      }
     }
 
     return evals;
@@ -293,7 +314,12 @@ public class Main {
         goldUnlabeledBracketSet = 
           getGoldUnlabeledBracketSets(
               trainCorpusString, trainFileType, getSubsetN());
+    
+      else
+        goldUnlabeledBracketSet = 
+          getGoldUnlabeledBracketSets(testCorpusString, testFileType);
             
+    assert goldUnlabeledBracketSet != null;
     return goldUnlabeledBracketSet;
   }
   
@@ -455,8 +481,8 @@ public class Main {
   private void eval(final String comment, final Chunker chunker) 
   throws CommandLineError, IOException, EvalError, ChunkerError {
     
-    if (evalType == null || 
-        (evalType.length == 1 && evalType[0].equals("none"))) return;
+    if (output == null && (evalType == null || 
+        (evalType.length == 1 && evalType[0].equals("none")))) return;
     
     final ChunkedSegmentedCorpus chunkerOutput =  
       chunker.getChunkedCorpus(getEvalCorpus());
@@ -474,7 +500,7 @@ public class Main {
   }
 
   private void writeEval(final PrintStream out) 
-  throws IOException, CommandLineError, EvalError {
+  throws IOException, CommandLineError, EvalError, CorpusError {
     for (Eval eval: getEvals()) {
       eval.writeSummary(evalReport, out, onlyLast);
       out.println();
@@ -507,9 +533,10 @@ public class Main {
    * @throws CommandLineError 
    * @throws EvalError 
    * @throws IOException 
-   * @throws ChunkerError */ 
+   * @throws ChunkerError 
+   * @throws CorpusError */ 
   private static void stage1Chunk(final Main prog) 
-  throws CommandLineError, IOException, EvalError, ChunkerError {
+  throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError {
     Chunker chunker = prog.getSimpleChunker();
     prog.eval("stage-1", chunker);
     prog.writeEval(System.out);
@@ -517,26 +544,24 @@ public class Main {
   
   private static void stagedModelEval(
       final Main prog, final SequenceModelChunker model) 
-  throws CommandLineError, IOException, EvalError, ChunkerError {
-    prog.eval("Stage 1", model.getCurrentChunker());
+  throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError {
+    prog.eval("No EM", model.getCurrentChunker());
     while (model.anotherIteration()) {
       model.updateWithEM(prog.getVerbosePrintStream());
       prog.eval(
           String.format("Iter %d", model.getCurrentIter()),
           model.getCurrentChunker());
     }
+    prog.writeEval(System.out);
   }
 
   /** Execute HMM chunking model based on baseline output training
    * @param prog Command-line arguments
    * @throws IOException If there's a problem reading the training data
-   * @throws EncoderError 
-   * @throws CommandLineError 
-   * @throws ChunkerError 
-   * @throws EvalError 
    */
   private static void hmm1Chunk(final Main prog) 
-  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
+  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError, 
+  CorpusError {
     stagedModelEval(prog, prog.getHMMModelChunker());
   }
   
@@ -546,15 +571,18 @@ public class Main {
    * @throws CommandLineError 
    * @throws ChunkerError 
    * @throws EvalError 
+   * @throws CorpusError 
    */
   private static void prlg1Chunk(final Main prog) 
-  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError {
+  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError, 
+  CorpusError {
     stagedModelEval(prog, prog.getPRLGModelChunker());
   }
   
   private static void softModelEval(
       final Main prog, final SequenceModelChunker model) 
-  throws IOException, IOException, EvalError, ChunkerError, CommandLineError {
+  throws IOException, IOException, EvalError, ChunkerError, CommandLineError, 
+  CorpusError {
     prog.eval("Iter 0", model.getCurrentChunker());
     while (model.anotherIteration()) {
       model.updateWithEM(prog.getVerbosePrintStream());
@@ -562,16 +590,24 @@ public class Main {
           String.format("Iter %d", model.getCurrentIter()),
           model.getCurrentChunker());
     }
+    prog.writeEval(System.out);
   }
   
   private static void hmm2Chunk(final Main prog) 
-  throws IOException, CommandLineError, EvalError, ChunkerError, EncoderError {
+  throws IOException, CommandLineError, EvalError, ChunkerError, EncoderError, 
+  CorpusError {
     softModelEval(prog, prog.getHMMSoftModelChunker());
   }
   
   private static void prlg2Chunk(Main prog) 
-  throws IOException, EvalError, ChunkerError, CommandLineError, EncoderError {
+  throws IOException, EvalError, ChunkerError, CommandLineError, EncoderError, 
+  CorpusError {
     softModelEval(prog, prog.getPRLGSoftModelChunker());
+  }
+
+  private static void debug(Main prog) throws IOException, CommandLineError {
+    StopSegmentCorpus corpus = prog.getTrainStopSegmentCorpus();
+    corpus.writeTo(prog.output);
   }
   
   public static void main(String[] argv) {
@@ -602,6 +638,9 @@ public class Main {
       else if (action.equals("prlg2-chunk")) 
         prlg2Chunk(prog);
       
+      else if (action.equals("debug"))
+        debug(prog);
+      
       else {
         System.err.println("Unexpected action: " + action);
         usageError();
@@ -627,8 +666,11 @@ public class Main {
       usageError();
     } catch (ChunkerError e) {
       System.err.println("Problem with the chunker");
-      e.printStackTrace();
+      e.printStackTrace(System.err);
       usageError();
+    } catch (CorpusError e) {
+      System.err.println("Problem with corpus");
+      e.printStackTrace(System.err);
     }
   }
 }

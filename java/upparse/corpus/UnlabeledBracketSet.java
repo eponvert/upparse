@@ -9,21 +9,27 @@ import java.util.*;
  */
 public class UnlabeledBracketSet {
 
-  private final String[] tokens;
+  private final Alpha alpha;
+  private final int[] tokens;
   private final List<List<UnlabeledBracket>> firstInd, lastInd;
+  private final Set<UnlabeledBracket> brackets;
 
   public UnlabeledBracketSet(
-      final String[] _tokens, 
-      final Collection<UnlabeledBracket> _brackets) {
-    this(_tokens, _brackets, true);
+      final int[] tokensI, 
+      final Collection<UnlabeledBracket> _brackets,
+      final Alpha _alpha) {
+    this(tokensI, _brackets, _alpha, true);
   }
   
   public UnlabeledBracketSet(
-      final String[] _tokens, 
+      final int[] _tokens, 
       final Collection<UnlabeledBracket> _brackets,
+      final Alpha _alpha,
       final boolean countRoot) {
-    
+  
+    alpha = _alpha;
     tokens = _tokens;
+    brackets = new HashSet<UnlabeledBracket>(_brackets);
     
     if (countRoot) {
       UnlabeledBracket root = new UnlabeledBracket(0, tokens.length);
@@ -44,8 +50,12 @@ public class UnlabeledBracketSet {
       lastInd.get(b.getLast()-1).add(b);
     }
   }
+  
+  public Set<UnlabeledBracket> getBrackets() {
+    return brackets;
+  }
 
-  public String[] getTokens() {
+  public int[] getTokens() {
     return tokens;
   }
   
@@ -53,7 +63,7 @@ public class UnlabeledBracketSet {
     final List<String> l = new ArrayList<String>();
     for (int i = 0; i < tokens.length; i++) {
       for (int j = 0; j < firstInd.get(i).size(); j++) l.add("(");
-      l.add(tokens[i]);
+      l.add("_");
       for (int j = 0; j < lastInd.get(i).size(); j++) l.add(")");
     }
     return l;
@@ -64,19 +74,19 @@ public class UnlabeledBracketSet {
     final StringBuffer sb = new StringBuffer();
     for (int i = 0; i < tokens.length; i++) {
       for (int j = 0; j < firstInd.get(i).size(); j++) sb.append("(");
-      sb.append(tokens[i]);
+      sb.append(alpha.getString(tokens[i]));
       for (int j = 0; j < lastInd.get(i).size(); j++) sb.append(")");
       sb.append(" ");
     }
     return sb.toString().trim();
   }
 
-  public static UnlabeledBracketSet fromString(String string) {
+  public static UnlabeledBracketSet fromString(String string, Alpha alpha) {
     return fromTokens(
-      string.replaceAll("\\(", "( ").replaceAll("\\)", " )").split(" +"));
+      string.replaceAll("\\(", "( ").replaceAll("\\)", " )").split(" +"), alpha);
   }
   
-  public static UnlabeledBracketSet fromTokens(String[] items) {
+  public static UnlabeledBracketSet fromTokens(String[] items, Alpha alpha) {
     List<String> tokens = new ArrayList<String>();
     Stack<Integer> firstIndices = new Stack<Integer>();
     Set<UnlabeledBracket> brackets = new HashSet<UnlabeledBracket>();
@@ -98,10 +108,14 @@ public class UnlabeledBracketSet {
         n++;
       }
     }
-    return new UnlabeledBracketSet(tokens.toArray(new String[0]), brackets);
+    
+    int[] tokensI = new int[tokens.size()];
+    for (int i = 0; i < tokensI.length; i++)
+      tokensI[i] = alpha.getCode(tokens.get(i));
+    return new UnlabeledBracketSet(tokensI, brackets, alpha);
   }
 
-  public int[][] clumps(final Alpha alpha) {
+  public int[][] clumps() {
     int n = 0;
     int lastOpen = -1;
     final List<Integer> 
@@ -164,7 +178,7 @@ public class UnlabeledBracketSet {
       final int start = openC.get(k), end = closeC.get(k), len = end-start;
       int[] clump = new int[len];
       for (int l = 0; l < len; l++) 
-        clump[l] = alpha.getCode(tokens[start+l]);
+        clump[l] = tokens[start+l];
       clumps[m++] = clump;
     }
     return clumps;

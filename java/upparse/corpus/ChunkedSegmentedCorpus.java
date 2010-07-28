@@ -53,17 +53,16 @@ public class ChunkedSegmentedCorpus implements Corpus {
     public Collection<UnlabeledBracket> conv(int[][][] s) {
       List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
       int m = 0;
-      for (int[][] seg: s) {
-        final int seglen = segLen(seg);
-        if (seglen > 1) {
-          b.add(new UnlabeledBracket(m, m + seglen));
-          if (seg.length > 1) {
-            for (int[] chunk: seg) {
-              for (int n = 0; n < chunk.length - 2; n++)
-                b.add(new UnlabeledBracket(m + n, m + chunk.length));
-              m += chunk.length;
-            }
+      for (int[][] seg: s) { 
+        for (int i = 0; i < seg.length; i++) {
+          if (i < seg.length - 2) {
+            final int len = segLen(Arrays.copyOfRange(seg, i, seg.length)); 
+            if (len > 1) 
+              b.add(new UnlabeledBracket(m, m + len));
           }
+          if (seg[i].length > 1)
+            b.add(new UnlabeledBracket(m, m + seg[i].length));
+          m += seg[i].length;
         }
       }
       
@@ -107,7 +106,7 @@ public class ChunkedSegmentedCorpus implements Corpus {
       new UnlabeledBracketSet[nSentences()];
     
     for (int i = 0; i < nSentences(); i++) 
-      outputUB[i] = new UnlabeledBracketSet(tokens(i), b.conv(corpus[i]));
+      outputUB[i] = new UnlabeledBracketSet(tokens(i), b.conv(corpus[i]), alpha);
     
     return outputUB;
   }
@@ -199,16 +198,16 @@ public class ChunkedSegmentedCorpus implements Corpus {
     return corpus.length;
   }
 
-  public String[] tokens(int i) {
+  public int[] tokens(int i) {
     int n = 0;
     for (int[][] seg: corpus[i]) n += segLen(seg);
     
-    final String[] tokens = new String[n];
+    final int[] tokens = new int[n];
     int j = 0;
     for (int[][] seg: corpus[i])
       for (int[] chunk: seg)
         for (int w: chunk)
-          tokens[j++] = alpha.getString(w);
+          tokens[j++] = w;
     
     return tokens;
   }
@@ -233,8 +232,20 @@ public class ChunkedSegmentedCorpus implements Corpus {
     return n;
   }
 
-  public void writeTo(String output, String outputType) throws IOException {
-    if (outputType.equals("clumps"))
+  public void writeTo(String output, String outputType) throws IOException, CorpusError {
+    if (outputType.equals("clump") || outputType.equals("nps"))
       writeTo(output);
+    
+    else if (outputType.equals("treebank-rb"))
+      UnlabeledBracketSetCorpus.fromArrays(asRB()).writeTo(output);
+    
+    else if (outputType.equals("treebank-prec"))
+      UnlabeledBracketSetCorpus.fromArrays(asChunked()).writeTo(output);
+
+    else if (outputType.equals("treebank-flat"))
+      UnlabeledBracketSetCorpus.fromArrays(asFlat()).writeTo(output);
+
+    else
+      throw new CorpusError("Unexpected output type: " + outputType);
   }
 }

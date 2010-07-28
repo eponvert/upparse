@@ -8,8 +8,10 @@ import java.util.*;
 public abstract class CorpusTreeIter implements Iterable<LabeledBracketSet> {
 
   private final Iterable<String> strIter;
+  private final Alpha alpha;
 
-  public CorpusTreeIter(Iterable<String> _strIter) {
+  public CorpusTreeIter(final Iterable<String> _strIter, final Alpha _alpha) {
+    alpha = _alpha;
     strIter = _strIter;
   }
 
@@ -55,7 +57,7 @@ public abstract class CorpusTreeIter implements Iterable<LabeledBracketSet> {
       
       @Override
       public LabeledBracketSet next() {
-        return LabeledBracketSet.fromString(iterator.next());
+        return LabeledBracketSet.fromString(iterator.next(), alpha);
       }
       
       @Override

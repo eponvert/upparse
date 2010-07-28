@@ -4,7 +4,7 @@ package upparse.corpus;
  * Data structure representing a bracket, not including a category label
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class UnlabeledBracket {
+public class UnlabeledBracket implements Comparable<UnlabeledBracket> {
   
   private final int first, last;
 
@@ -12,7 +12,7 @@ public class UnlabeledBracket {
     first = _first;
     last = _last;
   }
-
+  
   @Override
   public boolean equals(Object obj) {
     final UnlabeledBracket b = (UnlabeledBracket) obj;
@@ -23,12 +23,29 @@ public class UnlabeledBracket {
   public int hashCode() {
     return 37 * first + last;
   }
-
+  
   public int getFirst() {
     return first;
   }
   
   public int getLast() {
     return last;
+  }
+
+  public int len() {
+    return last - first;
+  }
+
+  @Override
+  public int compareTo(UnlabeledBracket o) {
+    if (o == null) throw new NullPointerException();
+    else if (last < o.first) return -1;
+    else if (o.last < first) return 1;
+    else if (o.first <= first && last <= o.last) return -1;
+    else return 0;
+  }
+
+  public boolean contains(UnlabeledBracket b) {
+    return first <= b.first && b.last <= last;
   }
 }

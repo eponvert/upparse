@@ -15,7 +15,7 @@ public class CorpusUtil {
       final String[] corpusFiles, 
       final int numSent) {
     Iterable<LabeledBracketSet> 
-      treeiter = WSJCorpusTreeIter.fromFiles(corpusFiles);
+      treeiter = WSJCorpusTreeIter.fromFiles(corpusFiles, alpha);
     return 
       treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.wsjKeepStop, numSent);
   }
@@ -23,7 +23,7 @@ public class CorpusUtil {
   public static StopSegmentCorpus negraStopSegmentCorpus(
       final Alpha alpha, final String[] corpusFiles, final int numSent) {
     Iterable<LabeledBracketSet>
-      treeiter = NegraCorpusTreeIter.fromFiles(corpusFiles);
+      treeiter = NegraCorpusTreeIter.fromFiles(corpusFiles, alpha);
     return
       treeIterStopSegmentCorpus(
           alpha, treeiter, KeepStop.negraKeepStop, numSent);
@@ -34,7 +34,7 @@ public class CorpusUtil {
       final String[] corpusFiles, 
       final int numSent) {
     Iterable<LabeledBracketSet>
-      treeiter = CTBCorpusTreeIter.fromFiles(corpusFiles);
+      treeiter = CTBCorpusTreeIter.fromFiles(corpusFiles, alpha);
     return
       treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.ctbKeepStop, 0);
   }
@@ -86,28 +86,28 @@ public class CorpusUtil {
       }
     }
     
-    return StopSegmentCorpus.fromArrays(corpus);
+    return StopSegmentCorpus.fromArrays(alpha, corpus);
   }
 
 
   public static UnlabeledBracketSetCorpus wsjUnlabeledBracketSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        WSJCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             WSJCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus negraUnlabeledBrackSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        NegraCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             NegraCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus ctbUnlabeledBracketSetCorpus(
       Alpha alpha, String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(
-        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        CTBCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             CTBCorpusStandard.instance));
   }
 
@@ -116,7 +116,7 @@ public class CorpusUtil {
     UnlabeledBracketSet[] uBraks = arrayFromIter(iter);
     int[][][] arrays = new int[uBraks.length][][];
     int i = 0;
-    for (UnlabeledBracketSet u: uBraks) arrays[i++] = u.clumps(alpha);
+    for (UnlabeledBracketSet u: uBraks) arrays[i++] = u.clumps();
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
@@ -130,21 +130,21 @@ public class CorpusUtil {
   public static ChunkedCorpus wsjClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        WSJCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        WSJCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             WSJCorpusStandard.instance));
   }
 
   public static ChunkedCorpus negraClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        NegraCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        NegraCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             NegraCorpusStandard.instance));
   }
 
   public static ChunkedCorpus ctbClumpGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusClumps(alpha, 
-        CTBCorpusTreeIter.fromFiles(corpusFiles).toUnlabeledIter(
+        CTBCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             CTBCorpusStandard.instance));
   }
   
@@ -170,7 +170,7 @@ public class CorpusUtil {
   public static ChunkedCorpus wsjNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
-        WSJCorpusTreeIter.fromFiles(corpusFiles), 
+        WSJCorpusTreeIter.fromFiles(corpusFiles, alpha), 
         "NP", 
         WSJCorpusStandard.instance);
   }
@@ -178,7 +178,7 @@ public class CorpusUtil {
   public static ChunkedCorpus negraNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha, 
-        NegraCorpusTreeIter.fromFiles(corpusFiles), 
+        NegraCorpusTreeIter.fromFiles(corpusFiles, alpha), 
         "NP",
         NegraCorpusStandard.instance);
   }
@@ -186,7 +186,7 @@ public class CorpusUtil {
   public static ChunkedCorpus ctbNPsGoldStandard(Alpha alpha,
       String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha, 
-        CTBCorpusTreeIter.fromFiles(corpusFiles), 
+        CTBCorpusTreeIter.fromFiles(corpusFiles, alpha), 
         "NP",
         CTBCorpusStandard.instance);
   }

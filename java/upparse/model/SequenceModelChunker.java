@@ -38,17 +38,19 @@ public class SequenceModelChunker {
   }
   
   public boolean anotherIteration() {
-    return emdelta < Math.abs(lastPerplex - model.currPerplex());
+    final double curr = model.currPerplex();
+    return emdelta < Math.abs(lastPerplex - curr);
   }
   
   public void updateWithEM(PrintStream verboseOut) {
     currIter++;
-    model.emUpdateFromTrain();
     lastPerplex = model.currPerplex();
+    model.emUpdateFromTrain();
     if (verboseOut != null)
       verboseOut.println(
           String.format(
-              "Current iter = %d , perplex = %f", currIter, lastPerplex));
+              "Current iter = %d , perplex = %f", 
+              currIter, model.currPerplex()));
     
   }
 
