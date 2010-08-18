@@ -55,7 +55,7 @@ public class Main {
         if (arg.equals("-output")) 
           output = args[i++];
         
-        else if (arg.equals("-outputtype"))
+        else if (arg.equals("-outputType"))
           outputType = args[i++];
         
         else if (arg.equals("-numtrain"))
@@ -395,7 +395,7 @@ public class Main {
     
       else if (isSubsetExperiment())
         clumpGoldStandard =
-          getClumpGoldStandard(args, testFileType, getSubsetN());
+          getClumpGoldStandard(trainCorpusString, testFileType, getSubsetN());
     
       else 
         clumpGoldStandard = 
@@ -457,14 +457,14 @@ public class Main {
   
   private StopSegmentCorpus getSubsetStopSegmentCorpus() 
   throws CommandLineError {
-    final int num = Integer.parseInt(testCorpusString[0].substring(6));
-    return getTrainStopSegmentCorpus().filterLen(num);
+    return getTrainStopSegmentCorpus().filterLen(getSubsetN());
   }
   
   private int getSubsetN() {
-    assert trainCorpusString.length == 1;
-    assert trainCorpusString[0].startsWith("subset");
-    return Integer.parseInt(trainCorpusString[0].substring(6));
+    assert testCorpusString.length == 1;
+    assert testCorpusString[0].startsWith("subset");
+    final int subsetN = Integer.parseInt(testCorpusString[0].substring(6)); 
+    return subsetN;
   }
   
   private StopSegmentCorpus getEvalCorpus() throws CommandLineError {
@@ -606,8 +606,15 @@ public class Main {
   }
 
   private static void debug(Main prog) throws IOException, CommandLineError {
-    StopSegmentCorpus corpus = prog.getTrainStopSegmentCorpus();
-    corpus.writeTo(prog.output);
+    if (prog.trainCorpusString != null) {
+      StopSegmentCorpus corpus = prog.getTrainStopSegmentCorpus();
+      corpus.writeTo(prog.output);
+    }
+    
+    else if (prog.testCorpusString != null) {
+      UnlabeledBracketSetCorpus corpus = prog.getGoldUnlabeledBracketSets();
+      corpus.writeTo(prog.output);
+    }
   }
   
   public static void main(String[] argv) {

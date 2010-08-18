@@ -96,8 +96,8 @@ public class LabeledBracketSet {
   
   public static LabeledBracketSet fromString(
       String next, final Alpha alpha) {
-    next = next.replaceAll("\\(\\(", "( (").replaceAll("\\)", " )");
-    return fromTokens(next.split(" +"), alpha);
+    next = next.replaceAll("\\(\\(", "( (").replaceAll("\\)", " ) ");
+    return fromTokens(next.split("[ \\t]+"), alpha);
   }
 
   public static LabeledBracketSet fromTokens(String[] items, Alpha alpha) {
@@ -114,7 +114,7 @@ public class LabeledBracketSet {
         firstIndices.push(n);
       
       } else if (items[i].charAt(0) == ')') {
-        assert items[i].length() == 1;
+        assert items[i].length() == 1: "closing bracket is " + items[i];
         assert labels.size() == firstIndices.size();
         assert firstIndices.size() > 0;
         brackets.add(new LabeledBracket(firstIndices.pop(), n, labels.pop()));
@@ -137,8 +137,9 @@ public class LabeledBracketSet {
     List<LabeledBracket> newBraks = new ArrayList<LabeledBracket>();
     
     // Add all the POS
-    for (int i = 0; i < tokens.length; i++) 
+    for (int i = 0; i < tokens.length; i++) {
       newBraks.add(firstInd.get(i).get(0));
+    }
     
     for (LabeledBracket b: brackets)
       if (b.getLabel().startsWith(cat))

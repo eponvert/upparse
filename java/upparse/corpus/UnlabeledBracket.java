@@ -48,4 +48,9 @@ public class UnlabeledBracket implements Comparable<UnlabeledBracket> {
   public boolean contains(UnlabeledBracket b) {
     return first <= b.first && b.last <= last;
   }
+
+  @Override
+  public String toString() {
+    return String.format("[%d,%d]", first, last);
+  }
 }

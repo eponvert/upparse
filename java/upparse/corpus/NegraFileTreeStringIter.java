@@ -13,6 +13,7 @@ public class NegraFileTreeStringIter extends FileTreeStringIter {
 
   @Override
   protected boolean skipLine(String line) {
-    return line.trim().charAt(0) == '%';
+    final String _line = line.trim();
+    return _line.isEmpty() || _line.charAt(0) == '%';
   }
 }

@@ -39,7 +39,7 @@ public class StopSegmentCorpus {
   }
 
   /** Create a sub-corpus of setences whose length is lte to num */
-  public StopSegmentCorpus filterLen(int num) {
+  public StopSegmentCorpus filterLen(final int num) {
     boolean[] filt = new boolean[corpus.length];
     int i = 0;
     int n = 0;
@@ -49,8 +49,9 @@ public class StopSegmentCorpus {
         len += seg.length;
       if (len <= num) {
         n++;
-        filt[i++] = true;
+        filt[i] = true;
       }
+      i++;
     }
     
     int[][][] _corpus = new int[n][][];

@@ -55,7 +55,7 @@ public class ChunkedSegmentedCorpus implements Corpus {
       int m = 0;
       for (int[][] seg: s) { 
         for (int i = 0; i < seg.length; i++) {
-          if (i < seg.length - 2) {
+          if (i < seg.length - 1) {
             final int len = segLen(Arrays.copyOfRange(seg, i, seg.length)); 
             if (len > 1) 
               b.add(new UnlabeledBracket(m, m + len));
@@ -65,6 +65,9 @@ public class ChunkedSegmentedCorpus implements Corpus {
           m += seg[i].length;
         }
       }
+      
+      final UnlabeledBracket fullSpan = new UnlabeledBracket(0, m);
+      if (!b.contains(fullSpan)) b.add(fullSpan);
       
       return b;
     }
@@ -105,8 +108,10 @@ public class ChunkedSegmentedCorpus implements Corpus {
     UnlabeledBracketSet[] outputUB = 
       new UnlabeledBracketSet[nSentences()];
     
-    for (int i = 0; i < nSentences(); i++) 
-      outputUB[i] = new UnlabeledBracketSet(tokens(i), b.conv(corpus[i]), alpha);
+    for (int i = 0; i < nSentences(); i++) {
+      final Collection<UnlabeledBracket> brackets = b.conv(corpus[i]);
+      outputUB[i] = new UnlabeledBracketSet(tokens(i), brackets, alpha);
+    }
     
     return outputUB;
   }
