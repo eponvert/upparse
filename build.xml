@@ -13,7 +13,7 @@
   
   <target name="compile" depends="clean">
     <mkdir dir="${destdir}"/>
-    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true" excludes="**/tests/*.java">
+    <javac srcdir="${srcdir}" destdir="${destdir}" debug="true" excludes="**/tests/*.java" includeantruntime="false">
       <compilerarg value="-Xlint"/>
     </javac>
   </target>

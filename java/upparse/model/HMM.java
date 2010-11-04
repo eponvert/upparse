@@ -182,4 +182,8 @@ public class HMM extends SequenceModel {
     
     return new HMM(encoder, tokens, emiss, trans, initTag);
   }
+
+  protected double nonLogTrans(int t1, int t2) {
+    return exp(trans[t1][t2]);
+  }
 }

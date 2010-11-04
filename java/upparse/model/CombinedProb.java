@@ -10,16 +10,19 @@ import static upparse.util.Util.*;
 public class CombinedProb {
 
   private final double[][][] prob;
-  private final double[] logSum;
   final HMM backoffHmm;
+  final double[][] oovProb;
+  private final double param;
 
   private CombinedProb(
-      final double[][][] _prob, 
-      final double[] _logSum,  
-      final HMM _backoffHmm) {
+      final double[][][] _prob,
+      final double[][] _oovP,
+      final HMM _backoffHmm,
+      final double smoothParam) {
     prob = _prob;
-    logSum = _logSum;
+    oovProb = _oovP;
     backoffHmm = _backoffHmm;
+    param = smoothParam;
   }
 
   public int numTags() {
@@ -27,11 +30,30 @@ public class CombinedProb {
   }
   
   public int numTerms() {
-    return prob[0].length;
+    return prob[0][0].length;
   }
   
-  public double arcprob(final int j, final int w, final int k) {
-    return w < numTerms() ? prob[j][w][k] : backoffHmm.arcprob(j, w, k) - logSum[j];
+  public double arcprob(final int t1, final int w, final int t2) {
+    /*
+    for (int t = 0; t < numTags(); t++) {
+      logSum[t] = log(sum(counts[t]) + 1);
+      for (int w = 0; w < numTerms(); w++) {
+        for (int _t = 0; _t < numTags(); _t++) {
+          prob[t][w][_t] = 
+            log(counts[t][w][_t] + exp(backoffHmm.arcprob(t, w, _t))) 
+            - logSum[t];
+        }
+      }
+    }
+    */
+    
+    if (w >= numTerms()) 
+      return log(oovProb[t1][t2] * backoffHmm.nonLogTrans(t1,t2));
+    
+    else
+      return log(prob[t1][t2][w] * backoffHmm.nonLogTrans(t1, t2));
+    
+    // return w < numTerms() ? prob[t1][w][t2] : backoffHmm.arcprob(t1, w, t2) - logSum[t1];
   }
 
   /**
@@ -44,12 +66,12 @@ public class CombinedProb {
   }
 
   public static CombinedProb fromCounts(
-      double[][][] countsD, final HMM backoffHmm) {
+      double[][][] countsD, final HMM backoffHmm, final double smooth) {
     
     final int ntag = countsD.length, nterm = countsD[0].length;
-    final double[][][] prob = new double[ntag][nterm][ntag];
-    final double[] logSum = new double[ntag];
-    final CombinedProb c = new CombinedProb(prob, logSum, backoffHmm);
+    final double[][][] prob = new double[ntag][ntag][nterm];
+    final double[][] oovP = new double[ntag][ntag];
+    final CombinedProb c = new CombinedProb(prob, oovP, backoffHmm, smooth);
     c.update(countsD);
     return c;
   }
@@ -58,29 +80,49 @@ public class CombinedProb {
    * Update the probability distribution using these tag-term-tag counts
    */
   public void update(double[][][] counts) {
-    backoffHmm.update(counts); 
-    for (int t = 0; t < numTags(); t++) {
-      logSum[t] = log(sum(counts[t]) + 1);
-      for (int w = 0; w < numTerms(); w++) {
-        for (int _t = 0; _t < numTags(); _t++) {
-          prob[t][w][_t] = 
-            log(counts[t][w][_t] + exp(backoffHmm.arcprob(t, w, _t))) 
-            - logSum[t];
-        }
+    System.out.println("eek!");
+    backoffHmm.update(counts);
+    double[][][] _counts = switcheroo(counts);
+    final int n = numTags();
+    final double v = param * numTerms();
+    for (int s = 0; s < n; s++) {
+      for (int t = 0; t < n; t++) {
+        double sum = sum(_counts[s][t]);
+        oovProb[s][t] = param/sum;
+        for (int w = 0; w < numTerms(); w++)
+          prob[s][t][w] = (_counts[s][t][w] + param) / (sum + v);
       }
     }
   }
 
+  private static double[][][] switcheroo(final double[][][] counts) {
+    int ntag = counts.length;
+    int nterm = counts[0].length;
+    final double[][][] switched = new double[ntag][ntag][nterm];
+    for (int t1 = 0; t1 < ntag; t1++)
+      for (int t2 = 0; t2 < ntag; t2++)
+        for (int w = 0; w < nterm; w++)
+          switched[t1][t2][w] = counts[t1][w][t2];
+    return switched;
+  }
+
   public void checkSanity() {
     backoffHmm.checkSanity();
-    for (int t1 = 0; t1 < prob.length; t1++) {
+    int ntag = numTags(), nterm = numTerms();
+    for (int t1 = 0; t1 < ntag; t1++) {
+      for (int t2 = 0; t2 < ntag; t2++) {
+        double s = sum(prob[t1][t2]);
+        assert abs(s-1) < 1e-5 : s;
+      }
+    }
+    for (int t1 = 0; t1 < ntag; t1++) {
       double sum = 0;
-      for (int w = 0; w < prob[t1].length; w++) 
-        for (int t2 = 0; t2 < prob[t1][w].length; t2++) {
-          sum += exp(prob[t1][w][t2]);
+      for (int w = 0; w < nterm; w++) 
+        for (int t2 = 0; t2 < ntag; t2++) {
+          sum += exp(arcprob(t1, w, t2));
           assert !Double.isNaN(sum);
         }
-      assert abs(sum-1) < 1e-5;
+      assert abs(sum-1) < 1e-5 : sum;
     }
   }
 }
