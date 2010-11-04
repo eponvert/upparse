@@ -72,23 +72,25 @@ public class RRG extends SequenceModel {
    */
   public static RRG mleEstimate(
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder) throws EncoderError {
+      final BIOEncoder encoder,
+      final double smooth) throws EncoderError {
     final double[][][] counts = encoder.hardCounts(corpus);
     final int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
-    return fromCounts(counts, encoder, tokens);
+    return fromCounts(counts, encoder, tokens, smooth);
   }
 
   public static RRG fromCounts(
-      double[][][] counts, BIOEncoder encoder, int[] tokens) {
+      double[][][] counts, BIOEncoder encoder, int[] tokens, double smooth) {
     final HMM backoff = HMM.fromCounts(counts, encoder, tokens);
-    final CombinedProb combined = CombinedProb.fromCounts(counts, backoff);
+    final CombinedProb combined = 
+      CombinedProb.fromCounts(counts, backoff, smooth);
     return new RRG(encoder, tokens, combined);
   }
 
   public static SequenceModel softCountEstimate(
-      StopSegmentCorpus corpus, BIOEncoder encoder) {
+      StopSegmentCorpus corpus, BIOEncoder encoder, double smooth) {
     final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
     final double[][][] counts = encoder.softCounts(tokens);
-    return fromCounts(counts, encoder, tokens);
+    return fromCounts(counts, encoder, tokens, smooth);
   }
 }

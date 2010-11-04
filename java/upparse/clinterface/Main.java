@@ -40,6 +40,7 @@ public class Main {
   private List<ChunkedSegmentedCorpus>  writeOutput = 
     new ArrayList<ChunkedSegmentedCorpus>();
   private String outputType = "clump";
+  private double prlgSmooth = 0.1;
 
   private Main(String[] args) throws CommandLineError, IOException {
 
@@ -54,6 +55,9 @@ public class Main {
 
         if (arg.equals("-output")) 
           output = args[i++];
+        
+        else if (arg.equals("-prlgSmooth"))
+          prlgSmooth = Double.parseDouble(args[i++]);
         
         else if (arg.equals("-outputType"))
           outputType = args[i++];
@@ -432,7 +436,7 @@ public class Main {
     final StopSegmentCorpus trainCorpus = getTrainStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
     final BIOEncoder enco = getBIOEncoder();
-    final SequenceModel prlg = RRG.mleEstimate(outputCorpus, enco);
+    final SequenceModel prlg = RRG.mleEstimate(outputCorpus, enco, prlgSmooth);
     return new SequenceModelChunker(prlg, emdelta);
   }
   
@@ -446,7 +450,7 @@ public class Main {
   private SequenceModelChunker getPRLGSoftModelChunker() 
   throws CommandLineError, EncoderError {
     return new SequenceModelChunker(
-        RRG.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder()), 
+        RRG.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder(), prlgSmooth), 
         emdelta);
   }
 
