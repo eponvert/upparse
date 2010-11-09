@@ -28,7 +28,7 @@
   <target name="jar" depends="compile">
     <jar destfile="upparse.jar">
       <manifest>
-        <attribute name="Main-class" value="upparse.clinterface.Main"/>
+        <attribute name="Main-class" value="upparse.cli.Main"/>
       </manifest>
       <fileset dir="${destdir}" includes="**/*.class" excludes="**/tests/*.class"/>
     </jar>

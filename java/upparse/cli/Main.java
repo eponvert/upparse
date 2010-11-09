@@ -18,7 +18,7 @@ public class Main {
   private int iter = -1;
   private double emdelta = .001;
   private String[] args = new String[0];
-  private BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
+  private BIOEncoder.EncoderType encoderType = BIOEncoder.EncoderType.BIO;
   private String evalReport = "PR";
   private String[] evalType = new String[] { "clump" };
   private final Alpha alpha = new Alpha();
@@ -103,12 +103,9 @@ public class Main {
         else if (arg.equals("-emdelta")) 
           emdelta = Float.parseFloat(args[i++]);
 
-        else if (arg.equals("-G") || arg.equals("-grandparents"))
-          grandparents = BIOEncoder.GPOpt.GP;
+        else if (arg.equals("-G") || arg.equals("-encoderType"))
+          encoderType = BIOEncoder.EncoderType.valueOf(args[i++]);
         
-        else if (arg.equals("-GG") || arg.equals("-grandparentsN"))
-          grandparents = BIOEncoder.GPOpt.NOSTOP;
-
         else if (arg.equals("-E") || arg.equals("-evalreport"))
           evalReport = args[i++];
         
@@ -169,9 +166,8 @@ public class Main {
         "  -output FILE        Set output file/template\n" +
         "  -outputType T       Output type (see eval types)\n" +
         "  -outputAll          Produce model output for all EM iterations\n"+
-        "  -softtrain          Use soft training rather than two-stage\n" +
         "  -F|-factor N1,N2... Factors for Stage 1 chunking\n" +
-        "  -G|-grandparents    Use pseudo 2nd order tagset\n" +
+        "  -G|-encoderType T   Use chunk-encoder type T\n" +
         "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n" +
         "  -E|-evalreort EVAL  Evaluation report (eg PRL)\n" +
         "  -e|-evaltypes E1,E2 Evaluation types \n" +
@@ -189,7 +185,9 @@ public class Main {
         "\n" + 
         evalTypesHelp() + 
         "\n\n" +
-        Eval.evalReportHelp()
+        Eval.evalReportHelp() +
+        "\n\n" +
+        BIOEncoder.EncoderType.encoderTypeHelp()
     );
   }
   
@@ -422,7 +420,7 @@ public class Main {
 
   private BIOEncoder getBIOEncoder() throws EncoderError {
     return 
-    BIOEncoder.getBIOEncoder(grandparents, KeepStop.STOP, alpha); 
+    BIOEncoder.getBIOEncoder(encoderType, KeepStop.STOP, alpha); 
   }
 
   private SequenceModelChunker getHMMModelChunker() 
