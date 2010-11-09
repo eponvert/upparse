@@ -1,4 +1,4 @@
-package upparse.clinterface;
+package upparse.cli;
 
 import java.io.*;
 import java.util.*;
@@ -39,8 +39,10 @@ public class Main {
   private ChunkedCorpus npsGoldStandard;
   private List<ChunkedSegmentedCorpus>  writeOutput = 
     new ArrayList<ChunkedSegmentedCorpus>();
-  private String outputType = "clump";
+  private OutputType outputType = OutputType.CLUMP;
   private double prlgSmooth = 0.1;
+  private ChunkerType chunkerType = ChunkerType.PRLG;
+  private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
 
   private Main(String[] args) throws CommandLineError, IOException {
 
@@ -56,11 +58,17 @@ public class Main {
         if (arg.equals("-output")) 
           output = args[i++];
         
+        else if (arg.equals("-chunkingStrategy"))
+          chunkingStrategy = ChunkingStrategy.valueOf(args[i++]);
+        
+        else if (arg.equals("-chunkerType"))
+          chunkerType = ChunkerType.valueOf(args[i++]);
+        
         else if (arg.equals("-prlgSmooth"))
           prlgSmooth = Double.parseDouble(args[i++]);
         
         else if (arg.equals("-outputType"))
-          outputType = args[i++];
+          outputType = OutputType.valueOf(args[i++]);
         
         else if (arg.equals("-numtrain"))
           trainSents = Integer.parseInt(args[i++]);
@@ -151,11 +159,7 @@ public class Main {
         "Usage: java " + prog + " action [options] [args]\n" +
         "\n" +
         "Actions:\n" +
-        "  stage1-chunk\n" +
-        "  hmm1-chunk\n" +
-        "  prlg1-chunk\n" +  
-        "  hmm2-chunk\n" +
-        "  prlg2-chunk\n" +  
+        "  chunk\n" +
         "\n" +
         "Options:\n" +
         "  -train FILES        Train using specified files\n" +
@@ -165,6 +169,7 @@ public class Main {
         "  -output FILE        Set output file/template\n" +
         "  -outputType T       Output type (see eval types)\n" +
         "  -outputAll          Produce model output for all EM iterations\n"+
+        "  -softtrain          Use soft training rather than two-stage\n" +
         "  -F|-factor N1,N2... Factors for Stage 1 chunking\n" +
         "  -G|-grandparents    Use pseudo 2nd order tagset\n" +
         "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n" +
@@ -533,19 +538,6 @@ public class Main {
     System.exit(1);
   }
 
-  /** Execute and evaluate simple chunking model 
-   * @throws CommandLineError 
-   * @throws EvalError 
-   * @throws IOException 
-   * @throws ChunkerError 
-   * @throws CorpusError */ 
-  private static void stage1Chunk(final Main prog) 
-  throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError {
-    Chunker chunker = prog.getSimpleChunker();
-    prog.eval("stage-1", chunker);
-    prog.writeEval(System.out);
-  }
-  
   private static void stagedModelEval(
       final Main prog, final SequenceModelChunker model) 
   throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError {
@@ -558,31 +550,56 @@ public class Main {
     }
     prog.writeEval(System.out);
   }
+  
+  private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
 
-  /** Execute HMM chunking model based on baseline output training
-   * @param prog Command-line arguments
-   * @throws IOException If there's a problem reading the training data
-   */
-  private static void hmm1Chunk(final Main prog) 
-  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError, 
-  CorpusError {
-    stagedModelEval(prog, prog.getHMMModelChunker());
+  private static void chunk(final Main prog) 
+  throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError, 
+  EncoderError {
+    switch (prog.chunkingStrategy) {
+      case TWOSTAGE:
+        stagedModelEval(prog, prog.getTwoStageChunker());
+        break;
+        
+      case SOFT:
+        softModelEval(prog, prog.getSoftTrainChunker());
+        break;
+        
+      default:
+        return;
+    }
   }
   
-  /** Execute right-regular grammar model based on output training
-   * @param prog Command-line arguments
-   * @throws EncoderError 
-   * @throws CommandLineError 
-   * @throws ChunkerError 
-   * @throws EvalError 
-   * @throws CorpusError 
-   */
-  private static void prlg1Chunk(final Main prog) 
-  throws IOException, CommandLineError, EncoderError, EvalError, ChunkerError, 
-  CorpusError {
-    stagedModelEval(prog, prog.getPRLGModelChunker());
+  private static enum ChunkerType { PRLG, HMM; } 
+  
+  private SequenceModelChunker getTwoStageChunker() 
+  throws CommandLineError, EncoderError {
+    switch (chunkerType) {
+      case HMM:
+        return getHMMModelChunker();
+      
+      case PRLG:
+        return getPRLGModelChunker();
+        
+      default:
+        return null;  
+    }
   }
   
+  private SequenceModelChunker getSoftTrainChunker() 
+  throws CommandLineError, EncoderError {
+    switch (chunkerType) {
+      case HMM:
+        return getHMMSoftModelChunker();
+        
+      case PRLG:
+        return getPRLGSoftModelChunker();
+        
+      default:
+        return null;
+    }
+  }
+
   private static void softModelEval(
       final Main prog, final SequenceModelChunker model) 
   throws IOException, IOException, EvalError, ChunkerError, CommandLineError, 
@@ -597,18 +614,6 @@ public class Main {
     prog.writeEval(System.out);
   }
   
-  private static void hmm2Chunk(final Main prog) 
-  throws IOException, CommandLineError, EvalError, ChunkerError, EncoderError, 
-  CorpusError {
-    softModelEval(prog, prog.getHMMSoftModelChunker());
-  }
-  
-  private static void prlg2Chunk(Main prog) 
-  throws IOException, EvalError, ChunkerError, CommandLineError, EncoderError, 
-  CorpusError {
-    softModelEval(prog, prog.getPRLGSoftModelChunker());
-  }
-
   private static void debug(Main prog) throws IOException, CommandLineError {
     if (prog.trainCorpusString != null) {
       StopSegmentCorpus corpus = prog.getTrainStopSegmentCorpus();
@@ -634,20 +639,8 @@ public class Main {
 
       String action = args[0];
       
-      if (action.equals("stage1-chunk"))  
-        stage1Chunk(prog);
-      
-      else if (action.equals("hmm1-chunk")) 
-        hmm1Chunk(prog);
-      
-      else if (action.equals("hmm2-chunk")) 
-        hmm2Chunk(prog);
-      
-      else if (action.equals("prlg1-chunk")) 
-        prlg1Chunk(prog);
-      
-      else if (action.equals("prlg2-chunk")) 
-        prlg2Chunk(prog);
+      if (action.equals("chunk"))
+        chunk(prog);
       
       else if (action.equals("debug"))
         debug(prog);

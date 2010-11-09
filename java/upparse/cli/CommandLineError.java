@@ -1,4 +1,4 @@
-package upparse.clinterface;
+package upparse.cli;
 
 /**
  * Exception indicating command-line options usage error

@@ -237,20 +237,28 @@ public class ChunkedSegmentedCorpus implements Corpus {
     return n;
   }
 
-  public void writeTo(String output, String outputType) throws IOException, CorpusError {
-    if (outputType.equals("clump") || outputType.equals("nps"))
-      writeTo(output);
-    
-    else if (outputType.equals("treebank-rb"))
-      UnlabeledBracketSetCorpus.fromArrays(asRB()).writeTo(output);
-    
-    else if (outputType.equals("treebank-prec"))
-      UnlabeledBracketSetCorpus.fromArrays(asChunked()).writeTo(output);
-
-    else if (outputType.equals("treebank-flat"))
-      UnlabeledBracketSetCorpus.fromArrays(asFlat()).writeTo(output);
-
-    else
-      throw new CorpusError("Unexpected output type: " + outputType);
+  public void writeTo(
+      String output, OutputType outputType) throws IOException, CorpusError {
+    switch (outputType) {
+      case CLUMP:
+      case NPS:
+        writeTo(output);
+        break;
+        
+      case TREEBANKRB:
+        UnlabeledBracketSetCorpus.fromArrays(asRB()).writeTo(output);
+        break;
+        
+      case TREEBANKPREC:
+        UnlabeledBracketSetCorpus.fromArrays(asChunked()).writeTo(output);
+        break;
+        
+      case TREEBANKFLAT:
+        UnlabeledBracketSetCorpus.fromArrays(asFlat()).writeTo(output);
+        break;
+        
+      default:
+        throw new CorpusError("Unexpected output type: " + outputType);
+    }
   }
 }
