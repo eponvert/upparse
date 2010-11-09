@@ -16,7 +16,7 @@ public class Main {
   private String output = null;
   private String factor = "2,1,1";
   private int iter = -1;
-  private double emdelta = 1;
+  private double emdelta = .001;
   private String[] args = new String[0];
   private BIOEncoder.GPOpt grandparents = BIOEncoder.GPOpt.NOGP;
   private String evalReport = "PR";

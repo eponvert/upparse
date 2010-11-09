@@ -13,7 +13,7 @@ public abstract class SequenceModel {
   
   private final int[] orig;
   private final BIOEncoder encoder;
-  private double perplex = 1e16;
+  private double perplex = -1;
   private int[][] tagdict;
   
   public SequenceModel(

@@ -9,7 +9,7 @@ import upparse.corpus.*;
  */
 public class SequenceModelChunker {
 
-  private double lastPerplex = 0;
+  private double lastPerplex = -1;
   private int currIter = 0;
   private final SequenceModel model;
   private final double emdelta;
@@ -37,9 +37,19 @@ public class SequenceModelChunker {
     };
   }
   
+  private double currDelta() {
+    if (lastPerplex < 0)
+      return model.currPerplex();
+    
+    final double 
+    curr = model.currPerplex(),
+    less = lastPerplex - curr,
+    delta = less / curr;
+    return delta;
+  }
+  
   public boolean anotherIteration() {
-    final double curr = model.currPerplex();
-    return emdelta < Math.abs(lastPerplex - curr);
+    return lastPerplex < 0 || emdelta < currDelta();
   }
   
   public void updateWithEM(PrintStream verboseOut) {
@@ -49,8 +59,8 @@ public class SequenceModelChunker {
     if (verboseOut != null)
       verboseOut.println(
           String.format(
-              "Current iter = %d , perplex = %f", 
-              currIter, model.currPerplex()));
+              "Current iter = %d , perplex = %f, delta = %f", 
+              currIter, model.currPerplex(), currDelta()));
     
   }
 
