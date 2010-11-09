@@ -9,7 +9,14 @@ import upparse.util.*;
  */
 public abstract class BIOEncoder {
   
-  public static enum GPOpt { NOGP, GP, NOSTOP }
+  public static enum EncoderType { 
+    BIO_GP_NOSTOP, BIO_GP, BIO;
+    public static String encoderTypeHelp() {
+      return "  BIO            Basic BIO encoding\n" +
+             "  BIO_GP         BIO encoding with 2nd order tagset\n" +
+             "  BIO_GP_NOSTOP  BIO encoding with 2nd order tagset (except on STOP)";
+    } 
+  }
 
   static final String EOS = "__eos__";
   
@@ -22,15 +29,15 @@ public abstract class BIOEncoder {
   }
   
   public static BIOEncoder getBIOEncoder(
-      final GPOpt gp, final String stop, final Alpha alpha) throws EncoderError {
+      final EncoderType gp, final String stop, final Alpha alpha) throws EncoderError {
     switch (gp) {
-      case NOGP:
+      case BIO_GP_NOSTOP:
         return new SimpleBIOEncoder(stop, alpha);
         
-      case GP:
+      case BIO_GP:
         return new GrandparentBIOEncoder(stop, alpha);
         
-      case NOSTOP:
+      case BIO:
         return new GrandparentWithStopBIOEncoder(stop, alpha);
         
       default:
