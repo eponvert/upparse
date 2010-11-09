@@ -39,7 +39,7 @@ public abstract class Eval {
   }
 
   public void writeSummary(
-      final String evalType, final PrintStream out, final boolean onlyLast) 
+      final EvalReportType evalType, final PrintStream out, final boolean onlyLast) 
   throws EvalError {
     if (onlyLast) {
        writeSummary(lastExperment(), evalType, out);
@@ -51,29 +51,38 @@ public abstract class Eval {
   }
 
   private void writeSummary(
-      UnlabeledExperimentEval experiment, String evalType, PrintStream out) 
+      UnlabeledExperimentEval experiment, EvalReportType evalType, PrintStream out) 
   throws EvalError {
-    if (evalType.equals("PR"))
-      experiment.writeSummary(out);
-
-    else if (evalType.equals("PRLcsv"))
-      experiment.writeSummaryWithLenCSV(out);
-
-    else if (evalType.equals("nPRLcsv"))
-      experiment.writeSummaryWithLenAndNameCSV(out);
-
-    else if (evalType.equals("PRL")) 
-      experiment.writeSummaryWithLen(out);
-
-    else if (evalType.equals("PRC"))
-      experiment.writeSummaryWithCounts(out);
-    
-    else if (evalType.equals("PRCL"))
-      experiment.writeSummaryWithCountsAndLen(out);
-
-    else 
-      throw new EvalError("Unknown eval type:: " + evalType);
+    switch (evalType) {
+      case PR:
+        experiment.writeSummary(out);
+        break;
+        
+      case PRLcsv: 
+        experiment.writeSummaryWithLenCSV(out);
+        break;
+        
+      case nPRLcsv: 
+        experiment.writeSummaryWithLenAndNameCSV(out);
+        break;
+        
+      case PRL:
+        experiment.writeSummaryWithLen(out);
+        break;
+        
+      case PRC:
+        experiment.writeSummaryWithCounts(out);
+        break;
+        
+      case PRCL:
+        experiment.writeSummaryWithCountsAndLen(out);
+        break;
+        
+      default:
+        throw new EvalError("Unknown eval type:: " + evalType);
+    }
   }
+
 
   public static String evalReportHelp() {
     return

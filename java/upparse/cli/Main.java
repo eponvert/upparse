@@ -19,8 +19,8 @@ public class Main {
   private double emdelta = .001;
   private String[] args = new String[0];
   private BIOEncoder.EncoderType encoderType = BIOEncoder.EncoderType.BIO;
-  private String evalReport = "PR";
-  private String[] evalType = new String[] { "clump" };
+  private EvalReportType evalReport = EvalReportType.PR;
+  private OutputType[] evalType = new OutputType[] { OutputType.CLUMP };
   private final Alpha alpha = new Alpha();
   private boolean verbose = false;
   private String[] testCorpusString = null;
@@ -106,11 +106,11 @@ public class Main {
         else if (arg.equals("-G") || arg.equals("-encoderType"))
           encoderType = BIOEncoder.EncoderType.valueOf(args[i++]);
         
-        else if (arg.equals("-E") || arg.equals("-evalreport"))
-          evalReport = args[i++];
+        else if (arg.equals("-E") || arg.equals("-evalReportType"))
+          evalReport = EvalReportType.valueOf(args[i++]);
         
-        else if (arg.equals("-e") || arg.equals("-evaltypes"))
-          evalType = args[i++].split(",");
+        else if (arg.equals("-e") || arg.equals("-evalTypes"))
+          evalType = parseEvalTypes(args[i++]);
 
         else if (arg.equals("-v") || arg.equals("-verbose")) 
           verbose = true;
@@ -134,6 +134,14 @@ public class Main {
       e.printStackTrace(System.err);
       throw new CommandLineError();
     }
+  }
+
+  private OutputType[] parseEvalTypes(String string) {
+    String[] pieces = string.split(",");
+    OutputType[] outputTypes = new OutputType[pieces.length];
+    for (int i = 0; i < pieces.length; i++)
+      outputTypes[i] = OutputType.valueOf(pieces[i]);
+    return outputTypes;
   }
 
   private double[] getFactor() {
@@ -254,32 +262,41 @@ public class Main {
       else {
         evals = new Eval[evalType.length];
         int i = 0;
-        for (String etype: evalType)
-          if (etype.equals("clump"))
-            evals[i++] = 
-              ChunkingEval.fromChunkedCorpus("clumps", getClumpGoldStandard(), checkTerms); 
-
-          else if (etype.equals("nps"))
-            evals[i++] = 
-              ChunkingEval.fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
-
-          else if (etype.equals("treebank-prec"))
-            evals[i++] = 
-              TreebankPrecisionEval.fromUnlabeledBracketSets(
-                  "Prec", getGoldUnlabeledBracketSets(), checkTerms);
-
-          else if (etype.equals("treebank-flat"))
-            evals[i++] = 
-              TreebankFlatEval.fromUnlabeledBracketSets(
-                  "Flat", getGoldUnlabeledBracketSets(), checkTerms);
-
-          else if (etype.equals("treebank-rb"))
-            evals[i++] =
-              TreebankRBEval.fromUnlabeledBracketSets(
-                  "RB", getGoldUnlabeledBracketSets(), checkTerms);
-
-          else
-            throw new CommandLineError("Unexpected eval type: " + etype);
+        for (OutputType etype: evalType)
+          switch (etype) {
+            case CLUMP:
+              evals[i++] = 
+                ChunkingEval
+                .fromChunkedCorpus("clumps", getClumpGoldStandard(), checkTerms); 
+              break;
+              
+            case NPS:
+              evals[i++] = 
+                ChunkingEval
+                .fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
+              break;
+              
+            case TREEBANKPREC:
+              evals[i++] = 
+                TreebankPrecisionEval.fromUnlabeledBracketSets(
+                    "Prec", getGoldUnlabeledBracketSets(), checkTerms);
+              break;
+              
+            case TREEBANKFLAT:
+              evals[i++] = 
+                TreebankFlatEval.fromUnlabeledBracketSets(
+                    "Flat", getGoldUnlabeledBracketSets(), checkTerms);
+              break;
+              
+            case TREEBANKRB: 
+              evals[i++] =
+                TreebankRBEval.fromUnlabeledBracketSets(
+                    "RB", getGoldUnlabeledBracketSets(), checkTerms);
+              break;
+              
+            default: 
+              throw new CommandLineError("Unexpected eval type: " + etype);
+          }
       }
     }
 
