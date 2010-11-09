@@ -34,26 +34,11 @@ public class CombinedProb {
   }
   
   public double arcprob(final int t1, final int w, final int t2) {
-    /*
-    for (int t = 0; t < numTags(); t++) {
-      logSum[t] = log(sum(counts[t]) + 1);
-      for (int w = 0; w < numTerms(); w++) {
-        for (int _t = 0; _t < numTags(); _t++) {
-          prob[t][w][_t] = 
-            log(counts[t][w][_t] + exp(backoffHmm.arcprob(t, w, _t))) 
-            - logSum[t];
-        }
-      }
-    }
-    */
-    
     if (w >= numTerms()) 
       return log(oovProb[t1][t2] * backoffHmm.nonLogTrans(t1,t2));
     
     else
       return log(prob[t1][t2][w] * backoffHmm.nonLogTrans(t1, t2));
-    
-    // return w < numTerms() ? prob[t1][w][t2] : backoffHmm.arcprob(t1, w, t2) - logSum[t1];
   }
 
   /**
@@ -80,7 +65,6 @@ public class CombinedProb {
    * Update the probability distribution using these tag-term-tag counts
    */
   public void update(double[][][] counts) {
-    System.out.println("eek!");
     backoffHmm.update(counts);
     double[][][] _counts = switcheroo(counts);
     final int n = numTags();
