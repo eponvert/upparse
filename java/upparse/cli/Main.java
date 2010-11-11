@@ -12,7 +12,10 @@ import upparse.model.*;
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class Main {
-  
+
+  private static enum ChunkerType { PRLG, HMM; } 
+  private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
+
   private String output = null;
   private String factor = "2,1,1";
   private int iter = -1;
@@ -566,7 +569,6 @@ public class Main {
     prog.writeEval(System.out);
   }
   
-  private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
 
   private static void chunk(final Main prog) 
   throws CommandLineError, IOException, EvalError, ChunkerError, CorpusError, 
@@ -585,7 +587,6 @@ public class Main {
     }
   }
   
-  private static enum ChunkerType { PRLG, HMM; } 
   
   private SequenceModelChunker getTwoStageChunker() 
   throws CommandLineError, EncoderError {
