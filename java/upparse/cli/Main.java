@@ -46,11 +46,15 @@ public class Main {
   private double prlgSmooth = 0.1;
   private ChunkerType chunkerType = ChunkerType.PRLG;
   private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
+  private final String action;
 
   private Main(String[] args) throws CommandLineError, IOException {
 
     int i = 0;
     String arg;
+    
+    if (args.length < 1)
+      throw new CommandLineError("Please specify an action");
 
     try {
       List<String> otherArgs = new ArrayList<String>();
@@ -129,6 +133,7 @@ public class Main {
       }
 
       this.args = otherArgs.toArray(new String[0]);
+      this.action = this.args[0];
 
       // don't run EM more than 200 iterations
       if (iter < 0) iter = 200;
@@ -646,23 +651,19 @@ public class Main {
     try {
       Main prog = new Main(argv);
       
-      String[] args = prog.args;
-
       if (prog.args.length == 0)  {
         System.err.println("Please specify an action\n");
         usageError();
       }
 
-      String action = args[0];
-      
-      if (action.equals("chunk"))
+      if (prog.action.equals("chunk"))
         chunk(prog);
       
-      else if (action.equals("debug"))
+      else if (prog.action.equals("debug"))
         debug(prog);
       
       else {
-        System.err.println("Unexpected action: " + action);
+        System.err.println("Unexpected action: " + prog.action);
         usageError();
       }
       
