@@ -46,6 +46,8 @@ public class Main {
   private double prlgSmooth = 0.1;
   private ChunkerType chunkerType = ChunkerType.PRLG;
   private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
+  private int filterTrain = -1;
+  private int filterTest = -1;
   private final String action;
 
   private Main(String[] args) throws CommandLineError, IOException {
@@ -64,6 +66,12 @@ public class Main {
 
         if (arg.equals("-output")) 
           output = args[i++];
+        
+        else if (arg.equals("-filterTrain"))
+          filterTrain = Integer.parseInt(args[i++]);
+        
+        else if (arg.equals("-filterTest"))
+          filterTest = Integer.parseInt(args[i++]);
         
         else if (arg.equals("-chunkingStrategy"))
           chunkingStrategy = ChunkingStrategy.valueOf(args[i++]);
@@ -238,17 +246,24 @@ public class Main {
   
   private StopSegmentCorpus getTrainStopSegmentCorpus() 
   throws CommandLineError {
-    if (trainStopSegmentCorpus == null)
+    if (trainStopSegmentCorpus == null) { 
       trainStopSegmentCorpus = 
         getStopSegmentCorpus(trainCorpusString, trainFileType, trainSents);
+      if (filterTrain > 0)
+        trainStopSegmentCorpus = trainStopSegmentCorpus.filterLen(filterTrain);
+    }
+    
     return trainStopSegmentCorpus;
   }
 
   private StopSegmentCorpus getTestStopSegmentCorpus() 
   throws CommandLineError {
-    if (testStopSegmentCorpus == null)
+    if (testStopSegmentCorpus == null) {
       testStopSegmentCorpus = 
         getStopSegmentCorpus(testCorpusString, testFileType);
+      if (filterTest > 0)
+        testStopSegmentCorpus = testStopSegmentCorpus.filterLen(filterTest);
+    }
     return testStopSegmentCorpus;
   }
   
