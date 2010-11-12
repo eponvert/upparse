@@ -27,9 +27,9 @@ public class Main {
   private final Alpha alpha = new Alpha();
   private boolean verbose = false;
   private String[] testCorpusString = null;
-  private String testFileType = "wsj";
+  private CorpusType testFileType = CorpusType.WSJ;
   private String[] trainCorpusString = null;
-  private String trainFileType = "wsj";
+  private CorpusType trainFileType = CorpusType.WSJ;
   private boolean checkTerms = true;
   private boolean onlyLast = false;
   private boolean outputAll = false;
@@ -104,10 +104,10 @@ public class Main {
         }
         
         else if (args.equals("-testFileType"))
-          testFileType = args[i++];
+          testFileType = CorpusType.valueOf(args[i++]);
         
         else if (arg.equals("-trainFileType"))
-          trainFileType = args[i++];
+          trainFileType = CorpusType.valueOf(args[i++]);
 
         else if (arg.equals("-factor") || arg.equals("-F")) 
           factor = args[i++];
@@ -216,30 +216,32 @@ public class Main {
   }
   
   private StopSegmentCorpus getStopSegmentCorpus(
-      final String[] corpusStr, final String fileType, final int numSent) 
+      final String[] corpusStr, final CorpusType fileType, final int numSent) 
   throws CommandLineError {
     
-    if (fileType.equals("wsj"))
-      return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
-    
-    else if (fileType.equals("negra"))
-      return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
-    
-    else if (fileType.equals("ctb"))
-      return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
-    
-    else if (fileType.equals("spl"))
-      return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
-    
-    else if (fileType.equals("wpl"))
-      return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
-    
-    else
-      throw new CommandLineError("Unexpected file-type: " + fileType);
+    switch (fileType) {
+      case WSJ:
+        return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
+
+      case NEGRA:
+        return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      case CTB:
+        return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
+
+      case SPL:
+        return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      case WPL:
+        return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      default:
+        throw new CommandLineError("Unexpected file-type: " + fileType);
+    }
   }
   
   private StopSegmentCorpus getStopSegmentCorpus(
-      final String[] corpusStr, final String fileType) 
+      final String[] corpusStr, final CorpusType fileType) 
   throws CommandLineError {
     return getStopSegmentCorpus(corpusStr, fileType, -1);
   }
@@ -327,24 +329,26 @@ public class Main {
   }
 
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
-      final String[] corpusFiles, final String fileType) 
+      final String[] corpusFiles, final CorpusType fileType) 
   throws CommandLineError { 
-    if (fileType.equals("wsj"))
-      return CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
-    
-    else if (fileType.equals("negra"))
-      return CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
-    
-    else if (fileType.equals("ctb"))
-      return CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
-    
-    else
-      throw new CommandLineError(
-          "Unexpected file type for unlabeled bracket sets: " + fileType);
+    switch (fileType) {
+      case WSJ:
+        return CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
+        
+      case NEGRA:
+        return CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
+        
+      case CTB:
+        return CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
+        
+      default:
+        throw new CommandLineError(
+            "Unexpected file type for unlabeled bracket sets: " + fileType);
+    }
   }
   
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
-      final String[] corpusFiles, final String fileType, final int n) 
+      final String[] corpusFiles, final CorpusType fileType, final int n) 
   throws CommandLineError { 
     return getGoldUnlabeledBracketSets(corpusFiles, fileType)
     .filterBySentenceLength(n);
@@ -371,26 +375,28 @@ public class Main {
   }
   
   private ChunkedCorpus getNPsGoldStandard(
-      final String[] corpusFiles, final String fileType, final int n) 
+      final String[] corpusFiles, final CorpusType fileType, final int n) 
   throws CommandLineError {
     return getNPsGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
   }
   
   private ChunkedCorpus getNPsGoldStandard(
-      final String[] corpusFiles, final String fileType) 
+      final String[] corpusFiles, final CorpusType fileType) 
   throws CommandLineError {
-    if (fileType.equals("wsj"))
-      return CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
-    
-    else if (fileType.equals("negra"))
-      return CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
-    
-    else if (fileType.equals("ctb"))
-      return CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
-    
-    else
-      throw new CommandLineError(
-          "Unexpected file type for NPs gold standard: " + fileType);
+    switch (fileType) {
+      case WSJ:
+        return CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
+        
+      case NEGRA:
+        return CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
+        
+      case CTB:
+        return CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
+        
+      default:
+        throw new CommandLineError(
+            "Unexpected file type for NPs gold standard: " + fileType);
+    }
   }
 
   private ChunkedCorpus getNPsGoldStandard() throws CommandLineError {
@@ -409,26 +415,27 @@ public class Main {
   }
   
   private ChunkedCorpus getClumpGoldStandard(
-      final String[] corpusFiles, final String fileType) 
+      final String[] corpusFiles, final CorpusType fileType) 
   throws CommandLineError {
     
-    if (fileType.equals("wsj")) 
-      return CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
-    
-    else if (fileType.equals("negra"))
-      return CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
-    
-    else if (fileType.equals("ctb"))
-      return CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
-    
-    else 
-      throw new CommandLineError(
-          "Unexpected file type for clumping gold standard: " + fileType);
-      
+    switch (fileType) {
+      case WSJ:
+        return CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
+        
+      case NEGRA:
+        return CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
+        
+      case CTB:
+        return CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
+        
+      default:
+        throw new CommandLineError(
+            "Unexpected file type for clumping gold standard: " + fileType);
+    }
   }
 
   private ChunkedCorpus getClumpGoldStandard(
-      final String[] corpusFiles, final String fileType, final int n) 
+      final String[] corpusFiles, final CorpusType fileType, final int n) 
   throws CommandLineError {
     return 
     getClumpGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
