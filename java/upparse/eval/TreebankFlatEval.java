@@ -26,4 +26,9 @@ public class TreebankFlatEval extends TreebankEval {
       final ChunkedSegmentedCorpus output) {
     return UnlabeledBracketSetCorpus.fromArrays(output.asFlat());
   }
+
+  public static Eval fromUnlabeledBracketSets(String string,
+      UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
+    return fromUnlabeledBracketSets(string, goldUnlabeledBracketSets, false);
+  }
 }

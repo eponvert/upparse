@@ -15,34 +15,33 @@ public class Main {
 
   private static enum ChunkerType { PRLG, HMM; } 
   private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
-
-  private String output = null;
+  
+  private final Alpha alpha = new Alpha();
+  private OutputManager outputManager = OutputManager.nullOutputManager();
+  private EvalManager evalManager = new EvalManager(alpha);
   private String factor = "2,1,1";
   private int iter = -1;
   private double emdelta = .001;
   private String[] args = new String[0];
   private BIOEncoder.EncoderType encoderType = BIOEncoder.EncoderType.BIO;
-  private EvalReportType evalReport = EvalReportType.PR;
-  private OutputType[] evalType = new OutputType[] { OutputType.CLUMP };
-  private final Alpha alpha = new Alpha();
+  // private EvalReportType evalReport = EvalReportType.PR;
+  // private OutputType[] evalType = new OutputType[] { OutputType.CLUMP };
   private boolean verbose = false;
-  private String[] testCorpusString = null;
   private CorpusType testFileType = CorpusType.WSJ;
   private String[] trainCorpusString = null;
   private CorpusType trainFileType = CorpusType.WSJ;
   private boolean checkTerms = true;
   private boolean onlyLast = false;
-  private boolean outputAll = false;
   private int trainSents = -1;
   private StopSegmentCorpus trainStopSegmentCorpus;
   private StopSegmentCorpus testStopSegmentCorpus;
-  private Eval[] evals;
-  private ChunkedCorpus clumpGoldStandard;
-  private UnlabeledBracketSetCorpus goldUnlabeledBracketSet;
-  private ChunkedCorpus npsGoldStandard;
-  private List<ChunkedSegmentedCorpus>  writeOutput = 
-    new ArrayList<ChunkedSegmentedCorpus>();
-  private OutputType outputType = OutputType.CLUMP;
+  // private Eval[] evals;
+  // private ChunkedCorpus clumpGoldStandard;
+  // private UnlabeledBracketSetCorpus goldUnlabeledBracketSet;
+  // private ChunkedCorpus npsGoldStandard;
+  // private List<ChunkedSegmentedCorpus>  writeOutput = 
+    // new ArrayList<ChunkedSegmentedCorpus>();
+  // private OutputType outputType = OutputType.CLUMP;
   private double prlgSmooth = 0.1;
   private ChunkerType chunkerType = ChunkerType.PRLG;
   private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
@@ -50,10 +49,14 @@ public class Main {
   private int filterTest = -1;
   private final String action;
 
-  private Main(String[] args) throws CommandLineError, IOException {
-
+  private Main(String[] args) throws CommandLineError, IOException, EvalError {
     int i = 0;
     String arg;
+    
+    boolean outputAll = false;
+    OutputType outputType = OutputType.CLUMP;
+    String eval = "";
+    String[] testCorpusString = new String[0];
     
     if (args.length < 1)
       throw new CommandLineError("Please specify an action");
@@ -65,7 +68,7 @@ public class Main {
         arg = args[i++];
 
         if (arg.equals("-output")) 
-          output = args[i++];
+          outputManager = OutputManager.fromDirname(args[i++]);
         
         else if (arg.equals("-filterTrain"))
           filterTrain = Integer.parseInt(args[i++]);
@@ -122,10 +125,10 @@ public class Main {
           encoderType = BIOEncoder.EncoderType.valueOf(args[i++]);
         
         else if (arg.equals("-E") || arg.equals("-evalReportType"))
-          evalReport = EvalReportType.valueOf(args[i++]);
+          evalManager.setEvalReportType(EvalReportType.valueOf(args[i++]));
         
         else if (arg.equals("-e") || arg.equals("-evalTypes"))
-          evalType = parseEvalTypes(args[i++]);
+          eval = args[i++];
 
         else if (arg.equals("-v") || arg.equals("-verbose")) 
           verbose = true;
@@ -142,7 +145,21 @@ public class Main {
 
       this.args = otherArgs.toArray(new String[0]);
       this.action = this.args[0];
-
+      
+      // Setup outputManager
+      outputManager.setOutputAllIter(outputAll);
+      outputManager.setOutputType(outputType);
+      
+      // Setup evalManager
+      evalManager.setParserEvaluationTypes(eval);
+      if (testCorpusString.length == 1 && 
+          testCorpusString[0].startsWith("subset")) {
+        int len = Integer.parseInt(testCorpusString[0].substring(6)); 
+        evalManager.setFilterLen(len);
+        evalManager.setTestCorpusString(trainCorpusString);
+      }
+      else evalManager.setTestCorpusString(testCorpusString);
+      
       // don't run EM more than 200 iterations
       if (iter < 0) iter = 200;
     }
@@ -150,14 +167,6 @@ public class Main {
       e.printStackTrace(System.err);
       throw new CommandLineError();
     }
-  }
-
-  private OutputType[] parseEvalTypes(String string) {
-    String[] pieces = string.split(",");
-    OutputType[] outputTypes = new OutputType[pieces.length];
-    for (int i = 0; i < pieces.length; i++)
-      outputTypes[i] = OutputType.valueOf(pieces[i]);
-    return outputTypes;
   }
 
   private double[] getFactor() {
@@ -217,58 +226,21 @@ public class Main {
   
   private StopSegmentCorpus getStopSegmentCorpus(
       final String[] corpusStr, final CorpusType fileType, final int numSent) 
-  throws CommandLineError {
+  throws CorpusError {
+    return CorpusUtil.stopSegmentCorpus(alpha, corpusStr, fileType, numSent);
+  }
     
-    switch (fileType) {
-      case WSJ:
-        return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
-
-      case NEGRA:
-        return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
-        
-      case CTB:
-        return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
-
-      case SPL:
-        return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
-        
-      case WPL:
-        return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
-        
-      default:
-        throw new CommandLineError("Unexpected file-type: " + fileType);
-    }
-  }
   
-  private StopSegmentCorpus getStopSegmentCorpus(
-      final String[] corpusStr, final CorpusType fileType) 
-  throws CommandLineError {
-    return getStopSegmentCorpus(corpusStr, fileType, -1);
-  }
-  
-  private StopSegmentCorpus getTrainStopSegmentCorpus() 
-  throws CommandLineError {
+  private StopSegmentCorpus getTrainStopSegmentCorpus() throws CorpusError {
     if (trainStopSegmentCorpus == null) { 
-      trainStopSegmentCorpus = 
-        getStopSegmentCorpus(trainCorpusString, trainFileType, trainSents);
+      trainStopSegmentCorpus =
+        CorpusUtil.stopSegmentCorpus(alpha, trainCorpusString, testFileType, trainSents);
       if (filterTrain > 0)
         trainStopSegmentCorpus = trainStopSegmentCorpus.filterLen(filterTrain);
     }
-    
     return trainStopSegmentCorpus;
   }
 
-  private StopSegmentCorpus getTestStopSegmentCorpus() 
-  throws CommandLineError {
-    if (testStopSegmentCorpus == null) {
-      testStopSegmentCorpus = 
-        getStopSegmentCorpus(testCorpusString, testFileType);
-      if (filterTest > 0)
-        testStopSegmentCorpus = testStopSegmentCorpus.filterLen(filterTest);
-    }
-    return testStopSegmentCorpus;
-  }
-  
   private static String evalTypesHelp() {
     return 
     "Evaluation types:\n" +
@@ -279,185 +251,7 @@ public class Main {
     "  treebank-rb";
   }
 
-  private Eval[] getEvals() throws IOException, CommandLineError {
-    if (evals == null) {
-      if (evalType.length == 1 && evalType[0].equals("none"))
-        evals = new Eval[0];
-      
-      else {
-        evals = new Eval[evalType.length];
-        int i = 0;
-        for (OutputType etype: evalType)
-          switch (etype) {
-            case CLUMP:
-              evals[i++] = 
-                ChunkingEval
-                .fromChunkedCorpus("clumps", getClumpGoldStandard(), checkTerms); 
-              break;
-              
-            case NPS:
-              evals[i++] = 
-                ChunkingEval
-                .fromChunkedCorpus("NPs", getNPsGoldStandard(), checkTerms);
-              break;
-              
-            case TREEBANKPREC:
-              evals[i++] = 
-                TreebankPrecisionEval.fromUnlabeledBracketSets(
-                    "Prec", getGoldUnlabeledBracketSets(), checkTerms);
-              break;
-              
-            case TREEBANKFLAT:
-              evals[i++] = 
-                TreebankFlatEval.fromUnlabeledBracketSets(
-                    "Flat", getGoldUnlabeledBracketSets(), checkTerms);
-              break;
-              
-            case TREEBANKRB: 
-              evals[i++] =
-                TreebankRBEval.fromUnlabeledBracketSets(
-                    "RB", getGoldUnlabeledBracketSets(), checkTerms);
-              break;
-              
-            default: 
-              throw new CommandLineError("Unexpected eval type: " + etype);
-          }
-      }
-    }
-
-    return evals;
-  }
-
-  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
-      final String[] corpusFiles, final CorpusType fileType) 
-  throws CommandLineError { 
-    switch (fileType) {
-      case WSJ:
-        return CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
-        
-      case NEGRA:
-        return CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
-        
-      case CTB:
-        return CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
-        
-      default:
-        throw new CommandLineError(
-            "Unexpected file type for unlabeled bracket sets: " + fileType);
-    }
-  }
-  
-  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets(
-      final String[] corpusFiles, final CorpusType fileType, final int n) 
-  throws CommandLineError { 
-    return getGoldUnlabeledBracketSets(corpusFiles, fileType)
-    .filterBySentenceLength(n);
-  }
-  
-  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
-  throws CommandLineError {
-    if (goldUnlabeledBracketSet == null) 
-      if (testCorpusString == null)
-        goldUnlabeledBracketSet = 
-          getGoldUnlabeledBracketSets(trainCorpusString, trainFileType);
-  
-      else if (isSubsetExperiment()) 
-        goldUnlabeledBracketSet = 
-          getGoldUnlabeledBracketSets(
-              trainCorpusString, trainFileType, getSubsetN());
-    
-      else
-        goldUnlabeledBracketSet = 
-          getGoldUnlabeledBracketSets(testCorpusString, testFileType);
-            
-    assert goldUnlabeledBracketSet != null;
-    return goldUnlabeledBracketSet;
-  }
-  
-  private ChunkedCorpus getNPsGoldStandard(
-      final String[] corpusFiles, final CorpusType fileType, final int n) 
-  throws CommandLineError {
-    return getNPsGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
-  }
-  
-  private ChunkedCorpus getNPsGoldStandard(
-      final String[] corpusFiles, final CorpusType fileType) 
-  throws CommandLineError {
-    switch (fileType) {
-      case WSJ:
-        return CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
-        
-      case NEGRA:
-        return CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
-        
-      case CTB:
-        return CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
-        
-      default:
-        throw new CommandLineError(
-            "Unexpected file type for NPs gold standard: " + fileType);
-    }
-  }
-
-  private ChunkedCorpus getNPsGoldStandard() throws CommandLineError {
-    if (npsGoldStandard == null)
-      if (testCorpusString == null)
-        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType);
-    
-      else if (isSubsetExperiment())
-        npsGoldStandard = getNPsGoldStandard(trainCorpusString, trainFileType, 
-            getSubsetN());
-    
-      else
-        npsGoldStandard = getNPsGoldStandard(testCorpusString, testFileType);
-    
-    return npsGoldStandard;
-  }
-  
-  private ChunkedCorpus getClumpGoldStandard(
-      final String[] corpusFiles, final CorpusType fileType) 
-  throws CommandLineError {
-    
-    switch (fileType) {
-      case WSJ:
-        return CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
-        
-      case NEGRA:
-        return CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
-        
-      case CTB:
-        return CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
-        
-      default:
-        throw new CommandLineError(
-            "Unexpected file type for clumping gold standard: " + fileType);
-    }
-  }
-
-  private ChunkedCorpus getClumpGoldStandard(
-      final String[] corpusFiles, final CorpusType fileType, final int n) 
-  throws CommandLineError {
-    return 
-    getClumpGoldStandard(corpusFiles, fileType).filterBySentenceLength(n);
-  }
-
-  private ChunkedCorpus getClumpGoldStandard() throws CommandLineError {
-    if (clumpGoldStandard == null) 
-      if (testCorpusString == null) 
-        clumpGoldStandard = 
-          getClumpGoldStandard(trainCorpusString, trainFileType);
-    
-      else if (isSubsetExperiment())
-        clumpGoldStandard =
-          getClumpGoldStandard(trainCorpusString, testFileType, getSubsetN());
-    
-      else 
-        clumpGoldStandard = 
-          getClumpGoldStandard(testCorpusString, testFileType);
-    return clumpGoldStandard;
-  }
-
-  private SimpleChunker getSimpleChunker() throws CommandLineError {
+  private SimpleChunker getSimpleChunker() throws CorpusError {
     return SimpleChunker.fromStopSegmentCorpus(
         alpha,
         getTrainStopSegmentCorpus(),
@@ -471,7 +265,7 @@ public class Main {
   }
 
   private SequenceModelChunker getHMMModelChunker() 
-  throws CommandLineError, EncoderError {
+  throws CorpusError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
     final StopSegmentCorpus trainCorpus = getTrainStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
@@ -481,7 +275,7 @@ public class Main {
   }
 
   private SequenceModelChunker getPRLGModelChunker() 
-  throws CommandLineError, EncoderError {
+  throws CorpusError, EncoderError {
     final SimpleChunker c = getSimpleChunker();
     final StopSegmentCorpus trainCorpus = getTrainStopSegmentCorpus();
     final ChunkedSegmentedCorpus outputCorpus = c.getChunkedCorpus(trainCorpus);
@@ -491,60 +285,32 @@ public class Main {
   }
   
   private SequenceModelChunker getHMMSoftModelChunker() 
-  throws CommandLineError, EncoderError {
+  throws CorpusError, EncoderError {
     return new SequenceModelChunker(
         HMM.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder()), 
         emdelta);
   }
 
   private SequenceModelChunker getPRLGSoftModelChunker() 
-  throws CommandLineError, EncoderError {
+  throws CorpusError, EncoderError {
     return new SequenceModelChunker(
         RRG.softCountEstimate(getTrainStopSegmentCorpus(), getBIOEncoder(), prlgSmooth), 
         emdelta);
   }
 
-  private boolean isSubsetExperiment() {
-    return testCorpusString.length == 1 && 
-    testCorpusString[0].startsWith("subset"); 
-  }
-  
-  private StopSegmentCorpus getSubsetStopSegmentCorpus() 
-  throws CommandLineError {
-    return getTrainStopSegmentCorpus().filterLen(getSubsetN());
-  }
-  
-  private int getSubsetN() {
-    assert testCorpusString.length == 1;
-    assert testCorpusString[0].startsWith("subset");
-    final int subsetN = Integer.parseInt(testCorpusString[0].substring(6)); 
-    return subsetN;
-  }
-  
-  private StopSegmentCorpus getEvalCorpus() throws CommandLineError {
-    if (testCorpusString == null)
-      return getTrainStopSegmentCorpus();
-    
-    else if (isSubsetExperiment()) 
-      return getSubsetStopSegmentCorpus();
-    
-    else 
-      return getTestStopSegmentCorpus();
-  }
-
   private void eval(final String comment, final Chunker chunker) 
   throws CommandLineError, IOException, EvalError, ChunkerError {
     
-    if (output == null && (evalType == null || 
+    if (outputManager.isNull() && (evalType == null || 
         (evalType.length == 1 && evalType[0].equals("none")))) return;
     
     final ChunkedSegmentedCorpus chunkerOutput =  
-      chunker.getChunkedCorpus(getEvalCorpus());
+      chunker.getChunkedCorpus(evalManager.getEvalStopSegmentCorpus());
     
     for (Eval eval: getEvals()) 
       eval.eval(comment, chunkerOutput);
     
-    if (output != null)
+    if (!outputManager.isNull())
       if (outputAll || writeOutput.isEmpty())
         writeOutput.add(chunkerOutput);
     
@@ -654,7 +420,7 @@ public class Main {
           String.format("Iter %d", model.getCurrentIter()),
           model.getCurrentChunker());
     }
-    prog.writeEval(System.out);
+    prog.outputManager.writeEval(prog.evalManager);
   }
   
   private static void debug(Main prog) throws IOException, CommandLineError {

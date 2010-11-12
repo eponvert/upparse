@@ -190,4 +190,34 @@ public class CorpusUtil {
         "NP",
         CTBCorpusStandard.instance);
   }
+
+  /**
+   * @param corpusStr
+   * @param fileType
+   * @param numSent
+   * @return
+   */
+  public static StopSegmentCorpus stopSegmentCorpus(
+      Alpha alpha, String[] corpusStr, CorpusType fileType, int numSent) 
+  throws CorpusError {
+    switch (fileType) {
+      case WSJ:
+        return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
+
+      case NEGRA:
+        return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      case CTB:
+        return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
+
+      case SPL:
+        return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      case WPL:
+        return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
+        
+      default:
+        throw new CorpusError("Unexpected file-type: " + fileType);
+    }
+  }
 }

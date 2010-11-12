@@ -24,4 +24,9 @@ public class TreebankRBEval extends TreebankEval {
       UnlabeledBracketSetCorpus goldUnlabeledBracketSets, boolean checkTerms) {
     return new TreebankRBEval(string, goldUnlabeledBracketSets, checkTerms);
   }
+
+  public static Eval fromUnlabeledBracketSets(String string,
+      UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
+    return fromUnlabeledBracketSets(string, goldUnlabeledBracketSets, false);
+  }
 }

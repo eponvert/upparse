@@ -373,4 +373,9 @@ public class ChunkingEval extends Eval {
       final String name, final ChunkedCorpus gold, boolean checkTerms) {
     return new ChunkingEval(name, gold, checkTerms);
   }
+
+  public static Eval fromChunkedCorpus(String string,
+      ChunkedCorpus clumpGoldStandard) {
+    return fromChunkedCorpus(string, clumpGoldStandard, false);
+  }
 }

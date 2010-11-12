@@ -27,4 +27,9 @@ public class TreebankPrecisionEval extends TreebankEval {
       ChunkedSegmentedCorpus output) {
     return UnlabeledBracketSetCorpus.fromArrays(output.asChunked());
   }
+
+  public static Eval fromUnlabeledBracketSets(String string,
+      UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
+    return fromUnlabeledBracketSets(string, goldUnlabeledBracketSets, false);
+  }
 }
