@@ -195,29 +195,95 @@ public class CorpusUtil {
    * @param corpusStr
    * @param fileType
    * @param numSent
+   * @param filterByLength 
    * @return
    */
   public static StopSegmentCorpus stopSegmentCorpus(
-      Alpha alpha, String[] corpusStr, CorpusType fileType, int numSent) 
+      final Alpha alpha, 
+      final String[] corpusStr, 
+      final CorpusType fileType, 
+      final int numSent, 
+      final int filterByLength) 
   throws CorpusError {
+    final StopSegmentCorpus corpus;
     switch (fileType) {
-      case WSJ:
-        return CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
+      case WSJ: 
+        corpus = CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent);
+        break;
 
       case NEGRA:
-        return CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
+        corpus = CorpusUtil.negraStopSegmentCorpus(alpha, corpusStr, numSent);
+        break;
         
       case CTB:
-        return CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
+        corpus = CorpusUtil.ctbStopSegmentCorpus(alpha, corpusStr, numSent);
+        break;
 
       case SPL:
-        return CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
+        corpus = CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
+        break;
         
       case WPL:
-        return CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
+        corpus = CorpusUtil.wplStopSegmentCorpus(alpha, corpusStr, numSent);
+        break;
         
       default:
         throw new CorpusError("Unexpected file-type: " + fileType);
     }
+    
+    return filterByLength > 0 ? corpus.filterLen(filterByLength) : corpus;
+  }
+
+  public static ChunkedCorpus npsGoldStandard(
+      final CorpusType testFileType,
+      final Alpha alpha, 
+      final String[] corpusFiles,
+      final int filterLength) throws CorpusError {
+    final ChunkedCorpus corpus;
+    switch (testFileType) {
+      case WSJ:
+        corpus = CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles); break;
+        
+      case NEGRA:
+        corpus = CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles); break;
+        
+      case CTB:
+        corpus = CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles); break;
+        
+      default:
+        throw new CorpusError(
+            "Unexpected file type for NPs gold standard: " + testFileType);
+    }
+    
+    return filterLength > 0 ? 
+        corpus.filterBySentenceLength(filterLength) : corpus;
+  }
+
+  public static UnlabeledBracketSetCorpus goldUnlabeledBracketSets(
+      CorpusType testFileType, Alpha alpha, String[] corpusFiles,
+      int filterLength) throws CorpusError {
+    final UnlabeledBracketSetCorpus corpus;
+    switch (testFileType) {
+      case WSJ:
+        corpus = 
+         CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
+        break;
+        
+      case NEGRA:
+        corpus =
+          CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
+        break;
+        
+      case CTB:
+        corpus =
+          CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
+        
+      default:
+        throw new CorpusError(
+            "Unexpected file type for unlabeled bracket sets: " + testFileType);
+    }
+    
+    return filterLength > 0 ?
+        corpus.filterBySentenceLength(filterLength) : corpus;
   }
 }

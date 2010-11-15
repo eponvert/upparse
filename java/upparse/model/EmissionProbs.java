@@ -18,13 +18,17 @@ public class EmissionProbs {
   private double defaultProb;
   private double nvocab;
   private final Ipredicate isStop;
+  private final double smoothParam;
 
   public EmissionProbs(
-      final double[][] _emiss, Ipredicate _isStop) {
+      final double[][] _emiss, 
+      final Ipredicate _isStop, 
+      final double _smoothParam) {
     emiss = _emiss;
     nvocab = emiss[0].length;
     defaultProb = log(1./nvocab);
     isStop = _isStop;
+    smoothParam = _smoothParam;
   }
 
   public int numTags() {
@@ -101,9 +105,9 @@ public class EmissionProbs {
     
     final double nvocab = (double) numNonStopTerms;
     for (int t: nonStopStates) {
-      final double sum = log(sum(emissCount[t]) + nvocab);
+      final double sum = log(sum(emissCount[t]) + smoothParam * nvocab);
       for (int w: nonStopTerms)
-        emiss[t][w] = log(emissCount[t][w] + 1) - sum;
+        emiss[t][w] = log(emissCount[t][w] + smoothParam) - sum;
       
       for (int w: stopTerms)
         emiss[t][w] = NEGATIVE_INFINITY;
@@ -113,10 +117,10 @@ public class EmissionProbs {
   }
 
   public static EmissionProbs fromCounts(
-      final double[][] emissCount, Ipredicate isStop) {
+      final double[][] emissCount, Ipredicate isStop, double smoothParam) {
     final int m = emissCount.length, n = emissCount[0].length;
     final EmissionProbs e = 
-      new EmissionProbs(new double[m][n], isStop);
+      new EmissionProbs(new double[m][n], isStop, smoothParam);
     e.update(emissCount);
     return e;
   }

@@ -1,5 +1,6 @@
 package upparse.eval;
 
+import java.io.*;
 import java.util.*;
 
 import upparse.corpus.*;
@@ -22,12 +23,17 @@ public class EvalManager {
   private ChunkedCorpus clumpGoldStandard = null;
   private UnlabeledBracketSetCorpus goldUnlabeledBracketSet = null;
   private StopSegmentCorpus testStopSegmentCorpus = null;
+  private int numSent = -1;
+  private boolean onlyLast = false;
+  
+  public void setTestFileType(CorpusType t) { testFileType = t; }
 
   public void setEvalReportType(EvalReportType type) {
     evalReportType = type;
   }
-
-  public void setParserEvaluationTypes(String string) throws EvalError {
+  
+  public void setParserEvaluationTypes(String string) 
+  throws EvalError, CorpusError {
     for (String s: string.split(",")) {
       switch (OutputType.valueOf(s)) {
         case CLUMP:
@@ -53,6 +59,9 @@ public class EvalManager {
           evals.add(TreebankRBEval.fromUnlabeledBracketSets(
               "RB", getGoldUnlabeledBracketSets()));
           
+        case NONE:
+          evals.add(null);
+          
         default: 
           throw new EvalError("Unexpected evaluation type: " + s);
       }
@@ -63,63 +72,19 @@ public class EvalManager {
     corpusFiles = filenames;
   }
   
-  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() throws EvalError { 
-    if (goldUnlabeledBracketSet == null) makeGoldUnlabeledBracketSets();
+  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
+  throws EvalError, CorpusError { 
+    if (goldUnlabeledBracketSet == null)
+      goldUnlabeledBracketSet = CorpusUtil.goldUnlabeledBracketSets(
+          testFileType, alpha, corpusFiles, filterLength);
     assert goldUnlabeledBracketSet != null;
     return goldUnlabeledBracketSet;
   }
   
-  private void makeGoldUnlabeledBracketSets() throws EvalError {
-    switch (testFileType) {
-      case WSJ:
-        goldUnlabeledBracketSet = 
-         CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
-        break;
-        
-      case NEGRA:
-        goldUnlabeledBracketSet =
-          CorpusUtil.negraUnlabeledBrackSetCorpus(alpha, corpusFiles);
-        break;
-        
-      case CTB:
-        goldUnlabeledBracketSet =
-          CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
-        
-      default:
-        throw new EvalError(
-            "Unexpected file type for unlabeled bracket sets: " + testFileType);
-    }
-    
-    if (filterLength > 0)
-      goldUnlabeledBracketSet = 
-        goldUnlabeledBracketSet.filterBySentenceLength(filterLength);
-  }
-  
-  private void makeNPsGoldStandard() throws EvalError {
-    switch (testFileType) {
-      case WSJ:
-        npsGoldStandard = CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
-        break;
-        
-      case NEGRA:
-        npsGoldStandard = CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
-        break;
-        
-      case CTB:
-        npsGoldStandard = CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
-        break;
-        
-      default:
-        throw new EvalError(
-            "Unexpected file type for NPs gold standard: " + testFileType);
-    }
-    
-    if (filterLength > 0)
-      npsGoldStandard = npsGoldStandard.filterBySentenceLength(filterLength);
-  }
-
-  private ChunkedCorpus getNPsGoldStandard() throws EvalError {
-    if (npsGoldStandard == null) makeNPsGoldStandard();
+  private ChunkedCorpus getNPsGoldStandard() throws CorpusError {
+    if (npsGoldStandard == null) 
+      npsGoldStandard = CorpusUtil.npsGoldStandard(
+          testFileType, alpha, corpusFiles, filterLength);
     assert npsGoldStandard != null;
     return npsGoldStandard;
   }
@@ -156,13 +121,35 @@ public class EvalManager {
 
   public void setFilterLen(int len) { filterLength = len; }
 
-  public StopSegmentCorpus getEvalStopSegmentCorpus() {
-    if (testStopSegmentCorpus == null) {
-      testStopSegmentCorpus = 
-        getStopSegmentCorpus(corpusFiles, testFileType);
-      if (filterTest > 0)
-        testStopSegmentCorpus = testStopSegmentCorpus.filterLen(filterTest);
-    }
+  public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError {
+    if (testStopSegmentCorpus == null) makeEvalStopSegmentCorpus();
     return testStopSegmentCorpus;
+  }
+
+  private void makeEvalStopSegmentCorpus() throws CorpusError {
+    testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(
+          alpha, corpusFiles, testFileType, numSent, filterLength); 
+  }
+
+  public boolean isNull() {
+    return evalReportType == null || noEvals();
+  }
+
+  private boolean noEvals() {
+    return evals.size() == 0 || (evals.size() == 1 && evals.get(0) == null);
+  }
+
+  public void addChunkerOutput(
+      final String comment, final ChunkedSegmentedCorpus output) 
+  throws EvalError {
+    for (Eval eval: evals)
+      eval.eval(comment, output);
+  }
+
+  public void writeEval(PrintStream out) throws EvalError {
+    for (Eval eval: evals) {
+      eval.writeSummary(evalReportType, out, onlyLast);
+      out.println();
+    }
   }
 }

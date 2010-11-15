@@ -28,8 +28,16 @@ public abstract class OutputManager {
   public void setOutputAllIter(boolean outputAll) { outputAllIter = outputAll; }
   
   public abstract PrintStream getResultsStream();
+  public abstract PrintStream getStatusStream();
   
   public abstract void closeAll();
 
   public void setOutputType(OutputType type) { outputType  = type; }
+
+  public abstract void writeOutput() throws IOException, CorpusError;
+
+  public abstract void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput);
+  
+  public void setOutputAll(boolean b) { outputAllIter = b; }
 }
+

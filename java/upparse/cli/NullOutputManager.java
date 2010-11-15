@@ -2,6 +2,8 @@ package upparse.cli;
 
 import java.io.*;
 
+import upparse.corpus.*;
+
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
@@ -11,16 +13,23 @@ public class NullOutputManager extends OutputManager {
   
   private NullOutputManager() { }
 
-  public static OutputManager instance() {
-    return INSTANCE;
-  }
+  public static OutputManager instance() { return INSTANCE; }
 
   @Override
   public boolean isNull() { return true; }
 
   @Override
   public PrintStream getResultsStream() { return System.out; }
+
+  @Override
+  public PrintStream getStatusStream() { return System.err; }
   
   @Override
   public void closeAll() { }
+
+  @Override
+  public void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput) { }
+
+  @Override
+  public void writeOutput() throws IOException { }
 }
