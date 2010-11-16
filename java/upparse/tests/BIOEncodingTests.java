@@ -45,7 +45,7 @@ public class BIOEncodingTests {
                                 { theC, lazyC, dogC } } } },
           alpha);
     
-    BIOEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
+    TagEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
     ChunkedSegmentedCorpus clumpedCorpusOutput = 
       encoder.clumpedCorpusFromBIOOutput(tokens, output);
     
@@ -81,7 +81,7 @@ public class BIOEncodingTests {
                                 { sleepsC } } } },
           alpha);
     
-    BIOEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
+    TagEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
     ChunkedSegmentedCorpus clumpedCorpusOutput = 
       encoder.clumpedCorpusFromBIOOutput(tokens, output);
     
@@ -137,7 +137,7 @@ public class BIOEncodingTests {
             { { { dummyC },
                 { sentenceC } } } } , alpha);
 
-    BIOEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
+    TagEncoder encoder = new SimpleBIOEncoder("__stop__", alpha);
     ChunkedSegmentedCorpus clumpedCorpusOutput = 
       encoder.clumpedCorpusFromBIOOutput(tokens, output);
     

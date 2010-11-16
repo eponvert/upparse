@@ -11,12 +11,12 @@ import upparse.util.*;
 public abstract class SequenceModel {
   
   private final int[] orig;
-  private final BIOEncoder encoder;
+  private final TagEncoder encoder;
   private double perplex = -1;
   private int[][] tagdict;
   
   public SequenceModel(
-      final BIOEncoder _encoder, final int[] _orig, final int[][] _tagdict) {
+      final TagEncoder _encoder, final int[] _orig, final int[][] _tagdict) {
     encoder = _encoder;
     orig = _orig;
     tagdict = _tagdict;
@@ -33,7 +33,7 @@ public abstract class SequenceModel {
     return orig;
   }
 
-  public final BIOEncoder getEncoder() {
+  public final TagEncoder getEncoder() {
     return encoder;
   }
 
@@ -265,7 +265,7 @@ public abstract class SequenceModel {
   public static SequenceModel mleEstimate(
       final SequenceModelType sequenceModelType,
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder,
+      final TagEncoder encoder,
       final double smoothParam) throws EncoderError, SequenceModelError {
     switch (sequenceModelType) {
       case HMM: return HMM.mleEstimate(corpus, encoder, smoothParam);
@@ -279,7 +279,7 @@ public abstract class SequenceModel {
   public static SequenceModel softEstimate(
       final SequenceModelType sequenceModelType,
       final StopSegmentCorpus corpus,
-      final BIOEncoder encoder,
+      final TagEncoder encoder,
       final double smoothParam) throws SequenceModelError {
     switch (sequenceModelType) {
       case HMM: return HMM.softCountEstimate(corpus, encoder, smoothParam);

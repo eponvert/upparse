@@ -1,6 +1,6 @@
 package upparse.corpus;
 
-/** Error with {@link BIOEncoder}
+/** Error with {@link TagEncoder}
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class EncoderError extends Exception {

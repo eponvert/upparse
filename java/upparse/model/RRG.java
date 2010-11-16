@@ -12,7 +12,7 @@ public class RRG extends SequenceModel {
   private final CombinedProb combinedP;
   
   private RRG(
-      final BIOEncoder _encoder,
+      final TagEncoder _encoder,
       final int[] _orig,
       final CombinedProb _combinedProb) {
     super(_encoder, _orig, new int[_combinedProb.numTerms()][]);
@@ -65,14 +65,14 @@ public class RRG extends SequenceModel {
 
   /**
    * @param corpus Corpus output by a separate model
-   * @param encoder A {@link BIOEncoder} for encoding data-sets
+   * @param encoder A {@link TagEncoder} for encoding data-sets
    * @param scaleFactor 
    * @param scaleFactor2 
    * @return A new right-regular grammar model
    */
   public static RRG mleEstimate(
       final ChunkedSegmentedCorpus corpus,
-      final BIOEncoder encoder,
+      final TagEncoder encoder,
       final double smooth) throws EncoderError {
     final double[][][] counts = encoder.hardCounts(corpus);
     final int[] tokens = encoder.tokensFromClumpedCorpus(corpus);
@@ -80,7 +80,7 @@ public class RRG extends SequenceModel {
   }
 
   public static RRG fromCounts(
-      double[][][] counts, BIOEncoder encoder, int[] tokens, double smooth) {
+      double[][][] counts, TagEncoder encoder, int[] tokens, double smooth) {
     final HMM backoff = HMM.fromCounts(counts, encoder, tokens, smooth);
     final CombinedProb combined = 
       CombinedProb.fromCounts(counts, backoff, smooth);
@@ -88,7 +88,7 @@ public class RRG extends SequenceModel {
   }
 
   public static SequenceModel softCountEstimate(
-      StopSegmentCorpus corpus, BIOEncoder encoder, double smooth) {
+      StopSegmentCorpus corpus, TagEncoder encoder, double smooth) {
     final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
     final double[][][] counts = encoder.softCounts(tokens);
     return fromCounts(counts, encoder, tokens, smooth);

@@ -7,9 +7,9 @@ import upparse.util.*;
  * "grandparent" tags, for emulating a second-order HMM
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class GrandparentBIOEncoder extends BIOEncoder {
+public class GrandparentBIOEncoder extends TagEncoder {
   
-  private final BIOEncoder simpleEncoder;
+  private final TagEncoder simpleEncoder;
   
   public static final int 
     STOP_B_STATE    = 0,

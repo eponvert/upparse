@@ -7,7 +7,7 @@ import upparse.util.*;
  * Utility for encoding a clumped corpus as a BIO-tagged training set 
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public abstract class BIOEncoder {
+public abstract class TagEncoder {
   
   public static enum EncoderType { 
     BIO_GP_NOSTOP, BIO_GP, BIO;
@@ -23,12 +23,12 @@ public abstract class BIOEncoder {
   final int stopv;
   final Alpha alpha;
   
-  public BIOEncoder(String stop, Alpha alpha) {
+  public TagEncoder(String stop, Alpha alpha) {
     this.alpha = alpha;
     stopv = alpha.getCode(stop);
   }
   
-  public static BIOEncoder getBIOEncoder(
+  public static TagEncoder getBIOEncoder(
       final EncoderType gp, final String stop, final Alpha alpha) throws EncoderError {
     switch (gp) {
       case BIO_GP_NOSTOP:

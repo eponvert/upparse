@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import upparse.corpus.*;
-import upparse.corpus.BIOEncoder.*;
+import upparse.corpus.TagEncoder.*;
 import upparse.eval.*;
 import upparse.model.*;
 
@@ -25,8 +25,8 @@ public class Main {
   private int iter = -1;
   private double emdelta = .001;
   private String[] args = new String[0];
-  private BIOEncoder encoder =
-    BIOEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
+  private TagEncoder encoder =
+    TagEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
   private String[] trainCorpusString = null;
   private CorpusType trainFileType = CorpusType.WSJ;
   private int trainSents = -1;
@@ -53,7 +53,7 @@ public class Main {
     try {
       List<String> otherArgs = new ArrayList<String>();
       encoder =
-        BIOEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
+        TagEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
       int filterTest = -1;
       while (i < args.length) {
         arg = args[i++];
@@ -108,7 +108,7 @@ public class Main {
         else if (arg.equals("-emdelta")) emdelta = Float.parseFloat(args[i++]);
 
         else if (arg.equals("-G") || arg.equals("-encoderType"))
-          encoder = BIOEncoder.getBIOEncoder(
+          encoder = TagEncoder.getBIOEncoder(
               EncoderType.valueOf(args[i++]), KeepStop.STOP, alpha);
         
         else if (arg.equals("-E") || arg.equals("-evalReportType")) {
@@ -225,7 +225,7 @@ public class Main {
         "\n\n" +
         Eval.evalReportHelp() +
         "\n\n" +
-        BIOEncoder.EncoderType.encoderTypeHelp()
+        TagEncoder.EncoderType.encoderTypeHelp()
     );
   }
   

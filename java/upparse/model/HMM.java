@@ -15,7 +15,7 @@ public class HMM extends SequenceModel {
   private double[] initTag;
 
   private HMM(
-      final BIOEncoder _encoder, 
+      final TagEncoder _encoder, 
       final int[] _tokens,
       final EmissionProbs _emiss, 
       final double[][] _trans, 
@@ -141,7 +141,7 @@ public class HMM extends SequenceModel {
 
   public static HMM mleEstimate(
       final ChunkedSegmentedCorpus corpus, 
-      final BIOEncoder encoder, 
+      final TagEncoder encoder, 
       final double smoothParam)
   throws EncoderError {
     return fromCounts(
@@ -153,7 +153,7 @@ public class HMM extends SequenceModel {
   
   public static HMM softCountEstimate(
       final StopSegmentCorpus corpus, 
-      final BIOEncoder encoder, 
+      final TagEncoder encoder, 
       final double smoothParam) 
   {
     final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
@@ -163,7 +163,7 @@ public class HMM extends SequenceModel {
 
   public static HMM fromCounts(
       final double[][][] counts, 
-      final BIOEncoder encoder,
+      final TagEncoder encoder,
       final int[] tokens, 
       final double smoothParam) {
     

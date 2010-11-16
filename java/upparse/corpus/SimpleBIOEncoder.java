@@ -8,7 +8,7 @@ import upparse.util.*;
  * Utility for encoding clumped corpus and BIO tagged training set for HMM
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class SimpleBIOEncoder extends BIOEncoder {
+public class SimpleBIOEncoder extends TagEncoder {
 
   public static final int 
     STOP_STATE = 0, 
