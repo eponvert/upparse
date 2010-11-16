@@ -29,7 +29,7 @@ public class Main {
   private CorpusType trainFileType = CorpusType.WSJ;
   private int trainSents = -1;
   private StopSegmentCorpus trainStopSegmentCorpus;
-  private double prlgSmooth = 0.1;
+  private double smooth = 0.1;
   private SequenceModelType chunkerType = SequenceModelType.PRLG;
   private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
   private int filterTrain = -1;
@@ -71,8 +71,8 @@ public class Main {
         else if (arg.equals("-chunkerType"))
           chunkerType = SequenceModelType.valueOf(args[i++]);
         
-        else if (arg.equals("-prlgSmooth"))
-          prlgSmooth = Double.parseDouble(args[i++]);
+        else if (arg.equals("-smooth"))
+          smooth = Double.parseDouble(args[i++]);
         
         else if (arg.equals("-outputType"))
           outputType = OutputType.valueOf(args[i++]);
@@ -109,8 +109,9 @@ public class Main {
           encoder = BIOEncoder.getBIOEncoder(
               EncoderType.valueOf(args[i++]), KeepStop.STOP, alpha);
         
-        else if (arg.equals("-E") || arg.equals("-evalReportType"))
+        else if (arg.equals("-E") || arg.equals("-evalReportType")) {
           evalManager.setEvalReportType(EvalReportType.valueOf(args[i++]));
+        }
         
         else if (arg.equals("-e") || arg.equals("-evalTypes"))
           eval = args[i++];
@@ -128,7 +129,6 @@ public class Main {
       outputManager.setOutputType(outputType);
       
       // Setup evalManager
-      evalManager.setParserEvaluationTypes(eval);
       if (testCorpusString.length == 1 && 
           testCorpusString[0].startsWith("subset")) {
         int len = Integer.parseInt(testCorpusString[0].substring(6)); 
@@ -138,9 +138,12 @@ public class Main {
         evalManager.setTestCorpusString(testCorpusString);
         evalManager.setFilterLen(filterTest);
       }
+      evalManager.setParserEvaluationTypes(eval);
       
       // don't run EM more than 200 iterations
       if (iter < 0) iter = 200;
+      
+      outputManager.writeMetadata(this);
     }
     catch (ArrayIndexOutOfBoundsException e) {
       e.printStackTrace(System.err);
@@ -148,13 +151,33 @@ public class Main {
     }
   }
 
+  public void writeMetadata(PrintStream s) {
+    if (action.equals("chunk")) {
+      s.println(currentDate());
+      s.println("Chunk experiment");
+      s.println("  Experiment strategy: " + chunkingStrategy);
+      s.println("  Chunker type: " + chunkerType);
+      if (chunkingStrategy == ChunkingStrategy.TWOSTAGE)
+        s.println("  Stage 1 factor: " + factor);
+      s.println("  EM iter delta cutoff: " + emdelta);
+      if (iter > 0) s.println("  EM iter num cutoff: " + iter);
+      s.println("  BIO encoder: " + encoder.getClass().getSimpleName());
+      if (filterTrain > 0) s.println("  Filter train by len: " + filterTrain);
+      s.println("  Smoothing param: " + smooth);
+      s.println("  Train files:");
+      for (String f: trainCorpusString) s.println("    " + f);
+      s.println("  Train file type: " + trainFileType);
+      evalManager.writeMetadata(s);
+    }
+  }
+  
+  private String currentDate() { return (new Date()).toString(); }
+
   private double[] getFactor() {
     String[] fpieces = factor.split(",");
-
     double[] f = new double[fpieces.length];
     for (int i = 0; i < fpieces.length; i++) 
       f[i] = Double.parseDouble(fpieces[i]);
-
     return f;
   }
 
@@ -265,10 +288,10 @@ public class Main {
         final SimpleChunker c = getSimpleChunker();
         final ChunkedSegmentedCorpus psuedoTraining = c.getChunkedCorpus(train);
         return SequenceModel.mleEstimate(
-            chunkerType, psuedoTraining, encoder, prlgSmooth);
+            chunkerType, psuedoTraining, encoder, smooth);
       case SOFT:
         return SequenceModel.softEstimate(
-            chunkerType, train, encoder, prlgSmooth);
+            chunkerType, train, encoder, smooth);
         
       default:
         throw new CommandLineError(

@@ -2,7 +2,6 @@ package upparse.eval;
 
 import static java.lang.Math.*;
 
-import java.io.*;
 import java.util.*;
 
 import upparse.corpus.*;
@@ -17,22 +16,12 @@ public class ChunkingEval extends Eval {
   private final boolean checkTerms;
 
   private ChunkingEval(
-      final String name, 
-      final ChunkedCorpus chunkedCorpus, 
+      final OutputType _type, 
+      final ChunkedCorpus chunkedCorpus,
       final boolean _checkTerms) {
-    super(name);
+    super("Chunker-"+_type.toString());
     goldCorpus = chunkedCorpus;
     checkTerms = _checkTerms;
-  }
-
-  public static ChunkingEval fromCorpusFile(
-      final String filename, 
-      final Alpha alpha,
-      final boolean checkTerms) 
-  throws IOException {
-    final String name = new File(filename).getName();
-    return new ChunkingEval(
-        name, ChunkedCorpus.fromFile(filename, alpha), checkTerms);
   }
 
   @Override
@@ -370,12 +359,15 @@ public class ChunkingEval extends Eval {
   }
 
   public static Eval fromChunkedCorpus(
-      final String name, final ChunkedCorpus gold, boolean checkTerms) {
-    return new ChunkingEval(name, gold, checkTerms);
+      final OutputType type,
+      final ChunkedCorpus gold, 
+      final boolean checkTerms) {
+    return new ChunkingEval(type, gold, checkTerms);
   }
 
-  public static Eval fromChunkedCorpus(String string,
-      ChunkedCorpus clumpGoldStandard) {
-    return fromChunkedCorpus(string, clumpGoldStandard, false);
+  public static Eval fromChunkedCorpus(
+      final OutputType type,
+      final ChunkedCorpus clumpGoldStandard) { 
+    return fromChunkedCorpus(type, clumpGoldStandard, false);
   }
 }

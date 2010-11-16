@@ -15,7 +15,8 @@ public abstract class OutputManager {
   /**
    * @param filename The name of the directory for system output
    */
-  public static OutputManager fromDirname(final String filename) throws CommandLineError {
+  public static OutputManager fromDirname(final String filename) 
+  throws CommandLineError {
     return DirectoryOutputManager.fromDirname(filename);
   }
 
@@ -39,5 +40,7 @@ public abstract class OutputManager {
   public abstract void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput);
   
   public void setOutputAll(boolean b) { outputAllIter = b; }
+  
+  public abstract void writeMetadata(Main prog) throws IOException;
 }
 

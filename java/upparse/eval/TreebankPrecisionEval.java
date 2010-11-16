@@ -8,18 +8,18 @@ import upparse.corpus.*;
 public class TreebankPrecisionEval extends TreebankEval {
   
   private TreebankPrecisionEval(
-      final String name,
+      final OutputType treebankprec,
       final UnlabeledBracketSetCorpus gold,
       final boolean checkTerms) {
-    super(name, gold, checkTerms);
+    super(treebankprec, gold, checkTerms);
   }
 
   public static TreebankPrecisionEval fromUnlabeledBracketSets(
-      final String name, 
+      final OutputType treebankprec, 
       final UnlabeledBracketSetCorpus gold, 
       final boolean checkTerms) {
     assert gold != null;
-    return new TreebankPrecisionEval(name, gold, checkTerms);
+    return new TreebankPrecisionEval(treebankprec, gold, checkTerms);
   }
 
   @Override
@@ -28,8 +28,8 @@ public class TreebankPrecisionEval extends TreebankEval {
     return UnlabeledBracketSetCorpus.fromArrays(output.asChunked());
   }
 
-  public static Eval fromUnlabeledBracketSets(String string,
+  public static Eval fromUnlabeledBracketSets(OutputType treebankprec,
       UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
-    return fromUnlabeledBracketSets(string, goldUnlabeledBracketSets, false);
+    return fromUnlabeledBracketSets(treebankprec, goldUnlabeledBracketSets, false);
   }
 }

@@ -8,17 +8,17 @@ import upparse.corpus.*;
 public class TreebankFlatEval extends TreebankEval {
   
   private TreebankFlatEval(
-      final String name, 
+      final OutputType type, 
       final UnlabeledBracketSetCorpus gold, 
       final boolean checkTerms) {
-    super(name, gold, checkTerms);
+    super(type, gold, checkTerms);
   }
 
   public static Eval fromUnlabeledBracketSets(
-      final String name,
+      final OutputType type,
       final UnlabeledBracketSetCorpus unlabeledBracketSetCorpus, 
       final boolean checkTerms) {
-    return new TreebankFlatEval(name, unlabeledBracketSetCorpus, checkTerms);
+    return new TreebankFlatEval(type, unlabeledBracketSetCorpus, checkTerms);
   }
 
   @Override
@@ -27,8 +27,8 @@ public class TreebankFlatEval extends TreebankEval {
     return UnlabeledBracketSetCorpus.fromArrays(output.asFlat());
   }
 
-  public static Eval fromUnlabeledBracketSets(String string,
+  public static Eval fromUnlabeledBracketSets(OutputType type,
       UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
-    return fromUnlabeledBracketSets(string, goldUnlabeledBracketSets, false);
+    return fromUnlabeledBracketSets(type, goldUnlabeledBracketSets, false);
   }
 }

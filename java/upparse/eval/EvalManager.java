@@ -26,6 +26,20 @@ public class EvalManager {
   private int numSent = -1;
   private boolean onlyLast = false;
   
+
+  public void writeMetadata(PrintStream s) {
+    s.print("  Evaluation type: ");
+    for (Eval e: evals) s.print(e.getEvalName() + " ");
+    s.println();
+    s.println("  Test files:");
+    for (String f: corpusFiles) s.println("    " + f);
+    if (filterLength > 0) 
+      s.println("  Filter test files by len: " + filterLength);
+    if (numSent > 0)
+      s.println("  Num test sentences: " + numSent);
+    s.println("  Test file type: " + testFileType);
+  }
+  
   public void setTestFileType(CorpusType t) { testFileType = t; }
 
   public void setEvalReportType(EvalReportType type) {
@@ -34,33 +48,44 @@ public class EvalManager {
   
   public void setParserEvaluationTypes(String string) 
   throws EvalError, CorpusError {
-    for (String s: string.split(",")) {
+    if (string.equals("")) { 
+      evals.add(
+          ChunkingEval.fromChunkedCorpus(
+              OutputType.CLUMP, getClumpGoldStandard()));
+      evals.add(
+          ChunkingEval.fromChunkedCorpus(
+              OutputType.NPS, getNPsGoldStandard()));
+    }
+    else for (String s: string.split(",")) {
       switch (OutputType.valueOf(s)) {
         case CLUMP:
           evals.add(ChunkingEval
-              .fromChunkedCorpus("clumps", getClumpGoldStandard()));
+              .fromChunkedCorpus(OutputType.CLUMP, getClumpGoldStandard()));
           break;
           
         case NPS:
           evals.add(ChunkingEval
-              .fromChunkedCorpus("NPs", getNPsGoldStandard()));
+              .fromChunkedCorpus(OutputType.NPS, getNPsGoldStandard()));
           break;
           
         case TREEBANKPREC:
-          evals.add(TreebankPrecisionEval
-              .fromUnlabeledBracketSets("Prec", getGoldUnlabeledBracketSets()));
+          evals.add(TreebankPrecisionEval.fromUnlabeledBracketSets(
+              OutputType.TREEBANKPREC, getGoldUnlabeledBracketSets()));
           break;
           
         case TREEBANKFLAT:
-          evals.add(TreebankFlatEval
-              .fromUnlabeledBracketSets("Flat", getGoldUnlabeledBracketSets()));
+          evals.add(TreebankFlatEval.fromUnlabeledBracketSets(
+              OutputType.TREEBANKFLAT, getGoldUnlabeledBracketSets()));
+          break;
           
         case TREEBANKRB:
           evals.add(TreebankRBEval.fromUnlabeledBracketSets(
-              "RB", getGoldUnlabeledBracketSets()));
+              OutputType.TREEBANKRB, getGoldUnlabeledBracketSets()));
+          break;
           
         case NONE:
-          evals.add(null);
+          evals.add(NullEval.instance());
+          break;
           
         default: 
           throw new EvalError("Unexpected evaluation type: " + s);

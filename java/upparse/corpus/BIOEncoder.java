@@ -32,13 +32,13 @@ public abstract class BIOEncoder {
       final EncoderType gp, final String stop, final Alpha alpha) throws EncoderError {
     switch (gp) {
       case BIO_GP_NOSTOP:
-        return new SimpleBIOEncoder(stop, alpha);
+        return new GrandparentWithStopBIOEncoder(stop, alpha);
         
       case BIO_GP:
         return new GrandparentBIOEncoder(stop, alpha);
         
       case BIO:
-        return new GrandparentWithStopBIOEncoder(stop, alpha);
+        return new SimpleBIOEncoder(stop, alpha);
         
       default:
         throw new EncoderError("Unexpected GP option " + gp);

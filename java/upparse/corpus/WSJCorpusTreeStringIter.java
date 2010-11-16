@@ -8,10 +8,8 @@ import java.io.*;
  */
 public class WSJCorpusTreeStringIter extends CorpusTreeStringIter {
   
-  private WSJCorpusTreeStringIter(final String[] _files) {
-    super(_files);
-  }
-  
+  private WSJCorpusTreeStringIter(final String[] _files) { super(_files); }
+
   public static WSJCorpusTreeStringIter fromFiles(final String[] files) {
     return new WSJCorpusTreeStringIter(files);
   }

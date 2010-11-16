@@ -75,4 +75,17 @@ public class DirectoryOutputManager extends OutputManager {
   private String lastChunkerIterOutputFname() {
     return dir + File.separator + "I" + numIter + "_last";
   }
+  
+  public static OutputManager fromDirname(final String filename) 
+  throws CommandLineError {
+    return new DirectoryOutputManager(filename);
+  }
+
+  @Override
+  public void writeMetadata(Main prog) throws IOException {
+    PrintStream metadataStream = 
+      new PrintStream(new File(dir + File.separator + "README"));
+    prog.writeMetadata(metadataStream);
+    metadataStream.close();
+  }
 }

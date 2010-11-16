@@ -266,7 +266,7 @@ public class CorpusUtil {
     switch (testFileType) {
       case WSJ:
         corpus = 
-         CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles);
+         CorpusUtil.wsjUnlabeledBracketSetCorpus(alpha, corpusFiles); 
         break;
         
       case NEGRA:
@@ -277,6 +277,7 @@ public class CorpusUtil {
       case CTB:
         corpus =
           CorpusUtil.ctbUnlabeledBracketSetCorpus(alpha, corpusFiles);
+        break;
         
       default:
         throw new CorpusError(

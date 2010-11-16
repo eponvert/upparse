@@ -32,4 +32,7 @@ public class NullOutputManager extends OutputManager {
 
   @Override
   public void writeOutput() throws IOException { }
+
+  @Override
+  public void writeMetadata(Main prog) throws IOException { }
 }
