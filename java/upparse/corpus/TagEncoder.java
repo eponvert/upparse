@@ -18,15 +18,22 @@ public abstract class TagEncoder {
     } 
   }
 
-  static final String EOS = "__eos__";
+  private static final String EOS = "__eos__";
   
-  final int stopv;
+  private final int stopv;
+  private final int eosv;
   final Alpha alpha;
   
   public TagEncoder(String stop, Alpha alpha) {
     this.alpha = alpha;
     stopv = alpha.getCode(stop);
+    eosv = alpha.getCode(EOS);
   }
+  
+  protected boolean isStop(int w) { return w == stopv; }
+  protected boolean isEos(int w) { return w == eosv; }
+  protected boolean isStopOrEos(int w) { return isStop(w) || isEos(w); }
+  protected int getEos() { return eosv; }
   
   public static TagEncoder getBIOEncoder(
       final EncoderType gp, final String stop, final Alpha alpha) throws EncoderError {

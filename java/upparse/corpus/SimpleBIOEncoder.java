@@ -86,11 +86,8 @@ public class SimpleBIOEncoder extends TagEncoder {
     assert tokens.length == output.length;
 
     // Count the number of sentences
-    int eosv = alpha.getCode(EOS);
     int numS = -1; // don't count first __eos__
-    for (int w: tokens)
-      if (w == eosv)
-        numS++;
+    for (int w: tokens) if (isEos(w)) numS++;
 
     int[][][][] clumpedCorpus = new int[numS][][][];
 
@@ -103,15 +100,13 @@ public class SimpleBIOEncoder extends TagEncoder {
     while (sInd < numS) {
 
       // process a sentence
-      while (nextEos < tokens.length && tokens[nextEos] != eosv) nextEos++;
+      while (nextEos < tokens.length && !isEos(tokens[nextEos])) nextEos++;
 
       // count the number of segments
       numSeg = 0;
       j = i;
       while (j < tokens.length && j <= nextEos) {
-        if (tokens[j] == stopv || tokens[j] == eosv) {
-          numSeg++;
-        }
+        if (isStopOrEos(tokens[j])) numSeg++;
         j++;
       }
 
@@ -206,23 +201,19 @@ public class SimpleBIOEncoder extends TagEncoder {
   public double[][] softTrain(final int[] train) {
     final double[][] counts = new double[train.length][numTags()];
     
-    final int eosv = alpha.getCode(EOS);
-
     for (int i = 0; i < train.length; i++) {
-      if (train[i] == stopv || train[i] == eosv) {
-        counts[i][STOP_STATE] = 1;
-      } else {
+      if (isStopOrEos(train[i])) counts[i][STOP_STATE] = 1;
+      else {
         assert i > 0;
         assert i + 1 < train.length;
 
-        if ((train[i-1] == stopv || train[i-1] == eosv) && 
-            (train[i+1] == stopv || train[i+1] == eosv))
+        if (isStopOrEos(train[i-1]) && isStopOrEos(train[i+1]))
           counts[i][O_STATE] = 1;
         
-        else if (train[i-1] == stopv || train[i-1] == eosv) 
+        else if (isStopOrEos(train[i-1]))
           counts[i][B_STATE] = counts[i][O_STATE] = .5;
 
-        else if (train[i+1] == stopv || train[i+1] == eosv)
+        else if (isStopOrEos(train[i+1]))
           counts[i][O_STATE] = counts[i][I_STATE] = .5;
 
         else

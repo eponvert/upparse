@@ -178,24 +178,24 @@ public class GrandparentWithStopBIOEncoder extends TagEncoder {
   public double[][] softTrain(final int[] train) {
     final double[][] tags = new double[train.length][numTags()];
     for (int i = 0; i < train.length; i++)
-      if (train[i] == stopv)
+      if (isStopOrEos(train[i]))
         tags[i][STOP_STATE] = 1;
       else {
         assert i != 0;
         assert i + 1 < train.length;
-        if (train[i-1] == stopv && train[i+1] == stopv)
+        if (isStopOrEos(train[i-1]) && isStopOrEos(train[i+1]))
           tags[i][STOP_O_STATE] = 1;
         
-        else if (train[i-1] == stopv) 
+        else if (isStopOrEos(train[i-1]))
           tags[i][STOP_O_STATE] = tags[i][STOP_B_STATE] = .5;
         
         else {
           assert i > 1;
           
-          if (train[i-2] == stopv && train[i+1] == stopv)
+          if (isStopOrEos(train[i-2]) && isStopOrEos(train[i+1]))
             tags[i][O_O_STATE] = tags[i][B_I_STATE] = .5;
 
-          else if (train[i-2] == stopv)
+          else if (isStopOrEos(train[i-2]))
             tags[i][O_B_STATE] = tags[i][O_O_STATE] = tags[i][B_I_STATE] = 
               ATHIRD;
 

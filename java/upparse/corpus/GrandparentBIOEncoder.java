@@ -193,34 +193,34 @@ public class GrandparentBIOEncoder extends TagEncoder {
   @Override
   public double[][] softTrain(final int[] train) {
     final double[][] tags = new double[train.length][numTags()];
-    assert train[0] == stopv;
+    assert isStopOrEos(train[0]);
     tags[0][O_STOP_STATE] = 1;
     
     for (int i = 1; i < train.length; i++)
-      if (train[i] == stopv && train[i-1] == stopv)
+      if (isStopOrEos(train[i]) && isStopOrEos(train[i-1])) 
         tags[i][STOP_STOP_STATE] = 1;
     
-      else if (train[i] == stopv && i > 1 && train[i-2] == stopv) 
+      else if (isStopOrEos(train[i]) && i > 1 && isStopOrEos(train[i-2])) 
         tags[i][O_STOP_STATE] = 1;
     
-      else if (train[i] == stopv)
+      else if (isStopOrEos(train[i]))
         tags[i][O_STOP_STATE] = tags[i][I_STOP_STATE] = .5;
     
       else {
         assert i + 1 < train.length;
-        if (train[i-1] == stopv && train[i+1] == stopv)
+        if (isStopOrEos(train[i-1]) && isStopOrEos(train[i+1]))
           tags[i][STOP_O_STATE] = 1;
         
-        else if (train[i-1] == stopv) 
+        else if (isStopOrEos(train[i-1]))
           tags[i][STOP_O_STATE] = tags[i][STOP_B_STATE] = .5;
         
         else {
           assert i > 1;
           
-          if (train[i-2] == stopv && train[i+1] == stopv)
+          if (isStopOrEos(train[i-2]) && isStopOrEos(train[i+1]))
             tags[i][O_O_STATE] = tags[i][B_I_STATE] = .5;
 
-          else if (train[i-2] == stopv)
+          else if (isStopOrEos(train[i-2]))
             tags[i][O_B_STATE] = tags[i][O_O_STATE] = tags[i][B_I_STATE] = 
               ATHIRD;
 
