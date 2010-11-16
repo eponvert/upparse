@@ -1,10 +1,9 @@
 package upparse.model;
 
 import static java.lang.Math.*;
+import static java.util.Arrays.*;
 import upparse.corpus.*;
 import upparse.util.*;
-
-import static java.util.Arrays.*;
 
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
@@ -262,4 +261,32 @@ public abstract class SequenceModel {
   public abstract double initTagProb(int tag);
   
   public abstract double termProb(int tag, int term);
+  
+  public static SequenceModel mleEstimate(
+      final SequenceModelType sequenceModelType,
+      final ChunkedSegmentedCorpus corpus,
+      final BIOEncoder encoder,
+      final double smoothParam) throws EncoderError, SequenceModelError {
+    switch (sequenceModelType) {
+      case HMM: return HMM.mleEstimate(corpus, encoder, smoothParam);
+      case PRLG: return RRG.mleEstimate(corpus, encoder, smoothParam);
+      default: 
+        throw new SequenceModelError(
+            "Unexpected sequence model type: " + sequenceModelType);
+    }
+  }
+  
+  public static SequenceModel softEstimate(
+      final SequenceModelType sequenceModelType,
+      final StopSegmentCorpus corpus,
+      final BIOEncoder encoder,
+      final double smoothParam) throws SequenceModelError {
+    switch (sequenceModelType) {
+      case HMM: return HMM.softCountEstimate(corpus, encoder, smoothParam);
+      case PRLG: return RRG.softCountEstimate(corpus, encoder, smoothParam);
+      default:
+        throw new SequenceModelError(
+            "Unexpected sequence model type: " + sequenceModelType);
+    }
+  }
 }

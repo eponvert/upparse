@@ -81,7 +81,7 @@ public class RRG extends SequenceModel {
 
   public static RRG fromCounts(
       double[][][] counts, BIOEncoder encoder, int[] tokens, double smooth) {
-    final HMM backoff = HMM.fromCounts(counts, encoder, tokens);
+    final HMM backoff = HMM.fromCounts(counts, encoder, tokens, smooth);
     final CombinedProb combined = 
       CombinedProb.fromCounts(counts, backoff, smooth);
     return new RRG(encoder, tokens, combined);

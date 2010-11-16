@@ -13,10 +13,10 @@ public abstract class TreebankEval extends Eval {
   private final boolean checkTerms;
   
   protected TreebankEval(
-      final String name, 
+      final OutputType type, 
       final UnlabeledBracketSetCorpus _gold, 
       final boolean _checkTerms) {
-    super(name);
+    super("Chunker-" + type);
     assert _gold != null;
     gold = _gold;
     checkTerms = _checkTerms;

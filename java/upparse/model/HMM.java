@@ -140,26 +140,32 @@ public class HMM extends SequenceModel {
   }
 
   public static HMM mleEstimate(
-      final ChunkedSegmentedCorpus corpus, final BIOEncoder encoder)
+      final ChunkedSegmentedCorpus corpus, 
+      final BIOEncoder encoder, 
+      final double smoothParam)
   throws EncoderError {
     return fromCounts(
         encoder.hardCounts(corpus), 
         encoder, 
-        encoder.tokensFromClumpedCorpus(corpus));
+        encoder.tokensFromClumpedCorpus(corpus),
+        smoothParam);
   }
   
   public static HMM softCountEstimate(
-      final StopSegmentCorpus corpus, final BIOEncoder encoder) 
+      final StopSegmentCorpus corpus, 
+      final BIOEncoder encoder, 
+      final double smoothParam) 
   {
     final int[] tokens = encoder.tokensFromStopSegmentCorpus(corpus);
     final double[][][] counts = encoder.softCounts(tokens);
-    return fromCounts(counts, encoder, tokens);
+    return fromCounts(counts, encoder, tokens, smoothParam);
   }
 
   public static HMM fromCounts(
       final double[][][] counts, 
       final BIOEncoder encoder,
-      final int[] tokens) {
+      final int[] tokens, 
+      final double smoothParam) {
     
     assert counts.length != 0;
     final int nTag = encoder.numTags(), nTerm = counts[0].length;
@@ -177,7 +183,7 @@ public class HMM extends SequenceModel {
     
     final double[] initTag = logs(encoder.getInitTagProb());
     final EmissionProbs emiss = 
-      EmissionProbs.fromCounts(emissCount, encoder.isStopPred());
+      EmissionProbs.fromCounts(emissCount, encoder.isStopPred(), smoothParam);
     final double[][] trans = getTrans(transCount);
     
     return new HMM(encoder, tokens, emiss, trans, initTag);

@@ -8,10 +8,10 @@ import upparse.corpus.*;
 public class TreebankRBEval extends TreebankEval {
   
   private TreebankRBEval(
-      final String name, 
+      final OutputType type, 
       final UnlabeledBracketSetCorpus gold, 
       final boolean checkTerms) {
-    super(name, gold, checkTerms);
+    super(type, gold, checkTerms);
   }
 
   @Override
@@ -20,8 +20,13 @@ public class TreebankRBEval extends TreebankEval {
     return UnlabeledBracketSetCorpus.fromArrays(output.asRB());
   }
 
-  public static Eval fromUnlabeledBracketSets(String string,
+  public static Eval fromUnlabeledBracketSets(OutputType type,
       UnlabeledBracketSetCorpus goldUnlabeledBracketSets, boolean checkTerms) {
-    return new TreebankRBEval(string, goldUnlabeledBracketSets, checkTerms);
+    return new TreebankRBEval(type, goldUnlabeledBracketSets, checkTerms);
+  }
+
+  public static Eval fromUnlabeledBracketSets(OutputType type,
+      UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
+    return fromUnlabeledBracketSets(type, goldUnlabeledBracketSets, false);
   }
 }
