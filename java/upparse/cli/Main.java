@@ -16,6 +16,8 @@ public class Main {
 
   private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
   
+  private static String VERSION = "101:35180c7a9bc3";
+  
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
   private EvalManager evalManager = new EvalManager(alpha);
@@ -154,6 +156,7 @@ public class Main {
   public void writeMetadata(PrintStream s) {
     if (action.equals("chunk")) {
       s.println(currentDate());
+      s.println("  Version: " + VERSION);
       s.println("Chunk experiment");
       s.println("  Experiment strategy: " + chunkingStrategy);
       s.println("  Chunker type: " + chunkerType);
