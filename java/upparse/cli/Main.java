@@ -161,7 +161,7 @@ public class Main {
   }
 
   public void writeMetadata(PrintStream s) {
-    if (action.equals("chunk")) {
+    if (action.equals(CHUNK_ACTION)) {
       s.println(currentDate());
       s.println("  Version: " + VERSION);
       s.println("Chunk experiment");
