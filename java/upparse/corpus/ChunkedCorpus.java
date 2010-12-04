@@ -167,4 +167,41 @@ public class ChunkedCorpus {
   public static ChunkedCorpus fromArrays(int[][][] arrays, Alpha alpha) {
     return new ChunkedCorpus(arrays, alpha);
   }
+  public UnlabeledBracketSet[] toUnlabeledBracketSets() {
+    UnlabeledBracketSet[] outputUB = 
+      new UnlabeledBracketSet[corpus.length];
+    
+    for (int i = 0; i < corpus.length; i++) 
+      outputUB[i] = new UnlabeledBracketSet(tokens(i), conv(i), alpha, false);
+    
+    return outputUB;
+  }
+
+  private Collection<UnlabeledBracket> conv(int i) {
+    final int[][] chunks = corpus[i];
+    List<UnlabeledBracket> b = new ArrayList<UnlabeledBracket>();
+    int m = 0;
+    for (int[] chunk: chunks) {
+      int chunklen = chunk.length;
+      m += chunklen;
+      if (chunklen > 1)
+        b.add(new UnlabeledBracket(m - chunklen, m));
+    }
+    return b;
+  }
+
+  private int[] tokens(int i) {
+    final int[][] chunks = corpus[i];
+    int n = 0;
+    for (int[] a: chunks) n += a.length;
+    int[] tokens = new int[n];
+    int j = 0;
+    for (int[] a: chunks) for (int c: a) tokens[j++] = c;
+    return tokens;
+  }
+
+
+  public UnlabeledBracketSetCorpus toUnlabeledBracketSetCorpus() {
+    return UnlabeledBracketSetCorpus.fromArrays(toUnlabeledBracketSets());
+  }
 }

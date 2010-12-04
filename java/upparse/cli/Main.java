@@ -17,7 +17,9 @@ public class Main {
   private static enum ChunkingStrategy { TWOSTAGE, SOFT; }
   
   private static String VERSION = "101:35180c7a9bc3";
-  
+  private static final String CCLPARSER_EVAL_ACTION = "cclp-eval";
+  private static final String CHUNK_ACTION = "chunk";
+
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
   private EvalManager evalManager = new EvalManager(alpha);
@@ -36,6 +38,8 @@ public class Main {
   private ChunkingStrategy chunkingStrategy = ChunkingStrategy.TWOSTAGE;
   private int filterTrain = -1;
   private final String action;
+  private String cclparserOutput;
+
 
   private Main(String[] args) 
   throws CommandLineError, IOException, EvalError, EncoderError, CorpusError {
@@ -60,6 +64,9 @@ public class Main {
 
         if (arg.equals("-output")) 
           outputManager = OutputManager.fromDirname(args[i++]);
+        
+        else if (arg.equals("-cclpOutput"))
+          cclparserOutput = args[i++];
         
         else if (arg.equals("-filterTrain"))
           filterTrain = Integer.parseInt(args[i++]);
@@ -94,7 +101,7 @@ public class Main {
           trainCorpusString = sb.toArray(new String[0]);
         }
         
-        else if (args.equals("-testFileType"))
+        else if (arg.equals("-testFileType"))
           evalManager.setTestFileType(CorpusType.valueOf(args[i++]));
 
         else if (arg.equals("-trainFileType"))
@@ -195,31 +202,40 @@ public class Main {
         "\n" +
         "Actions:\n" +
         "  chunk\n" +
-        "\n" +
+        "  cascade-parse\n" +
+        "  cclp-eval\n" +
+        "\n" + 
         "Options:\n" +
+        "  -chunkingStrategy K TWOSTAGE or SOFT\n" +
+        "  -chunkerType K      HMM or PRLG\n" +
         "  -train FILES        Train using specified files\n" +
+        "  -filterTrain N      Train only on sentences of len <= N\n" +
+        "  -numtrain N         Train only on the first N sentences\n" +
+        "  -filterTest N       Evaluate only on sentences of len <= N\n" +
         "  -test FILES         Evaluated on specified files\n" +
-        "  -trainFileType X    Train files file type (eg wsj)\n" +
-        "  -testFileType X     Test files file type (eg wsj)\n" +
+        "  -trainFileType X    Train files file type (eg WSJ)\n" +
+        "  -testFileType X     Test files file type (eg WSJ)\n" +
         "  -output FILE        Set output file/template\n" +
         "  -outputType T       Output type (see eval types)\n" +
+        "  -cclpOutput F       Output of CCLParser for comparison calc\n" +
         "  -outputAll          Produce model output for all EM iterations\n"+
         "  -F|-factor N1,N2... Factors for Stage 1 chunking\n" +
         "  -G|-encoderType T   Use chunk-encoder type T\n" +
         "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n" +
-        "  -E|-evalreort EVAL  Evaluation report (eg PRL)\n" +
-        "  -e|-evaltypes E1,E2 Evaluation types \n" +
+        "  -E|-evalReportType  Evaluation report (eg PRL)\n" +
+        "  -e|-evalTypes E1,E2 Evaluation types \n" +
         "  -iterations N       Iterations of EM\n" +
         "  -emdelta D          Halt EM when data perplexity change is less than\n" +
+        "  -smooth V           Smoothing parameter for emissions probabilities\n" +
         "  -dontCheckTerms     Don't check that the eval and output terms are equal\n" +
         "  -onlyLast           Only show evaluation of last itertation of EM\n" +
         "\n" +
         "File types:\n" +
-        "  wsj    : WSJ/Penn Treebank corpus\n" +
-        "  negra  : Negra Treebank (Penn Treebank like)\n" +
-        "  ctb    : Penn Chinese Treebank corpus\n" + 
-        "  spl    : Sentence per line\n" +
-        "  wpl    : Word per line (sentences seperated by blank lines)\n" +
+        "  WSJ    : WSJ/Penn Treebank corpus\n" +
+        "  NEGRA  : Negra Treebank (Penn Treebank like)\n" +
+        "  CTB    : Penn Chinese Treebank corpus\n" + 
+        "  SPL    : Sentence per line\n" +
+        "  WPL    : Word per line (sentences seperated by blank lines)\n" +
         "\n" + 
         OutputType.outputTypesHelp() +
         "\n\n" +
@@ -227,7 +243,7 @@ public class Main {
         "\n\n" +
         TagEncoder.EncoderType.encoderTypeHelp()
     );
-  }
+  }  
   
   private StopSegmentCorpus getTrainStopSegmentCorpus() throws CorpusError {
     if (trainStopSegmentCorpus == null) makeTrainStopSegmentCorpus();
@@ -308,6 +324,18 @@ public class Main {
     chunkerEval(new SequenceModelChunker(getSequenceModel(), emdelta));
   }
   
+  private void cclpEval() throws EvalError, IOException, CorpusError {
+    UnlabeledBracketSetCorpus outputCorpus = getCCLParserOutput();
+    evalManager.initializeCCLParserEval();
+    evalManager.evalParserOutput(outputCorpus, outputManager);
+    writeOutput();
+  }
+
+  private UnlabeledBracketSetCorpus getCCLParserOutput() {
+    final String[] files = new String[] { cclparserOutput };
+    return CorpusUtil.cclpUnlabeledBracketSetCorpus(alpha, files);
+  }
+  
   public static void main(String[] argv) {
     try {
       Main prog = new Main(argv);
@@ -317,7 +345,8 @@ public class Main {
         usageError();
       }
 
-      if (prog.action.equals("chunk")) prog.chunk();
+      if (prog.action.equals(CHUNK_ACTION)) prog.chunk();
+      else if (prog.action.equals(CCLPARSER_EVAL_ACTION)) prog.cclpEval();
 
       else {
         System.err.println("Unexpected action: " + prog.action);

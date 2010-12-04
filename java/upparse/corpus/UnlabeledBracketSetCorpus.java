@@ -6,13 +6,16 @@ import java.util.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class UnlabeledBracketSetCorpus { 
+public class UnlabeledBracketSetCorpus 
+implements Iterable<UnlabeledBracketSet> { 
   
   private final UnlabeledBracketSet[] trees;
 
   private UnlabeledBracketSetCorpus(UnlabeledBracketSet[] _trees) {
     trees = _trees;
   }
+  
+  public UnlabeledBracketSet[] getTrees() { return trees; }
 
   public UnlabeledBracketSetCorpus filterBySentenceLength(int n) {
     List<Integer> indices = new ArrayList<Integer>();
@@ -55,5 +58,22 @@ public class UnlabeledBracketSetCorpus {
     for (int i = 0; i < trees.length; i++)
       writer.println(trees[i].toString());
     writer.close();
+  }
+
+  @Override
+  public Iterator<UnlabeledBracketSet> iterator() {
+    return new Iterator<UnlabeledBracketSet>() {
+      
+      int i = 0;
+      
+      @Override
+      public void remove() { throw new UnsupportedOperationException(); }
+      
+      @Override
+      public UnlabeledBracketSet next() { return trees[i++]; }
+      
+      @Override
+      public boolean hasNext() { return i < trees.length; }
+    };
   }
 }

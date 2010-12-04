@@ -5,31 +5,24 @@ import upparse.corpus.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class TreebankPrecisionEval extends TreebankEval {
+public class TreebankPrecisionEval extends TreebankEvalFromChunkerOutput {
   
   private TreebankPrecisionEval(
       final OutputType treebankprec,
-      final UnlabeledBracketSetCorpus gold,
-      final boolean checkTerms) {
-    super(treebankprec, gold, checkTerms);
+      final UnlabeledBracketSetCorpus gold) {
+    super(treebankprec, gold);
   }
 
   public static TreebankPrecisionEval fromUnlabeledBracketSets(
       final OutputType treebankprec, 
-      final UnlabeledBracketSetCorpus gold, 
-      final boolean checkTerms) {
+      final UnlabeledBracketSetCorpus gold) {  
     assert gold != null;
-    return new TreebankPrecisionEval(treebankprec, gold, checkTerms);
+    return new TreebankPrecisionEval(treebankprec, gold);
   }
 
   @Override
   protected UnlabeledBracketSetCorpus makeTreeCorpus(
       ChunkedSegmentedCorpus output) {
     return UnlabeledBracketSetCorpus.fromArrays(output.asChunked());
-  }
-
-  public static Eval fromUnlabeledBracketSets(OutputType treebankprec,
-      UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
-    return fromUnlabeledBracketSets(treebankprec, goldUnlabeledBracketSets, false);
   }
 }

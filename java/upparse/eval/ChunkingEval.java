@@ -30,6 +30,12 @@ public class ChunkingEval extends Eval {
     addExperiment(new ChunkingExperiment(string, outputCorpus.toChunkedCorpus()));
   }
   
+  public UnlabeledExperimentEval newChunkingExperiment(
+      final String s, final ChunkedCorpus c) throws EvalError {
+    return new ChunkingExperiment(s, c);
+  }
+  
+  
   private static class ChunkSet {
     final int index[][];
     final Chunk[] chunks;
@@ -286,15 +292,15 @@ public class ChunkingEval extends Eval {
       return min(MAXLEN, c.end - c.start);
     }
 
-    private int[] termsFromSent(int[][] gold) {
+    private int[] termsFromSent(int[][] goldIndices) {
       int n = 0;
-      for (int[] c: gold) 
+      for (int[] c: goldIndices) 
         n += c.length;
       
       int[] terms = new int[n];
       int i = 0;
       
-      for (int[] c: gold) 
+      for (int[] c: goldIndices) 
         for (int t: c)
           terms[i++] = t;
       
@@ -302,15 +308,15 @@ public class ChunkingEval extends Eval {
     }
 
     /** @return A sorted array of chunks len > 1 in the sentence */
-    final Chunk[] chunks(int[][] sent) {
+    final Chunk[] chunks(int[][] gold) {
       int nChunks = 0;
-      for (int[] chunk: sent)
+      for (int[] chunk: gold)
         if (chunk.length > 1) nChunks++;
       
       Chunk[] ind = new Chunk[nChunks];
       
       int i = 0, start = 0, end;
-      for (int[] chunk: sent) {
+      for (int[] chunk: gold) {
         if (chunk.length == 1)
           start++;
         else {
@@ -358,14 +364,14 @@ public class ChunkingEval extends Eval {
     }
   }
 
-  public static Eval fromChunkedCorpus(
+  public static ChunkingEval fromChunkedCorpus(
       final OutputType type,
       final ChunkedCorpus gold, 
       final boolean checkTerms) {
     return new ChunkingEval(type, gold, checkTerms);
   }
 
-  public static Eval fromChunkedCorpus(
+  public static ChunkingEval fromChunkedCorpus(
       final OutputType type,
       final ChunkedCorpus clumpGoldStandard) { 
     return fromChunkedCorpus(type, clumpGoldStandard, false);

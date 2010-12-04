@@ -13,6 +13,13 @@ public class LabeledBracket {
     last = _last;
     label = _label;
   }
+  
+  @Override
+  public String toString() { 
+    return String.format("%s(%d,%d)", label, first, last); 
+  }
+
+
 
   public UnlabeledBracket unlabeled() {
     return new UnlabeledBracket(first, last);

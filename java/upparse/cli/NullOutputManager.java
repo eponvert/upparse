@@ -35,4 +35,14 @@ public class NullOutputManager extends OutputManager {
 
   @Override
   public void writeMetadata(Main prog) throws IOException { }
+
+  @Override
+  public String treeOutputFilename() { 
+    return null;
+  }
+
+  @Override
+  public String clumpsOutputFilename() {
+    return null;
+  }
 }

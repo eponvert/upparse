@@ -36,7 +36,7 @@ public class CorpusUtil {
     Iterable<LabeledBracketSet>
       treeiter = CTBCorpusTreeIter.fromFiles(corpusFiles, alpha);
     return
-      treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.ctbKeepStop, 0);
+      treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.ctbKeepStop, numSent);
   }
 
   public static StopSegmentCorpus splStopSegmentCorpus(Alpha alpha,
@@ -110,8 +110,14 @@ public class CorpusUtil {
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             CTBCorpusStandard.instance));
   }
+  
+  public static UnlabeledBracketSetCorpus cclpUnlabeledBracketSetCorpus(
+      Alpha alpha, String[] files) {
+    return UnlabeledBracketSetCorpus.fromTreeIter(
+        CCLParserCorpusTreeIter.fromFiles(files, alpha));
+  }
 
-  private static ChunkedCorpus getChunkedCorpusClumps(Alpha alpha,
+  public static ChunkedCorpus getChunkedCorpusClumps(Alpha alpha,
       Iterable<UnlabeledBracketSet> iter) {
     UnlabeledBracketSet[] uBraks = ubsArrayFromIter(iter);
     int[][][] arrays = new int[uBraks.length][][];

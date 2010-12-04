@@ -29,7 +29,6 @@ public class UnlabeledBracketSet {
   
     alpha = _alpha;
     tokens = _tokens;
-    brackets = new HashSet<UnlabeledBracket>(_brackets);
     
     if (countRoot) {
       UnlabeledBracket root = new UnlabeledBracket(0, tokens.length);
@@ -45,12 +44,18 @@ public class UnlabeledBracketSet {
       lastInd.add(new ArrayList<UnlabeledBracket>());
     }
     
-    for (UnlabeledBracket b: _brackets) {
+    brackets = new HashSet<UnlabeledBracket>();
+    for (UnlabeledBracket b: _brackets) addBracket(b);
+  }
+  
+  private void addBracket(UnlabeledBracket b) {
+    if (!firstInd.get(b.getFirst()).contains(b)) {
+      brackets.add(b);
       firstInd.get(b.getFirst()).add(b);
       lastInd.get(b.getLast()-1).add(b);
     }
   }
-  
+
   public Set<UnlabeledBracket> getBrackets() {
     return brackets;
   }
@@ -182,5 +187,29 @@ public class UnlabeledBracketSet {
       clumps[m++] = clump;
     }
     return clumps;
+  }
+
+  public static UnlabeledBracketSet emptySet(
+      final Alpha alpha, final int[] tokens, final boolean countRoot) {
+    return new UnlabeledBracketSet(
+        tokens, new ArrayList<UnlabeledBracket>(), alpha, countRoot);
+  }
+
+  public static UnlabeledBracketSet emptySet(Alpha alpha2, int[] tokens2) {
+    return emptySet(alpha2, tokens2, false);
+  }
+
+  public void appendNonSingletonBrackets(Collection<UnlabeledBracket> bs) {
+    for (UnlabeledBracket b: bs) if (b.len() > 1) addBracket(b);
+  }
+
+  public void appendRootBracket() {
+    addBracket(new UnlabeledBracket(0, tokens.length));
+  }
+
+  public UnlabeledBracketSet copy() {
+    final UnlabeledBracketSet copy = emptySet(alpha, tokens);
+    copy.appendNonSingletonBrackets(brackets);
+    return copy;
   }
 }

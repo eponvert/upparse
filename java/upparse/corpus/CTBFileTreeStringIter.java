@@ -13,6 +13,7 @@ public class CTBFileTreeStringIter extends FileTreeStringIter {
 
   @Override
   protected boolean skipLine(String line) {
-    return line.trim().charAt(0) == '<';
+    final boolean skip = line.trim().charAt(0) == '<'; 
+    return skip;
   }
 }

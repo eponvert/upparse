@@ -4,32 +4,28 @@ import java.util.*;
 
 import upparse.corpus.*;
 
+
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public abstract class TreebankEval extends Eval {
+public class TreebankEval { 
 
   private final UnlabeledBracketSetCorpus gold;
   private final boolean checkTerms;
+  private final String name;
   
-  protected TreebankEval(
-      final OutputType type, 
-      final UnlabeledBracketSetCorpus _gold, 
-      final boolean _checkTerms) {
-    super("Chunker-" + type);
-    assert _gold != null;
+  public TreebankEval(
+      String _name, UnlabeledBracketSetCorpus _gold) {
+    name = _name;
     gold = _gold;
-    checkTerms = _checkTerms;
+    checkTerms = false;
+  }
+  
+  public TreebankEval(OutputType type, UnlabeledBracketSetCorpus gold2) {
+    this("Chunker-" + type, gold2);
   }
 
-  protected abstract UnlabeledBracketSetCorpus makeTreeCorpus(
-      ChunkedSegmentedCorpus output);
-  
-  @Override
-  public void eval(String string, ChunkedSegmentedCorpus output)
-      throws EvalError {
-    addExperiment(new ParsingExperiment(string, makeTreeCorpus(output)));
-  }
+  public String getEvalName() { return name; }
 
   private static UnlabeledBracket[] difference(
       final Set<UnlabeledBracket> a, final UnlabeledBracket[] tp) {
@@ -71,7 +67,7 @@ public abstract class TreebankEval extends Eval {
           outpB = output.get(i),
           goldB = gold.get(i);
         
-        assert outpB.getTokens().length == goldB.getTokens().length;
+        // assert outpB.getTokens().length == goldB.getTokens().length;
         if (checkTerms)
           for (int j = 0; j < outpB.getTokens().length; j++)
             assert outpB.getTokens()[j] == goldB.getTokens()[j];
@@ -175,5 +171,16 @@ public abstract class TreebankEval extends Eval {
     public int getTPlen() {
       return len[TP];
     }
+  }
+
+  public UnlabeledExperimentEval getExperiment(String name,
+      UnlabeledBracketSetCorpus output) {
+    return new ParsingExperiment(name, output);
+  }
+
+  public UnlabeledExperimentEval getExperiment(
+      final String n,
+      final UnlabeledBracketSet[] a) {
+    return getExperiment(n, UnlabeledBracketSetCorpus.fromArrays(a));
   }
 }

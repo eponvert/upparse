@@ -5,13 +5,12 @@ import upparse.corpus.*;
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
-public class TreebankRBEval extends TreebankEval {
+public class TreebankRBEval extends TreebankEvalFromChunkerOutput {
   
   private TreebankRBEval(
       final OutputType type, 
-      final UnlabeledBracketSetCorpus gold, 
-      final boolean checkTerms) {
-    super(type, gold, checkTerms);
+      final UnlabeledBracketSetCorpus gold) { 
+    super(type, gold);
   }
 
   @Override
@@ -21,12 +20,7 @@ public class TreebankRBEval extends TreebankEval {
   }
 
   public static Eval fromUnlabeledBracketSets(OutputType type,
-      UnlabeledBracketSetCorpus goldUnlabeledBracketSets, boolean checkTerms) {
-    return new TreebankRBEval(type, goldUnlabeledBracketSets, checkTerms);
-  }
-
-  public static Eval fromUnlabeledBracketSets(OutputType type,
       UnlabeledBracketSetCorpus goldUnlabeledBracketSets) {
-    return fromUnlabeledBracketSets(type, goldUnlabeledBracketSets, false);
+    return new TreebankRBEval(type, goldUnlabeledBracketSets);
   }
 }

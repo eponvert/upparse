@@ -42,5 +42,9 @@ public abstract class OutputManager {
   public void setOutputAll(boolean b) { outputAllIter = b; }
   
   public abstract void writeMetadata(Main prog) throws IOException;
+
+  public abstract String treeOutputFilename();
+  
+  public abstract String clumpsOutputFilename();
 }
 

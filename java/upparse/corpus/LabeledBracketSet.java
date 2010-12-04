@@ -34,6 +34,11 @@ public class LabeledBracketSet {
       firstInd.get(b.getFirst()).add(b);
       lastInd.get(b.getLast()-1).add(b);
     }
+    
+    for (int i = 0; i < tokens.length; i++) {
+      assert firstInd.get(i).size() != 0;
+      assert lastInd.get(i).size() != 0;
+    }
 
     pos = new String[tokens.length];
     
@@ -97,7 +102,21 @@ public class LabeledBracketSet {
   public static LabeledBracketSet fromString(
       String next, final Alpha alpha) {
     next = next.replaceAll("\\(\\(", "( (").replaceAll("\\)", " ) ");
-    return fromTokens(next.split("[ \\t]+"), alpha);
+    next = next.replaceAll("(\\([a-zA-Z]* [a-zA-Z]*) ([a-zA-Z]* \\))", "\\1_\\2");
+    if (next.matches(".*\\([a-zA-Z]* [a-zA-Z]* [a-zA-Z]* \\).*"))
+      throw new RuntimeException("Got it");
+    if (next.matches("Ken Madsen"))
+      throw new RuntimeException("Got it by cheating");
+    if (next.contains("Ken Madsen"))
+      throw new RuntimeException("Got it by cheating");
+    if (next.contains("Ken_Madsen"))
+      throw new RuntimeException("woot");
+    if (next.contains("Madsen"))
+      throw new RuntimeException("hmm");
+    if (next.contains("\\1"))
+      throw new RuntimeException("woops");
+    String[] items = next.split("[ \\t]+");
+    return fromTokens(items, alpha);
   }
 
   public static LabeledBracketSet fromTokens(String[] items, Alpha alpha) {
@@ -138,7 +157,8 @@ public class LabeledBracketSet {
     
     // Add all the POS
     for (int i = 0; i < tokens.length; i++) {
-      newBraks.add(firstInd.get(i).get(0));
+      final List<LabeledBracket> ind = firstInd.get(i);
+      newBraks.add(ind.get(0));
     }
     
     for (LabeledBracket b: brackets)

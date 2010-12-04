@@ -3,6 +3,7 @@ package upparse.eval;
 import java.io.*;
 import java.util.*;
 
+import upparse.cli.*;
 import upparse.corpus.*;
 
 /**
@@ -25,7 +26,12 @@ public class EvalManager {
   private StopSegmentCorpus testStopSegmentCorpus = null;
   private int numSent = -1;
   private boolean onlyLast = false;
-  
+  private TreebankEval treebankEval;
+  private ChunkingEval npsEval;
+  private ChunkingEval clumpsEval;
+  private TreebankEval ubsFromClumpsEval;
+  private TreebankEval ubsFromNPsEval;
+
 
   public void writeMetadata(PrintStream s) {
     s.print("  Evaluation type: ");
@@ -99,18 +105,26 @@ public class EvalManager {
   
   private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
   throws EvalError, CorpusError { 
+    checkGoldUnlabeledBracketSet();
+    return goldUnlabeledBracketSet;
+  }
+  
+  private void checkGoldUnlabeledBracketSet() throws CorpusError {
     if (goldUnlabeledBracketSet == null)
       goldUnlabeledBracketSet = CorpusUtil.goldUnlabeledBracketSets(
           testFileType, alpha, corpusFiles, filterLength);
     assert goldUnlabeledBracketSet != null;
-    return goldUnlabeledBracketSet;
   }
   
-  private ChunkedCorpus getNPsGoldStandard() throws CorpusError {
+  private void checkNPsGoldStandard() throws CorpusError {
     if (npsGoldStandard == null) 
       npsGoldStandard = CorpusUtil.npsGoldStandard(
           testFileType, alpha, corpusFiles, filterLength);
     assert npsGoldStandard != null;
+  }
+
+  private ChunkedCorpus getNPsGoldStandard() throws CorpusError {
+    checkNPsGoldStandard();
     return npsGoldStandard;
   }
   
@@ -137,12 +151,18 @@ public class EvalManager {
       clumpGoldStandard = 
         clumpGoldStandard.filterBySentenceLength(filterLength);
   }
-
-  private ChunkedCorpus getClumpGoldStandard() throws EvalError {
+  
+  private void checkClumpGoldStandard() throws EvalError {
     if (clumpGoldStandard == null) makeClumpGoldStandard();
     assert clumpGoldStandard != null;
+  }
+
+  private ChunkedCorpus getClumpGoldStandard() throws EvalError {
+    checkClumpGoldStandard();
     return clumpGoldStandard;
   }
+
+
 
   public void setFilterLen(int len) { filterLength = len; }
 
@@ -175,6 +195,50 @@ public class EvalManager {
     for (Eval eval: evals) {
       eval.writeSummary(evalReportType, out, onlyLast);
       out.println();
+    }
+  }
+  
+  public void initializeCCLParserEval() throws EvalError, CorpusError {
+    checkNPsGoldStandard();
+    checkClumpGoldStandard();
+    treebankEval = new TreebankEval("asTrees", getGoldUnlabeledBracketSets());
+    npsEval =  ChunkingEval.fromChunkedCorpus(OutputType.NPS, npsGoldStandard);
+    clumpsEval =
+      ChunkingEval.fromChunkedCorpus(OutputType.CLUMP, clumpGoldStandard);
+    ubsFromClumpsEval = new TreebankEval("clumps Recall", 
+        clumpGoldStandard.toUnlabeledBracketSetCorpus());
+    ubsFromNPsEval = new TreebankEval("NPs Recall", 
+        npsGoldStandard.toUnlabeledBracketSetCorpus());
+  }
+
+  public void evalParserOutput(
+      final UnlabeledBracketSetCorpus output, final OutputManager man) 
+  throws CorpusError, EvalError, IOException {
+    ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha, output);
+    treebankEval
+      .getExperiment("asTrees", output.getTrees())
+      .writeSummary(man.getResultsStream());
+    
+    clumpsEval.addExperiment(
+        clumpsEval.newChunkingExperiment("clumps", chunked));
+    clumpsEval.writeSummary(evalReportType, man.getResultsStream(), false);
+    
+    ubsFromClumpsEval
+      .getExperiment("", output.getTrees())
+      .writeSummary(man.getResultsStream());
+    
+    npsEval.addExperiment(
+        npsEval.newChunkingExperiment("NPs", chunked));
+    npsEval.writeSummary(evalReportType, man.getResultsStream(), false);
+    
+    ubsFromNPsEval
+      .getExperiment("", output.getTrees())
+      .writeSummary(man.getResultsStream());
+    
+      
+    if (!man.isNull()) {
+      output.writeTo(man.treeOutputFilename());
+      chunked.writeTo(man.clumpsOutputFilename());
     }
   }
 }

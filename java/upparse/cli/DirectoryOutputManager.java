@@ -88,4 +88,14 @@ public class DirectoryOutputManager extends OutputManager {
     prog.writeMetadata(metadataStream);
     metadataStream.close();
   }
+
+  @Override
+  public String treeOutputFilename() { 
+    return dir + File.separator + "as-trees.txt";
+  }
+
+  @Override
+  public String clumpsOutputFilename() {
+    return dir + File.separator + "as-chunks.txt";
+  }
 }
