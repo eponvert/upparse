@@ -56,7 +56,7 @@ public class CorpusUtil {
       final Iterable<LabeledBracketSet> treeiter, 
       final CorpusConstraints cc,
       final int numS) {
-    final LabeledBracketSet[] lbs = arrayFromIter(treeiter);
+    final LabeledBracketSet[] lbs = lbsArrayFromIter(treeiter);
     final int len; 
     if (numS == -1 || numS > lbs.length) len = lbs.length;
     else len = numS;
@@ -113,14 +113,14 @@ public class CorpusUtil {
 
   private static ChunkedCorpus getChunkedCorpusClumps(Alpha alpha,
       Iterable<UnlabeledBracketSet> iter) {
-    UnlabeledBracketSet[] uBraks = arrayFromIter(iter);
+    UnlabeledBracketSet[] uBraks = ubsArrayFromIter(iter);
     int[][][] arrays = new int[uBraks.length][][];
     int i = 0;
     for (UnlabeledBracketSet u: uBraks) arrays[i++] = u.clumps();
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
-  private static UnlabeledBracketSet[] arrayFromIter(
+  private static UnlabeledBracketSet[] ubsArrayFromIter(
       Iterable<UnlabeledBracketSet> iter) {
     List<UnlabeledBracketSet> l = new ArrayList<UnlabeledBracketSet>();
     for (UnlabeledBracketSet s: iter) l.add(s);
@@ -152,7 +152,7 @@ public class CorpusUtil {
       final Iterable<LabeledBracketSet> iter, 
       final String cat, 
       final CorpusConstraints cc) {
-    LabeledBracketSet[] lBraks = arrayFromIter(iter);
+    LabeledBracketSet[] lBraks = lbsArrayFromIter(iter);
     int[][][] arrays = new int[lBraks.length][][];
     int i = 0;
     for (LabeledBracketSet l: lBraks)
@@ -160,7 +160,7 @@ public class CorpusUtil {
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
-  private static LabeledBracketSet[] arrayFromIter(
+  private static LabeledBracketSet[] lbsArrayFromIter(
       Iterable<LabeledBracketSet> unlabeledIter) {
     List<LabeledBracketSet> l = new ArrayList<LabeledBracketSet>();
     for (LabeledBracketSet u: unlabeledIter) l.add(u);
