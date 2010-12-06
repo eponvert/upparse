@@ -115,6 +115,11 @@ public class EmissionProbs {
     
     defaultProb = log(1/nvocab);
   }
+  
+  public static EmissionProbs directFromProbs(
+      final double[][] probs, Ipredicate isStop, double smoothParam) {
+    return new EmissionProbs(probs, isStop, smoothParam);
+  }
 
   public static EmissionProbs fromCounts(
       final double[][] emissCount, Ipredicate isStop, double smoothParam) {

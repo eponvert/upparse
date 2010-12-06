@@ -60,7 +60,7 @@ public class StopSegmentCorpus {
       if (filt[j])
         _corpus[i++] = corpus[j];
     
-    return fromArrays(alpha, _corpus);
+    return fromArrays(getAlpha(), _corpus);
   }
 
   public Iterable<int[][]> arrayIter() {
@@ -101,12 +101,16 @@ public class StopSegmentCorpus {
       for (int[] seg: sent) {
         for (int w: seg) {
           bw.write(" ");
-          bw.write(alpha.getString(w));
+          bw.write(getAlpha().getString(w));
         }
         bw.write(" __stop__");
       }
       bw.write("\n");
     }
     bw.close();
+  }
+
+  public Alpha getAlpha() {
+    return alpha;
   }
 }

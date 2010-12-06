@@ -109,4 +109,32 @@ public class CombinedProb {
       assert abs(sum-1) < 1e-5 : sum;
     }
   }
+
+  /**
+   * Creates a combined probability store directly from an array of log-
+   * probabilities
+   * @param prob The array of NxNxV log probabilities, where N = number of tags 
+   * and V = vocabulary size
+   * @param hmm The HMM used for transition probabilities
+   * @param smooth The smoothing parameter for these probabilities
+   * @return A new combined probability store
+   */
+  public static CombinedProb fromProb(
+      double[][][] prob, HMM hmm, double smooth) {
+    // convert the log probs to non-log
+    double[][][] nlProb = 
+      new double[prob.length][prob[0][0].length][prob[0].length];
+    for (int x1 = 0; x1 < prob.length; x1++) {
+      for (int x2 = 0; x2 < prob[x1].length; x2++) {
+        for (int x3 = 0; x3 < prob[x1][x2].length; x3++) {
+          nlProb[x1][x3][x2] = Math.exp(prob[x1][x2][x3]);
+        }
+      }
+    }
+
+    // Now, the fromCounts method should actually work.
+    // This is stupid: to do this I need to switch around the probs, 
+    // even though they're about to be switched back around.
+    return fromCounts(nlProb, hmm, smooth);
+  }
 }

@@ -42,6 +42,12 @@ public class GrandparentBIOEncoder extends TagEncoder {
     O_B_STATE, 
     O_O_STATE };
 
+  private static final int[] ALL_STOP_TAGS = new int[] {
+    I_STOP_STATE, 
+    O_STOP_STATE,
+    STOP_STOP_STATE
+  };
+
   static {
     INIT_TAG_PROB[O_STOP_STATE] = 1;
     
@@ -251,5 +257,10 @@ public class GrandparentBIOEncoder extends TagEncoder {
   @Override
   public int[] allNonStopTags() {
     return NON_STOP_TAGS;
+  }
+
+  @Override
+  public int[] allStopTags() {
+    return ALL_STOP_TAGS;
   }
 }
