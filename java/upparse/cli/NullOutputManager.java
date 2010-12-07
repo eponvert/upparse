@@ -28,7 +28,8 @@ public class NullOutputManager extends OutputManager {
   public void closeAll() { }
 
   @Override
-  public void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput) { }
+  public void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput, String s) { 
+  }
 
   @Override
   public void writeOutput() throws IOException { }

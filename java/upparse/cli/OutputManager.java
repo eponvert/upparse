@@ -37,7 +37,8 @@ public abstract class OutputManager {
 
   public abstract void writeOutput() throws IOException, CorpusError;
 
-  public abstract void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput);
+  public abstract void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput,
+      String fname);
   
   public void setOutputAll(boolean b) { outputAllIter = b; }
   

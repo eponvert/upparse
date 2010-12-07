@@ -42,6 +42,7 @@ public class Main {
   private int filterTrain = -1;
   private final String action;
   private String cclparserOutput;
+  private boolean doContinuousEval = false;
 
   private Main(String[] args) throws CommandLineError, IOException, EvalError,
       EncoderError, CorpusError {
@@ -65,6 +66,9 @@ public class Main {
 
         if (arg.equals("-output"))
           outputManager = OutputManager.fromDirname(args[i++]);
+        
+        else if (arg.equals("-continuousEval"))
+          doContinuousEval = true;
 
         else if (arg.equals("-cclpOutput"))
           cclparserOutput = args[i++];
@@ -222,6 +226,7 @@ public class Main {
             + "\n"
             + "Options:\n"
             + "  -chunkingStrategy K TWOSTAGE or SOFT\n"
+            + "  -continuousEval     Run an eval on the test set after each iteration of EM\n"
             + "  -chunkerType K      HMM or PRLG\n"
             + "  -train FILES        Train using specified files\n"
             + "  -filterTrain N      Train only on sentences of len <= N\n"
@@ -282,8 +287,9 @@ public class Main {
 
     evalManager.addChunkerOutput(comment, chunkerOutput);
 
-    if (!outputManager.isNull())
-      outputManager.addChunkerOutput(chunkerOutput);
+    if (!outputManager.isNull()) {
+      outputManager.addChunkerOutput(chunkerOutput, comment);
+    }
   }
 
   private static void usageError() {
@@ -298,12 +304,14 @@ public class Main {
 
   private void chunkerEval(final SequenceModelChunker model)
       throws IOException, EvalError, ChunkerError, CorpusError {
-    evalChunker("Iter 0", model.getCurrentChunker());
     while (model.anotherIteration()) {
-      model.updateWithEM(outputManager.getStatusStream());
-      evalChunker(String.format("Iter %d", model.getCurrentIter()),
+      if (doContinuousEval )
+        evalChunker(String.format("Iter-%d", model.getCurrentIter()),
           model.getCurrentChunker());
+      model.updateWithEM(outputManager.getStatusStream());
     }
+    evalChunker(String.format("Iter-%d", model.getCurrentIter()),
+        model.getCurrentChunker());
     writeOutput();
   }
 

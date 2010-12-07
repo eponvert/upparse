@@ -113,4 +113,8 @@ public class StopSegmentCorpus {
   public Alpha getAlpha() {
     return alpha;
   }
+
+  public int size() { 
+    return corpus.length;
+  }
 }

@@ -14,7 +14,7 @@ public class DirectoryOutputManager extends OutputManager {
   private final PrintStream resultsStream;
   private List<ChunkedSegmentedCorpus>  writeOutput = 
     new ArrayList<ChunkedSegmentedCorpus>();
-  private int numIter = 0;
+  private List<String> fnames = new ArrayList<String>();
   private final PrintStream statusStream;
   
   private DirectoryOutputManager(final String dirName) throws CommandLineError {
@@ -50,32 +50,32 @@ public class DirectoryOutputManager extends OutputManager {
   public PrintStream getStatusStream() { return statusStream; }
 
   @Override
-  public void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput) {
-    numIter++;
-    if (outputAllIter || writeOutput.isEmpty())
+  public void addChunkerOutput(ChunkedSegmentedCorpus chunkerOutput, 
+      final String fname) {
+    if (outputAllIter || writeOutput.isEmpty()) {
       writeOutput.add(chunkerOutput);
-    else 
+      fnames.add(fname);
+    }
+    
+    else {
       writeOutput.set(0, chunkerOutput);
+      fnames.set(0, fname);
+    }
+  }
+  
+  private String getFname(int i) {
+    return dir + File.separator + fnames.get(i);
   }
 
   @Override
   public void writeOutput() throws CorpusError, IOException {
     if (writeOutput.size() == 1)
-      writeOutput.get(0).writeTo(lastChunkerIterOutputFname(), outputType);
+      writeOutput.get(0).writeTo(getFname(0), outputType);
     else
       for (int i = 0; i < writeOutput.size(); i++)
-        writeOutput.get(i).writeTo(getChunkerIterOutputFname(i), outputType);
+        writeOutput.get(i).writeTo(getFname(i), outputType);
   }
 
-  private String getChunkerIterOutputFname(int i) {
-    int _i = i+1;
-    return dir + File.separator + "I" + _i + (_i == numIter ? "_last" : "");
-  }
-
-  private String lastChunkerIterOutputFname() {
-    return dir + File.separator + "I" + numIter + "_last";
-  }
-  
   public static OutputManager fromDirname(final String filename) 
   throws CommandLineError {
     return new DirectoryOutputManager(filename);

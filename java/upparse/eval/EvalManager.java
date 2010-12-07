@@ -16,7 +16,8 @@ public class EvalManager {
   public EvalManager(Alpha a) { alpha = a; } 
 
   private EvalReportType evalReportType = EvalReportType.PR;
-  List<Eval> evals = new ArrayList<Eval>();
+  private List<Eval> evals = new ArrayList<Eval>();
+  private List<OutputType> evalTypes = new ArrayList<OutputType>();
   private String[] corpusFiles = null;
   private int filterLength = -1;
   private CorpusType testFileType = CorpusType.WSJ;
@@ -52,18 +53,18 @@ public class EvalManager {
     evalReportType = type;
   }
   
-  public void setParserEvaluationTypes(String string) 
+  public void setParserEvaluationTypes(String string)  
   throws EvalError, CorpusError {
     if (string.equals("")) { 
-      evals.add(
-          ChunkingEval.fromChunkedCorpus(
-              OutputType.CLUMP, getClumpGoldStandard()));
-      evals.add(
-          ChunkingEval.fromChunkedCorpus(
-              OutputType.NPS, getNPsGoldStandard()));
-    }
-    else for (String s: string.split(",")) {
-      switch (OutputType.valueOf(s)) {
+      evalTypes.add(OutputType.CLUMP);
+      evalTypes.add(OutputType.NPS);
+    } else for (String s: string.split(","))
+      evalTypes.add(OutputType.valueOf(s));
+  }
+  
+  private void initParseEvaluationTypes() throws EvalError, CorpusError {
+    for (OutputType t: evalTypes) {
+      switch(t) {
         case CLUMP:
           evals.add(ChunkingEval
               .fromChunkedCorpus(OutputType.CLUMP, getClumpGoldStandard()));
@@ -94,7 +95,7 @@ public class EvalManager {
           break;
           
         default: 
-          throw new EvalError("Unexpected evaluation type: " + s);
+          throw new EvalError("Unexpected evaluation type: " + t);
       }
     }
   }
@@ -166,7 +167,10 @@ public class EvalManager {
 
   public void setFilterLen(int len) { filterLength = len; }
 
-  public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError {
+  public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError, 
+  EvalError {
+    if (evals.size() == 0)
+      initParseEvaluationTypes();
     if (testStopSegmentCorpus == null) makeEvalStopSegmentCorpus();
     return testStopSegmentCorpus;
   }
@@ -176,17 +180,21 @@ public class EvalManager {
           alpha, corpusFiles, testFileType, numSent, filterLength); 
   }
 
-  public boolean isNull() {
+  public boolean isNull() throws EvalError, CorpusError {
     return evalReportType == null || noEvals();
   }
 
-  private boolean noEvals() {
+  private boolean noEvals() throws EvalError, CorpusError {
+    if (evals.size() == 0)
+      initParseEvaluationTypes();
     return evals.size() == 0 || (evals.size() == 1 && evals.get(0) == null);
   }
 
   public void addChunkerOutput(
       final String comment, final ChunkedSegmentedCorpus output) 
-  throws EvalError {
+  throws EvalError, CorpusError {
+    if (evals.size() == 0)
+      initParseEvaluationTypes();
     for (Eval eval: evals)
       eval.eval(comment, output);
   }
