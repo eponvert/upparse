@@ -43,6 +43,7 @@ public class Main {
   private final String action;
   private String cclparserOutput;
   private boolean doContinuousEval = false;
+  private boolean noSeg = false;
 
   private Main(String[] args) throws CommandLineError, IOException, EvalError,
       EncoderError, CorpusError {
@@ -66,7 +67,10 @@ public class Main {
 
         if (arg.equals("-output"))
           outputManager = OutputManager.fromDirname(args[i++]);
-        
+
+        if (arg.equals("-noSeg"))
+          noSeg = true;
+
         else if (arg.equals("-continuousEval"))
           doContinuousEval = true;
 
@@ -127,9 +131,8 @@ public class Main {
           encoder = TagEncoder.getBIOEncoder(EncoderType.valueOf(args[i++]),
               KeepStop.STOP, alpha);
 
-        else if (arg.equals("-E") || arg.equals("-evalReportType")) {
+        else if (arg.equals("-E") || arg.equals("-evalReportType"))
           evalManager.setEvalReportType(EvalReportType.valueOf(args[i++]));
-        }
 
         else if (arg.equals("-e") || arg.equals("-evalTypes"))
           eval = args[i++];
@@ -149,6 +152,7 @@ public class Main {
       outputManager.setOutputType(outputType);
 
       // Setup evalManager
+      evalManager.setNoSeg(noSeg);
       if (testCorpusString.length == 1
           && testCorpusString[0].startsWith("subset")) {
         int len = Integer.parseInt(testCorpusString[0].substring(6));
@@ -225,6 +229,7 @@ public class Main {
             + "  cclp-eval\n"
             + "\n"
             + "Options:\n"
+            + "  -noSeg              Ignore all punctuation\n"
             + "  -chunkingStrategy K TWOSTAGE or SOFT\n"
             + "  -continuousEval     Run an eval on the test set after each iteration of EM\n"
             + "  -chunkerType K      HMM or PRLG\n"
@@ -267,7 +272,7 @@ public class Main {
 
   private void makeTrainStopSegmentCorpus() throws CorpusError {
     trainStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha,
-        trainCorpusString, trainFileType, trainSents, filterTrain);
+        trainCorpusString, trainFileType, trainSents, filterTrain, noSeg);
     assert trainStopSegmentCorpus != null;
   }
 
@@ -305,9 +310,9 @@ public class Main {
   private void chunkerEval(final SequenceModelChunker model)
       throws IOException, EvalError, ChunkerError, CorpusError {
     while (model.anotherIteration()) {
-      if (doContinuousEval )
+      if (doContinuousEval)
         evalChunker(String.format("Iter-%d", model.getCurrentIter()),
-          model.getCurrentChunker());
+            model.getCurrentChunker());
       model.updateWithEM(outputManager.getStatusStream());
     }
     evalChunker(String.format("Iter-%d", model.getCurrentIter()),
@@ -330,10 +335,10 @@ public class Main {
       case UNIFORM:
         return SequenceModel.uniformEstimate(chunkerType, train, encoder,
             smooth);
-        
+
       case RANDOM:
-        return SequenceModel.randomEstimate(chunkerType, train, encoder, 
-            smooth);
+        return SequenceModel
+            .randomEstimate(chunkerType, train, encoder, smooth);
 
       default:
         throw new CommandLineError("Unexpected chunking strategy: "

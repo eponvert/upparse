@@ -10,10 +10,12 @@ import upparse.corpus.*;
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class EvalManager {
-  
+
   Alpha alpha;
-  
-  public EvalManager(Alpha a) { alpha = a; } 
+
+  public EvalManager(Alpha a) {
+    alpha = a;
+  }
 
   private EvalReportType evalReportType = EvalReportType.PR;
   private List<Eval> evals = new ArrayList<Eval>();
@@ -32,95 +34,104 @@ public class EvalManager {
   private ChunkingEval clumpsEval;
   private TreebankEval ubsFromClumpsEval;
   private TreebankEval ubsFromNPsEval;
+  private boolean noSeg = false;
 
+  public void setNoSeg(boolean b) {
+    noSeg = b;
+  }
 
   public void writeMetadata(PrintStream s) {
     s.print("  Evaluation type: ");
-    for (Eval e: evals) s.print(e.getEvalName() + " ");
+    for (Eval e : evals)
+      s.print(e.getEvalName() + " ");
     s.println();
     s.println("  Test files:");
-    for (String f: corpusFiles) s.println("    " + f);
-    if (filterLength > 0) 
+    for (String f : corpusFiles)
+      s.println("    " + f);
+    if (filterLength > 0)
       s.println("  Filter test files by len: " + filterLength);
     if (numSent > 0)
       s.println("  Num test sentences: " + numSent);
     s.println("  Test file type: " + testFileType);
   }
-  
-  public void setTestFileType(CorpusType t) { testFileType = t; }
+
+  public void setTestFileType(CorpusType t) {
+    testFileType = t;
+  }
 
   public void setEvalReportType(EvalReportType type) {
     evalReportType = type;
   }
-  
-  public void setParserEvaluationTypes(String string)  
-  throws EvalError, CorpusError {
-    if (string.equals("")) { 
+
+  public void setParserEvaluationTypes(String string) throws EvalError,
+      CorpusError {
+    if (string.equals("")) {
       evalTypes.add(OutputType.CLUMP);
       evalTypes.add(OutputType.NPS);
-    } else for (String s: string.split(","))
-      evalTypes.add(OutputType.valueOf(s));
+    } else
+      for (String s : string.split(","))
+        evalTypes.add(OutputType.valueOf(s));
   }
-  
+
   private void initParseEvaluationTypes() throws EvalError, CorpusError {
-    for (OutputType t: evalTypes) {
-      switch(t) {
+    for (OutputType t : evalTypes) {
+      switch (t) {
         case CLUMP:
-          evals.add(ChunkingEval
-              .fromChunkedCorpus(OutputType.CLUMP, getClumpGoldStandard()));
+          evals.add(ChunkingEval.fromChunkedCorpus(OutputType.CLUMP,
+              getClumpGoldStandard()));
           break;
-          
+
         case NPS:
-          evals.add(ChunkingEval
-              .fromChunkedCorpus(OutputType.NPS, getNPsGoldStandard()));
+          evals.add(ChunkingEval.fromChunkedCorpus(OutputType.NPS,
+              getNPsGoldStandard()));
           break;
-          
+
         case TREEBANKPREC:
           evals.add(TreebankPrecisionEval.fromUnlabeledBracketSets(
               OutputType.TREEBANKPREC, getGoldUnlabeledBracketSets()));
           break;
-          
+
         case TREEBANKFLAT:
           evals.add(TreebankFlatEval.fromUnlabeledBracketSets(
               OutputType.TREEBANKFLAT, getGoldUnlabeledBracketSets()));
           break;
-          
+
         case TREEBANKRB:
           evals.add(TreebankRBEval.fromUnlabeledBracketSets(
               OutputType.TREEBANKRB, getGoldUnlabeledBracketSets()));
           break;
-          
+
         case NONE:
           evals.add(NullEval.instance());
           break;
-          
-        default: 
+
+        default:
           throw new EvalError("Unexpected evaluation type: " + t);
       }
     }
   }
-  
+
   public void setTestCorpusString(String[] filenames) {
     corpusFiles = filenames;
   }
-  
-  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets() 
-  throws EvalError, CorpusError { 
+
+  private UnlabeledBracketSetCorpus getGoldUnlabeledBracketSets()
+      throws EvalError, CorpusError {
     checkGoldUnlabeledBracketSet();
     return goldUnlabeledBracketSet;
   }
-  
+
   private void checkGoldUnlabeledBracketSet() throws CorpusError {
     if (goldUnlabeledBracketSet == null)
       goldUnlabeledBracketSet = CorpusUtil.goldUnlabeledBracketSets(
           testFileType, alpha, corpusFiles, filterLength);
     assert goldUnlabeledBracketSet != null;
   }
-  
+
   private void checkNPsGoldStandard() throws CorpusError {
-    if (npsGoldStandard == null) 
-      npsGoldStandard = CorpusUtil.npsGoldStandard(
-          testFileType, alpha, corpusFiles, filterLength);
+    if (npsGoldStandard == null)
+      npsGoldStandard = CorpusUtil.npsGoldStandard(testFileType, alpha,
+          corpusFiles, filterLength);
     assert npsGoldStandard != null;
   }
 
@@ -128,33 +139,35 @@ public class EvalManager {
     checkNPsGoldStandard();
     return npsGoldStandard;
   }
-  
+
   private void makeClumpGoldStandard() throws EvalError {
     switch (testFileType) {
       case WSJ:
         clumpGoldStandard = CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
         break;
-        
+
       case NEGRA:
-        clumpGoldStandard = CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
+        clumpGoldStandard = CorpusUtil.negraClumpGoldStandard(alpha,
+            corpusFiles);
         break;
-        
+
       case CTB:
-        clumpGoldStandard  = CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
+        clumpGoldStandard = CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
         break;
-        
+
       default:
-        throw new EvalError(
-            "Unexpected file type for clumping gold standard: " + corpusFiles);
+        throw new EvalError("Unexpected file type for clumping gold standard: "
+            + corpusFiles);
     }
-    
+
     if (filterLength > 0)
-      clumpGoldStandard = 
-        clumpGoldStandard.filterBySentenceLength(filterLength);
+      clumpGoldStandard = clumpGoldStandard
+          .filterBySentenceLength(filterLength);
   }
-  
+
   private void checkClumpGoldStandard() throws EvalError {
-    if (clumpGoldStandard == null) makeClumpGoldStandard();
+    if (clumpGoldStandard == null)
+      makeClumpGoldStandard();
     assert clumpGoldStandard != null;
   }
 
@@ -163,21 +176,22 @@ public class EvalManager {
     return clumpGoldStandard;
   }
 
+  public void setFilterLen(int len) {
+    filterLength = len;
+  }
 
-
-  public void setFilterLen(int len) { filterLength = len; }
-
-  public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError, 
-  EvalError {
+  public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError,
+      EvalError {
     if (evals.size() == 0)
       initParseEvaluationTypes();
-    if (testStopSegmentCorpus == null) makeEvalStopSegmentCorpus();
+    if (testStopSegmentCorpus == null)
+      makeEvalStopSegmentCorpus();
     return testStopSegmentCorpus;
   }
 
   private void makeEvalStopSegmentCorpus() throws CorpusError {
-    testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(
-          alpha, corpusFiles, testFileType, numSent, filterLength); 
+    testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha, corpusFiles,
+        testFileType, numSent, filterLength, noSeg);
   }
 
   public boolean isNull() throws EvalError, CorpusError {
@@ -190,60 +204,53 @@ public class EvalManager {
     return evals.size() == 0 || (evals.size() == 1 && evals.get(0) == null);
   }
 
-  public void addChunkerOutput(
-      final String comment, final ChunkedSegmentedCorpus output) 
-  throws EvalError, CorpusError {
+  public void addChunkerOutput(final String comment,
+      final ChunkedSegmentedCorpus output) throws EvalError, CorpusError {
     if (evals.size() == 0)
       initParseEvaluationTypes();
-    for (Eval eval: evals)
+    for (Eval eval : evals)
       eval.eval(comment, output);
   }
 
   public void writeEval(PrintStream out) throws EvalError {
-    for (Eval eval: evals) {
+    for (Eval eval : evals) {
       eval.writeSummary(evalReportType, out, onlyLast);
       out.println();
     }
   }
-  
+
   public void initializeCCLParserEval() throws EvalError, CorpusError {
     checkNPsGoldStandard();
     checkClumpGoldStandard();
     treebankEval = new TreebankEval("asTrees", getGoldUnlabeledBracketSets());
-    npsEval =  ChunkingEval.fromChunkedCorpus(OutputType.NPS, npsGoldStandard);
-    clumpsEval =
-      ChunkingEval.fromChunkedCorpus(OutputType.CLUMP, clumpGoldStandard);
-    ubsFromClumpsEval = new TreebankEval("clumps Recall", 
+    npsEval = ChunkingEval.fromChunkedCorpus(OutputType.NPS, npsGoldStandard);
+    clumpsEval = ChunkingEval.fromChunkedCorpus(OutputType.CLUMP,
+        clumpGoldStandard);
+    ubsFromClumpsEval = new TreebankEval("clumps Recall",
         clumpGoldStandard.toUnlabeledBracketSetCorpus());
-    ubsFromNPsEval = new TreebankEval("NPs Recall", 
+    ubsFromNPsEval = new TreebankEval("NPs Recall",
         npsGoldStandard.toUnlabeledBracketSetCorpus());
   }
 
-  public void evalParserOutput(
-      final UnlabeledBracketSetCorpus output, final OutputManager man) 
-  throws CorpusError, EvalError, IOException {
+  public void evalParserOutput(final UnlabeledBracketSetCorpus output,
+      final OutputManager man) throws CorpusError, EvalError, IOException {
     ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha, output);
-    treebankEval
-      .getExperiment("asTrees", output.getTrees())
-      .writeSummary(man.getResultsStream());
-    
-    clumpsEval.addExperiment(
-        clumpsEval.newChunkingExperiment("clumps", chunked));
+    treebankEval.getExperiment("asTrees", output.getTrees()).writeSummary(
+        man.getResultsStream());
+
+    clumpsEval.addExperiment(clumpsEval
+        .newChunkingExperiment("clumps", chunked));
     clumpsEval.writeSummary(evalReportType, man.getResultsStream(), false);
-    
-    ubsFromClumpsEval
-      .getExperiment("", output.getTrees())
-      .writeSummary(man.getResultsStream());
-    
-    npsEval.addExperiment(
-        npsEval.newChunkingExperiment("NPs", chunked));
+
+    ubsFromClumpsEval.getExperiment("", output.getTrees()).writeSummary(
+        man.getResultsStream());
+
+    npsEval.addExperiment(npsEval.newChunkingExperiment("NPs", chunked));
     npsEval.writeSummary(evalReportType, man.getResultsStream(), false);
-    
-    ubsFromNPsEval
-      .getExperiment("", output.getTrees())
-      .writeSummary(man.getResultsStream());
-    
-      
+
+    ubsFromNPsEval.getExperiment("", output.getTrees()).writeSummary(
+        man.getResultsStream());
+
     if (!man.isNull()) {
       output.writeTo(man.treeOutputFilename());
       chunked.writeTo(man.clumpsOutputFilename());
