@@ -34,7 +34,7 @@ public class ChunkedCorpus {
           bw.write("(");
           for (k = 0; k < corpus[i][j].length; k++) {
             bw.write(alpha.getString(corpus[i][j][k]));
-            if (k <= corpus[i][j].length - 1) bw.write(" ");
+            if (k < corpus[i][j].length - 1) bw.write(" ");
           }
           bw.write(")");
         }
