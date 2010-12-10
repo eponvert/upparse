@@ -14,10 +14,7 @@ from struct import pack_into
 from subprocess import Popen, PIPE, STDOUT
 
 def ident_obj(obj): 
-  return ident_hsh(hash(obj))
-
-def ident_hsh(hsh):
-  return '_' + str(hsh)
+  return intern('(' + ('_'.join(obj)) + ')')
 
 def main():
 
@@ -25,7 +22,6 @@ def main():
 
   op.add_option('-o', '--output', default=None)
   op.add_option('-g', '--graph', default='graph.txt')
-  op.add_option('-c', '--chunks', default='chunks.txt')
   op.add_option('-I', '--mclI', default=2.0, type='float')
   op.add_option('-l', '--minlinking', default=2, type='int')
   op.add_option('-L', '--maxlinking', default=100, type='int')
@@ -61,8 +57,8 @@ def main():
       for w in line:
         if in_chunk:
           if w == ')':
-            chunk = tuple(curr_chunk)
-            print >>fh_out, ident_obj(chunk),
+            chunk = intern('(' + ('_'.join(curr_chunk)) + ')')
+            print >>fh_out, chunk,
             chunks.add(chunk)
             in_chunk = False
 
@@ -98,16 +94,11 @@ def main():
 
   chunk_sets = defaultdict(list)
 
-  chunk_fh = open(opt.chunks, 'w')
   graph_fh = open(opt.graph, 'w')
 
   for ch in chunks:
-    print >>chunk_fh, ident_obj(ch), ' '.join(ch)
-
-    for w in ch:
-      chunk_sets[w].append(hash(ch))
-
-  chunk_fh.close()
+    for w in ch[1:-1].split('_'):
+      chunk_sets[w].append(ch)
 
   cliques = [cl for cl in chunk_sets.values() if minlink <= len(cl) <= maxlink]
 
@@ -133,13 +124,13 @@ def main():
   print >>sys.stderr, 'done building graph'
 
   for c1_hsh, c2_hsh in chunk_graph:
-    print >>graph_fh, '%s\t%s\t%d' % (ident_obj(c1_hsh), ident_obj(c2_hsh), 1)
+    print >>graph_fh, '%s\t%s\t%d' % (c1_hsh, c2_hsh, 1)
   graph_fh.close()
 
   print >>sys.stderr, 'done writing graph'
 
   print >>sys.stderr, 'clustering...'
-  cmd = '%s %s -I %f --abc' % (opt.mcl, opt.graph, opt.mclI)
+  cmd = '%s %s -I %f --abc -d' % (opt.mcl, opt.graph, opt.mclI)
   print >>sys.stderr, 'cmd:', cmd
   p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
   while True:
