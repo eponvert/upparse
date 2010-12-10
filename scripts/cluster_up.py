@@ -9,6 +9,9 @@ the chunking system to be extended to "full" parsing out-of-the-box.
 import sys
 from optparse import OptionParser
 from collections import defaultdict
+from array import array
+from struct import pack_into
+from subprocess import Popen, PIPE, STDOUT
 
 def ident_obj(obj): 
   return ident_hsh(hash(obj))
@@ -23,11 +26,18 @@ def main():
   op.add_option('-o', '--output', default=None)
   op.add_option('-g', '--graph', default='graph.txt')
   op.add_option('-c', '--chunks', default='chunks.txt')
+  op.add_option('-I', '--mclI', default=2.0, type='float')
+  op.add_option('-l', '--minlinking', default=2, type='int')
+  op.add_option('-L', '--maxlinking', default=100, type='int')
+  op.add_option('-m', '--mcl', default='mcl')
 
   opt, args = op.parse_args()
 
   have_input_file = len(args) > 0
   have_output_file = opt.output is not None
+
+  minlink = opt.minlinking
+  maxlink = opt.maxlinking
 
   chunks = set()
 
@@ -84,6 +94,8 @@ def main():
 
   print >>sys.stderr, 'done outputting training 1'
 
+  print >>sys.stderr, 'number of chunk types:', len(chunks)
+
   chunk_sets = defaultdict(list)
 
   chunk_fh = open(opt.chunks, 'w')
@@ -97,32 +109,52 @@ def main():
 
   chunk_fh.close()
 
-  cliques = list(cl for cl in chunk_sets.values() if len(cl) > 1)
-
-  print >>sys.stderr, '\n'.join(map(str,cliques[:10]))
+  cliques = [cl for cl in chunk_sets.values() if minlink <= len(cl) <= maxlink]
 
   print >>sys.stderr, 'done outputting chunk index and building graph list'
 
   chunk_graph = set()
   print >>sys.stderr, 'building graph, to do %d cliques' % len(cliques)
+  numlinks = 0
   c = 1
   for chunk_set in cliques:
     for c1_hsh in chunk_set:
       for c2_hsh in chunk_set:
-        chunk_graph.add((c1_hsh,c2_hsh))
-        chunk_graph.add((c2_hsh,c1_hsh))
+        numlinks += 1
+        chunk_graph.add((c1_hsh, c2_hsh))
+
     if c % 1000 == 0:
-      print >>sys.stderr, str(c), len(chunk_graph)
+      print >>sys.stderr, str(c) # , len(n1) # len(chunk_graph)
 
     c += 1
 
+  print >>sys.stderr, 'Total initial links', str(numlinks)
+
   print >>sys.stderr, 'done building graph'
 
-  for c1, c2 in chunk_graph:
-    print >>graph_fh, ident_obj(c1_hsh), ident_obj(c2_hsh), '1'
+  for c1_hsh, c2_hsh in chunk_graph:
+    print >>graph_fh, '%s\t%s\t%d' % (ident_obj(c1_hsh), ident_obj(c2_hsh), 1)
   graph_fh.close()
 
   print >>sys.stderr, 'done writing graph'
+
+  print >>sys.stderr, 'clustering...'
+  cmd = '%s %s -I %f --abc' % (opt.mcl, opt.graph, opt.mclI)
+  print >>sys.stderr, 'cmd:', cmd
+  p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
+  while True:
+    o = p.stdout.read(1)
+    if o == '': 
+      break
+    else:
+      sys.stderr.write(o)
+
+  print >>sys.stderr, 'quit!'
+  p.wait()
+  
+  assert p.returncode == 0
+
+  print >>sys.stderr, 'done clustering'
 
 if __name__ == '__main__':
   main()
