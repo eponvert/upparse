@@ -13,13 +13,13 @@ public class EvalManager {
 
   Alpha alpha;
 
-  public EvalManager(Alpha a) {
+  public EvalManager(final Alpha a) {
     alpha = a;
   }
 
   private EvalReportType evalReportType = EvalReportType.PR;
-  private List<Eval> evals = new ArrayList<Eval>();
-  private List<OutputType> evalTypes = new ArrayList<OutputType>();
+  private final List<Eval> evals = new ArrayList<Eval>();
+  private final List<OutputType> evalTypes = new ArrayList<OutputType>();
   private String[] corpusFiles = null;
   private int filterLength = -1;
   private CorpusType testFileType = CorpusType.WSJ;
@@ -27,8 +27,8 @@ public class EvalManager {
   private ChunkedCorpus clumpGoldStandard = null;
   private UnlabeledBracketSetCorpus goldUnlabeledBracketSet = null;
   private StopSegmentCorpus testStopSegmentCorpus = null;
-  private int numSent = -1;
-  private boolean onlyLast = false;
+  private final int numSent = -1;
+  private final boolean onlyLast = false;
   private TreebankEval treebankEval;
   private ChunkingEval npsEval;
   private ChunkingEval clumpsEval;
@@ -36,45 +36,45 @@ public class EvalManager {
   private TreebankEval ubsFromNPsEval;
   private boolean noSeg = false;
 
-  public void setNoSeg(boolean b) {
+  public void setNoSeg(final boolean b) {
     noSeg = b;
   }
 
-  public void writeMetadata(PrintStream s) {
+  public void writeMetadata(final PrintStream s) {
     s.print("  Evaluation type: ");
-    for (Eval e : evals)
+    for (final Eval e : evals)
       s.print(e.getEvalName() + " ");
     s.println();
     s.println("  Test files:");
-    for (String f : corpusFiles)
+    for (final String f : corpusFiles)
       s.println("    " + f);
     if (filterLength > 0)
       s.println("  Filter test files by len: " + filterLength);
-    if (numSent > 0)
-      s.println("  Num test sentences: " + numSent);
+//    if (numSent > 0)
+//      s.println("  Num test sentences: " + numSent);
     s.println("  Test file type: " + testFileType);
   }
 
-  public void setTestFileType(CorpusType t) {
+  public void setTestFileType(final CorpusType t) {
     testFileType = t;
   }
 
-  public void setEvalReportType(EvalReportType type) {
+  public void setEvalReportType(final EvalReportType type) {
     evalReportType = type;
   }
 
-  public void setParserEvaluationTypes(String string) throws EvalError,
+  public void setParserEvaluationTypes(final String string) throws EvalError,
       CorpusError {
     if (string.equals("")) {
       evalTypes.add(OutputType.CLUMP);
       evalTypes.add(OutputType.NPS);
     } else
-      for (String s : string.split(","))
+      for (final String s : string.split(","))
         evalTypes.add(OutputType.valueOf(s));
   }
 
   private void initParseEvaluationTypes() throws EvalError, CorpusError {
-    for (OutputType t : evalTypes) {
+    for (final OutputType t : evalTypes) {
       switch (t) {
         case CLUMP:
           evals.add(ChunkingEval.fromChunkedCorpus(OutputType.CLUMP,
@@ -111,7 +111,7 @@ public class EvalManager {
     }
   }
 
-  public void setTestCorpusString(String[] filenames) {
+  public void setTestCorpusString(final String[] filenames) {
     corpusFiles = filenames;
   }
 
@@ -176,7 +176,7 @@ public class EvalManager {
     return clumpGoldStandard;
   }
 
-  public void setFilterLen(int len) {
+  public void setFilterLen(final int len) {
     filterLength = len;
   }
 
@@ -195,7 +195,7 @@ public class EvalManager {
   }
 
   public boolean isNull() throws EvalError, CorpusError {
-    return evalReportType == null || noEvals();
+    return corpusFiles.length == 0 || evalReportType == null || noEvals();
   }
 
   private boolean noEvals() throws EvalError, CorpusError {
@@ -208,12 +208,12 @@ public class EvalManager {
       final ChunkedSegmentedCorpus output) throws EvalError, CorpusError {
     if (evals.size() == 0)
       initParseEvaluationTypes();
-    for (Eval eval : evals)
+    for (final Eval eval : evals)
       eval.eval(comment, output);
   }
 
-  public void writeEval(PrintStream out) throws EvalError {
-    for (Eval eval : evals) {
+  public void writeEval(final PrintStream out) throws EvalError {
+    for (final Eval eval : evals) {
       eval.writeSummary(evalReportType, out, onlyLast);
       out.println();
     }
@@ -234,7 +234,8 @@ public class EvalManager {
 
   public void evalParserOutput(final UnlabeledBracketSetCorpus output,
       final OutputManager man) throws CorpusError, EvalError, IOException {
-    ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha, output);
+    final ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha,
+        output);
     treebankEval.getExperiment("asTrees", output.getTrees()).writeSummary(
         man.getResultsStream());
 

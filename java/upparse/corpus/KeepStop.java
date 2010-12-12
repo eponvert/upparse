@@ -20,13 +20,13 @@ public class KeepStop implements CorpusConstraints {
   public static final KeepStop ctbKeepStop =
     new KeepStop(CTBCorpusStandard.instance);
   
-  String[] STOPPING_PUNC = new String[] {
+  static String[] STOPPING_PUNC = new String[] {
     ".", "?", "!", ";", ",", "--", 
     "\uE38081", "\uEFBC8C", "\uE38082"  }; // Chinese stop, comma, enumeration
   
   public static final String STOP = "__stop__";
   
-  public boolean isStoppingPunc(final String w) {
+  public static boolean isStoppingPunc(final String w) {
     for (String p: STOPPING_PUNC)
       if (p.equals(w))
         return true;

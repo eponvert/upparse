@@ -76,7 +76,7 @@ public class Main {
 
         else if (arg.equals("-cclpOutput"))
           cclparserOutput = args[i++];
-
+        
         else if (arg.equals("-filterTrain"))
           filterTrain = Integer.parseInt(args[i++]);
 
@@ -158,11 +158,17 @@ public class Main {
         int len = Integer.parseInt(testCorpusString[0].substring(6));
         evalManager.setFilterLen(len);
         evalManager.setTestCorpusString(trainCorpusString);
-      } else {
+        evalManager.setParserEvaluationTypes(eval);
+      } else if (testCorpusString.length > 0) {
         evalManager.setTestCorpusString(testCorpusString);
         evalManager.setFilterLen(filterTest);
+        evalManager.setParserEvaluationTypes(eval);
+      } else {
+        evalManager.setTestFileType(trainFileType);
+        evalManager.setFilterLen(filterTrain);
+        evalManager.setTestCorpusString(trainCorpusString);
+        evalManager.setParserEvaluationTypes("NONE");
       }
-      evalManager.setParserEvaluationTypes(eval);
 
       // don't run EM more than 200 iterations
       if (iter < 0)
