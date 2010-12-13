@@ -84,20 +84,24 @@ public class CorpusUtil {
         String line;
         try {
           while ((line = br.readLine()) != null) {
-            final List<int[]> segments = new ArrayList<int[]>();
-            List<Integer> segment = new ArrayList<Integer>();
-            for (final String word : line.split(" ")) {
-              if (KeepStop.isStoppingPunc(word) && !noSeg && !segment.isEmpty()) {
-                segments.add(list2array(segment));
-                segment = new ArrayList<Integer>();
-              } else {
-                segment.add(alpha.getCode(word));
+            if (line.trim().equals("")) {
+              corpus[s++] = new int[0][];
+            } else {
+              final List<int[]> segments = new ArrayList<int[]>();
+              List<Integer> segment = new ArrayList<Integer>();
+              for (final String word : line.split(" ")) {
+                if (KeepStop.isStoppingPunc(word) && !noSeg && !segment.isEmpty()) {
+                  segments.add(list2array(segment));
+                  segment = new ArrayList<Integer>();
+                } else {
+                  segment.add(alpha.getCode(word));
+                }
               }
+              if (!segment.isEmpty())
+                segments.add(list2array(segment));
+              
+              corpus[s++] = lists2array(segments);
             }
-            if (!segment.isEmpty())
-              segments.add(list2array(segment));
-            
-            corpus[s++] = lists2array(segments);
           }
         } catch (final IOException e) {
           throw new CorpusError(e.getMessage());

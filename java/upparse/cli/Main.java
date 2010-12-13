@@ -299,7 +299,11 @@ public class Main {
     evalManager.addChunkerOutput(comment, chunkerOutput);
 
     if (!outputManager.isNull()) {
-      outputManager.addChunkerOutput(chunkerOutput, comment);
+      int filterLen = evalManager.getFilterLen();
+      if (filterLen > 0)
+        outputManager.addChunkerOutput(chunkerOutput.filter(filterLen), comment);
+      else
+        outputManager.addChunkerOutput(chunkerOutput, comment);
     }
   }
 

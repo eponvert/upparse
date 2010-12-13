@@ -257,4 +257,8 @@ public class EvalManager {
       chunked.writeTo(man.clumpsOutputFilename());
     }
   }
+
+  public int getFilterLen() { 
+    return filterLength;
+  }
 }

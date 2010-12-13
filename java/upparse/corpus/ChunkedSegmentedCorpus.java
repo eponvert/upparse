@@ -261,4 +261,13 @@ public class ChunkedSegmentedCorpus implements Corpus {
         throw new CorpusError("Unexpected output type: " + outputType);
     }
   }
+
+  public ChunkedSegmentedCorpus filter(int filterLen) {
+    List<int[][][]> newCorpusConstr = new ArrayList<int[][][]>();
+    for (int i = 0; i < corpus.length; i++)
+      if (tokens(i).length <= filterLen)
+        newCorpusConstr.add(corpus[i]);
+    int[][][][] newCorpus = newCorpusConstr.toArray(new int[0][][][]);
+    return new ChunkedSegmentedCorpus(newCorpus, alpha);
+  }
 }

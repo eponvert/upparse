@@ -2,8 +2,9 @@
 
 '''
 This script takes chunked sentence-per-line input from an unsupervised parsing
-program, clusters the output and creates a new dataset to chunk.  This allows
-the chunking system to be extended to "full" parsing out-of-the-box.
+program, makes pseudowords based on term frequency and creates a new dataset to 
+chunk.  This allows the chunking system to be extended to "full" parsing 
+out-of-the-box.
 '''
 
 import sys
@@ -29,14 +30,10 @@ def log(s):
 
   print >>sys.stderr, '+', s
 
-def read_chunker_output(input):
+def read_chunker_output(inp):
   'Create chunk symbols from chunker output'
 
-  if use_stdio(input):
-    fh_in = sys.stdin
-
-  else:
-    fh_in = open(input)
+  fh_in = open(inp)
 
   chunks = set()
   corpus = []
@@ -70,79 +67,14 @@ def read_chunker_output(input):
 
       corpus.append(sentence)
 
-  except IOError:
-    pass
-
   finally:
-    if not use_stdio(input):
-      fh_in.close()
+    fh_in.close()
 
   return corpus, chunks
 
 def is_chunk(w):
 
   return w[0] == '('
-
-def make_graph(graph_fname, chunks, minlink, maxlink, weight):
-  'Creates initial graph filename for MCL'
-
-  chunk_sets = defaultdict(list)
-
-  for ch in chunks:
-    for w in ch[1:-1].split('_'):
-      chunk_sets[w].append(ch)
-
-  if maxlink > 1:
-    filt = lambda x:minlink <= len(x) <= maxlink
-  else:
-    filt = lambda x:minlink <= len(x)
-
-  cliques = [cl for cl in chunk_sets.values() if filt(cl)]
-
-  log('done outputting chunk index and building graph list')
-
-  chunk_graph = defaultdict(zero)
-  log('building graph, to do %d cliques' % len(cliques))
-  numlinks = 0
-  c = 1
-  for chunk_set in cliques:
-    for c1 in chunk_set:
-      for c2 in chunk_set:
-        numlinks += 1
-
-        if weight is None or weight == 'one':
-          chunk_graph[c1,c2] = 1
-
-        elif weight == 'num':
-          chunk_graph[c1,c2] += 1
-
-        else:
-          raise RuntimeException('unrecognized: ' + weight)
-
-    if c % 1000 == 0:
-      log(str(c))
-
-    c += 1
-
-  log('done building graph')
-  log('total initial links %d' % numlinks)
-
-  graph_fh = open(graph_fname, 'w')
-  for c1, c2 in chunk_graph:
-    print >>graph_fh, '%s\t%s\t%f' % (c1, c2, chunk_graph[c1,c2])
-
-  graph_fh.close()
-
-  log('done writing graph')
-
-def graph_initial_fname(fname, maxlink):
-
-  suffix = maxlink > 0 and '-' + str(maxlink) or ''
-  return dirname(fname) + '/../' + basename(fname) + '_graph' + suffix
-
-def graph_output_fname(graph_fname):
-
-  return '%s/out.%s' % (dirname(graph_fname), basename(graph_fname))
 
 def run_cmd(cmd):
   log('cmd: ' + cmd)
@@ -156,15 +88,6 @@ def run_cmd(cmd):
 
   p.wait()
   assert p.returncode == 0
-
-
-def cluster(mcl, graph_in, mcl_i, graph_out):
-  'Rum MCL cluster algoitms'
-
-  log('clustering...')
-  cmd = '%s %s -I %f --abc -o %s' % (mcl, graph_in, mcl_i, graph_out)
-  run_cmd(cmd)
-  log('done clustering')
 
 def chunk_tag(i):
   return '__' + str(i)
@@ -191,17 +114,6 @@ def create_new_corpus(corpus, chunk_cl):
     new_corpus.append(new_sentence)
   return new_corpus
 
-def read_chunk_clusters(graph_out_fname):
-
-  chunk_cl = dict()
-  i = 0
-  for line in open(graph_out_fname):
-    for ch in line.split():
-      chunk_cl[ch] = i
-    i += 1
-
-  return chunk_cl
-
 def read_cmd(fname):
 
   s = ''
@@ -210,6 +122,7 @@ def read_cmd(fname):
       s +=l
   return s.strip()
 
+# TODO
 def intermediate_chunk(new_corpus, intermediate_fname, interm_out_dirname, \
     upparse_cmd):
 
@@ -253,55 +166,84 @@ class WordFreqClusterCl:
         w = _w
     return w
 
+def guess_input_type(fname):
+  if fname.endswith('.mrg'): 
+    return 'WSJ'
+  
+  elif fname.endswith('.penn'):
+    return 'PENN'
+
+  elif fname.endswith('.fid'):
+    return 'CTB'
+
+  else:
+    return 'SPL'
+
+def get_output_fname(output_dir):
+  files = [x for x in listdir(output_dir) if x[0] == 'I']
+  assert len(files) == 1
+  return files[0]
+
 def main():
 
   op = OptionParser()
 
-  op.add_option('-i', '--input', default='-')
-  op.add_option('-g', '--graph')
-  op.add_option('-G', '--graph_output')
-  op.add_option('-I', '--mcl_i', default=2.0, type='float')
-  op.add_option('-l', '--minlinking', default=2, type='int')
-  op.add_option('-L', '--maxlinking', default=-1, type='int')
-  op.add_option('-m', '--mcl', default='mcl')
-  op.add_option('-c', '--chunk_script')
-  op.add_option('-w', '--weight')
-  op.add_option('-t', '--intermediate')
-  op.add_option('-u', '--upparse_cmd')
-  op.add_option('-o', '--final_output')
-  op.add_option('-C', '--cheat_cluster', action='store_true')
+  op.add_option('-t', '--train')
+  op.add_option('-T', '--input_type')
+  op.add_option('-s', '--test')
+  op.add_option('-o', '--output')
+  op.add_option('-u', '--upparse_script')
 
   opt, args = op.parse_args()
 
-  log('reading chunker output from ' + opt.input)
-  corpus, chunks = read_chunker_output(opt.input)
+  input_type = opt.input_type or guess_input_type(opt.train)
+  log('guessing input type = ' + input_type)
+  log('running initial chunking')
+
+  init_train_output = opt.output + '-train-01'
+  if exists(init_train_output):
+    log('Initial train output %s exists' % init_train_output)
+
+  else:
+    log('chunking to create next level training')
+    cmd = read_cmd(opt.upparse_script)
+    cmd += ' -train ' + opt.train
+    cmd += ' -trainFileType ' + input_type
+    cmd += ' -test ' + opt.train
+    cmd += ' -testFileType ' + input_type
+    cmd += ' -output ' + init_train_output
+
+    run_cmd(cmd)
+
+  train_output_fname = get_output_fname(init_train_output)
+
+  init_eval_output = opt.output + '-eval-01'
+
+  if exists(init_eval_output):
+    log('Initial eval output %s exists' % init_eval_output)
+
+  else:
+    log('chunking to create next level eval')
+    cmd = read_cmd(opt.upparse_script)
+    cmd += ' -train ' + opt.train
+    cmd += ' -trainFileType ' + input_type
+    cmd += ' -test ' + opt.test
+    cmd += ' -testFileType ' + input_type
+    cmd += ' -output ' + init_eval_output
+
+    run_cmd(cmd)
+
+  log('building word frequencies')
+  chunk_cl = WordFreqClusterCl(corpus)
+  
+
+  sys.exit(0)
 
   if opt.cheat_cluster:
 
     chunk_cl = WordFreqClusterCl(corpus)
     intermediate_fname = opt.intermediate or \
         dirname(opt.input) + '/../cheat_interm.txt'
-
-  else:
-    graph_init_fname = opt.graph or graph_initial_fname( \
-        opt.input, opt.maxlinking)
-    graph_out_fname = opt.graph_output or graph_output_fname(graph_init_fname)
-
-    if exists(graph_out_fname):
-      log('%s exists' % graph_out_fname)
-
-    else:
-      if exists(graph_init_fname):
-        log(' %s exists' % graph_init_fname)
-
-      else:
-        log('creating initial graph')
-        log('number of chunk types: %d' % len(chunks))
-
-        make_graph(graph_init_fname, chunks, opt.minlinking, opt.maxlinking, \
-          opt.weight)
-
-      cluster(opt.mcl, graph_init_fname, opt.mcl_i, graph_out_fname)
 
     log('reading chunk clusters from MCL output')
     chunk_cl = read_chunk_clusters(graph_out_fname)
