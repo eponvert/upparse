@@ -67,4 +67,8 @@ public class SequenceModelChunker {
   public int getCurrentIter() {
     return currIter;
   }
+
+  public int getTrainingSentences() {
+    return model.getOrig().length;
+  }
 }

@@ -188,6 +188,11 @@ public class ChunkedSegmentedCorpus implements Corpus {
   public void writeTo(String fname) throws IOException {
     ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeTo(fname);
   }
+  
+
+  private void writeToUnderscore(String output) throws IOException {
+    ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeToUnderscore(output);
+  }
 
   public static ChunkedSegmentedCorpus fromArrays(
       int[][][][] clumpedCorpus, Alpha alpha) {
@@ -243,6 +248,10 @@ public class ChunkedSegmentedCorpus implements Corpus {
       case CLUMP:
       case NPS:
         writeTo(output);
+        break;
+       
+      case UNDERSCORE:
+        writeToUnderscore(output);
         break;
         
       case TREEBANKRB:

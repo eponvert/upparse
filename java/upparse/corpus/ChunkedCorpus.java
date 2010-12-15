@@ -46,6 +46,31 @@ public class ChunkedCorpus {
     
     bw.close();
   }
+  
+
+  public void writeToUnderscore(String filename) throws IOException {
+    BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+    int i, j, k;
+    for (i = 0; i < corpus.length; i++) {
+      for (j = 0; j < corpus[i].length; j++) {
+        if (corpus[i][j].length == 1) 
+          bw.write(alpha.getString(corpus[i][j][0]));
+        
+        else {
+          for (k = 0; k < corpus[i][j].length; k++) {
+            bw.write(alpha.getString(corpus[i][j][k]));
+            if (k < corpus[i][j].length - 1) bw.write("_");
+          }
+        }
+        
+        if (j != corpus[i].length - 1) bw.write(" ");
+      }
+      bw.write("\n");
+    }
+    
+    bw.close();
+  }
+
         
   public static ChunkedCorpus fromChunkedSegmentedCorpus(
       ChunkedSegmentedCorpus c) {

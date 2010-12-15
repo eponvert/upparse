@@ -34,21 +34,16 @@ def read_chunker_output(inp):
   'Create chunk symbols from chunker output'
 
   fh_in = open(inp)
-
-  chunks = set()
   corpus = []
 
   try:
     for line in fh_in:
       sentence = []
-      line = line.replace('(', '( ').replace(')', ' )').split()
       in_chunk = False
-      new_line = []
-      for w in line:
+      for w in chunk_line_split(line):
         if in_chunk:
           if w == ')':
             chunk = intern('(' + ('_'.join(curr_chunk)) + ')')
-            chunks.add(chunk)
             sentence.append(chunk)
             in_chunk = False
 
@@ -70,11 +65,11 @@ def read_chunker_output(inp):
   finally:
     fh_in.close()
 
-  return corpus, chunks
+  return corpus
 
 def is_chunk(w):
 
-  return w[0] == '('
+  return w.startswith('(')
 
 def run_cmd(cmd):
   log('cmd: ' + cmd)
@@ -91,6 +86,12 @@ def run_cmd(cmd):
 
 def chunk_tag(i):
   return '__' + str(i)
+
+def is_chunk_tag(w):
+  return w[:2] == '__'
+
+def mk_parse_str(sent):
+  return '(' + (' '.join(sent).replace('( ','(').replace(' )',')')) + ')'
 
 def create_new_corpus(corpus, chunk_cl):
   '''
@@ -120,7 +121,7 @@ def read_cmd(fname):
   for l in open(fname):
     if l.strip()[0] != '#':
       s +=l
-  return s.strip()
+  return s.replace('\\', '').replace('\n',' ').strip()
 
 # TODO
 def intermediate_chunk(new_corpus, intermediate_fname, interm_out_dirname, \
@@ -154,7 +155,7 @@ class WordFreqClusterCl:
     self.word_freq = make_word_freq(corpus)
 
   def __contains__(self, seq):
-    return any(w in self.word_freq for w in seq)
+    return any(w in self.word_freq for w in seq[1:-1].split('_'))
 
   def __getitem__(self, seq):
     seq = seq[1:-1].split('_')
@@ -182,7 +183,21 @@ def guess_input_type(fname):
 def get_output_fname(output_dir):
   files = [x for x in listdir(output_dir) if x[0] == 'I']
   assert len(files) == 1
-  return files[0]
+  return output_dir + '/' + files[0]
+
+def chunk_line_split(line):
+  return line.replace('(','( ').replace(')',' )').split()
+
+def underlying_text_corpus(corpus_fname):
+  
+  sentences = []
+  for line in open(corpus_fname):
+    sentence = []
+    for w in chunk_line_split(line):
+      if w not in ('(', ')'):
+        sentence.append(w)
+    sentences.append(sentence)
+  return sentences
 
 def main():
 
@@ -200,13 +215,15 @@ def main():
   log('guessing input type = ' + input_type)
   log('running initial chunking')
 
+  base_cmd = read_cmd(opt.upparse_script)
+
   init_train_output = opt.output + '-train-01'
   if exists(init_train_output):
     log('Initial train output %s exists' % init_train_output)
 
   else:
     log('chunking to create next level training')
-    cmd = read_cmd(opt.upparse_script)
+    cmd = base_cmd
     cmd += ' -train ' + opt.train
     cmd += ' -trainFileType ' + input_type
     cmd += ' -test ' + opt.train
@@ -224,7 +241,7 @@ def main():
 
   else:
     log('chunking to create next level eval')
-    cmd = read_cmd(opt.upparse_script)
+    cmd = base_cmd
     cmd += ' -train ' + opt.train
     cmd += ' -trainFileType ' + input_type
     cmd += ' -test ' + opt.test
@@ -233,9 +250,67 @@ def main():
 
     run_cmd(cmd)
 
+  eval_output_fname = get_output_fname(init_eval_output)
+
   log('building word frequencies')
-  chunk_cl = WordFreqClusterCl(corpus)
-  
+  chunk_cl = WordFreqClusterCl(underlying_text_corpus(train_output_fname))
+
+  log('reading in initial chunker output')
+  train_corpus_orig = read_chunker_output(train_output_fname)
+  eval_corpus_orig = read_chunker_output(eval_output_fname)
+ 
+  log('creating corpora with pseudowords')
+  train_corpus_new = create_new_corpus(train_corpus_orig, chunk_cl)
+  eval_corpus_new = create_new_corpus(eval_corpus_orig, chunk_cl)
+
+  log('writing new corpora with pseudowords to disk')
+  new_train_fname = init_train_output + '-pw'
+
+  log('writing to ' + new_train_fname)
+  new_train_fh = open(new_train_fname, 'w')
+  for sent in train_corpus_new:
+    print >>new_train_fh, ' '.join(sent)
+  new_train_fh.close()
+
+  new_eval_fname = init_eval_output + '-pw'
+
+  log('writing to ' + new_eval_fname)
+  new_eval_fh = open(new_eval_fname, 'w')
+  for sent in eval_corpus_new:
+    print >>new_eval_fh, ' '.join(sent)
+  new_eval_fh.close()
+
+  log('chunking level 2')
+  sec_train_output = opt.output + '-train-02'
+  sec_eval_output = opt.output + '-eval-02'
+
+  if exists(sec_train_output):
+    log('%s exists' % sec_train_output)
+
+  else:
+    cmd = base_cmd
+    cmd += ' -train ' + new_train_fname
+    cmd += ' -trainFileType SPL'
+    cmd += ' -test ' + new_train_fname
+    cmd += ' -testFileType SPL'
+    cmd += ' -output ' + sec_train_output
+
+    run_cmd(cmd)
+
+  if exists(sec_eval_output):
+    log('%s exists' % sec_eval_output)
+
+  else:
+    cmd = base_cmd
+    cmd += ' -train ' + new_train_fname
+    cmd += ' -trainFileType SPL'
+    cmd += ' -test ' + new_eval_fname
+    cmd += ' -testFileType SPL'
+    cmd += ' -output ' + sec_eval_output
+
+    run_cmd(cmd)
+
+
 
   sys.exit(0)
 
@@ -300,12 +375,6 @@ def main():
     final_output_fh.close()
 
   log('done')
-
-def is_chunk_tag(w):
-  return w[:2] == '__'
-
-def mk_parse_str(sent):
-  return '(' + (' '.join(sent).replace('( ','(').replace(' )',')')) + ')'
 
 if __name__ == '__main__':
   main()

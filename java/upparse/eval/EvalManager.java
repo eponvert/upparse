@@ -154,6 +154,13 @@ public class EvalManager {
       case CTB:
         clumpGoldStandard = CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
         break;
+        
+      case SPL:
+        evalTypes.clear();
+        evalTypes.add(OutputType.NONE);
+        evals.clear();
+        evals.add(NullEval.instance());
+        break;
 
       default:
         throw new EvalError("Unexpected file type for clumping gold standard: "
@@ -182,7 +189,7 @@ public class EvalManager {
 
   public StopSegmentCorpus getEvalStopSegmentCorpus() throws CorpusError,
       EvalError {
-    if (evals.size() == 0)
+    if (evals.size() == 0 && testFileType != CorpusType.SPL) 
       initParseEvaluationTypes();
     if (testStopSegmentCorpus == null)
       makeEvalStopSegmentCorpus();
