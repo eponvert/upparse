@@ -8,6 +8,7 @@ out-of-the-box.
 '''
 
 import sys
+from itertools import izip
 from os import listdir, sep
 from os.path import dirname, basename, exists
 from optparse import OptionParser
@@ -43,7 +44,7 @@ def read_chunker_output(inp):
       for w in chunk_line_split(line):
         if in_chunk:
           if w == ')':
-            chunk = intern('(' + ('_'.join(curr_chunk)) + ')')
+            chunk = ident_obj(curr_chunk)
             sentence.append(chunk)
             in_chunk = False
 
@@ -51,7 +52,7 @@ def read_chunker_output(inp):
             curr_chunk.append(w)
 
         else:
-          assert w != ')'
+          assert w != ')', 'no closing paren? "%s"' % line.strip()
 
           if w == '(':
             in_chunk = True
@@ -85,13 +86,18 @@ def run_cmd(cmd):
   assert p.returncode == 0
 
 def chunk_tag(i):
-  return '__' + str(i)
+  return '==' + str(i)
 
 def is_chunk_tag(w):
-  return w[:2] == '__'
+  return w[:2] == '=='
 
 def mk_parse_str(sent):
-  return '(' + (' '.join(sent).replace('( ','(').replace(' )',')')) + ')'
+  return '(' \
+  + (' '.join(sent).replace('( ','(').replace(' )',')')).replace(';','') \
+  + ')'
+
+def round_to_sq(w):
+  return w.replace('(','[').replace(')',']')
 
 def create_new_corpus(corpus, chunk_cl):
   '''
@@ -107,7 +113,7 @@ def create_new_corpus(corpus, chunk_cl):
         if w in chunk_cl:
           chunk_id = chunk_tag(chunk_cl[w])
         else:
-          chunk_id = w
+          chunk_id = round_to_sq(w)
         new_sentence.append(chunk_id)
       else:
         new_sentence.append(w)
@@ -172,7 +178,7 @@ def guess_input_type(fname):
     return 'WSJ'
   
   elif fname.endswith('.penn'):
-    return 'PENN'
+    return 'NEGRA'
 
   elif fname.endswith('.fid'):
     return 'CTB'
@@ -198,6 +204,31 @@ def underlying_text_corpus(corpus_fname):
         sentence.append(w)
     sentences.append(sentence)
   return sentences
+
+def chunk_squeeze(corpus):
+  new_corpus = []
+  for sent in corpus:
+    in_chunk = False
+    new_sent = []
+    
+    for w in sent:
+      if w == '(':
+        curr_chunk = []
+        in_chunk = True
+
+      elif w == ')':
+        new_sent.append('(' + (' '.join(curr_chunk)) + ')')
+        in_chunk = False
+
+      elif in_chunk:
+        curr_chunk.append(w)
+
+      else:
+        new_sent.append(w)
+
+    new_corpus.append(new_sent)
+
+  return new_corpus
 
 def main():
 
@@ -252,6 +283,17 @@ def main():
 
   eval_output_fname = get_output_fname(init_eval_output)
 
+  eval_corpus_sec = [chunk_line_split(x) for x in open(eval_output_fname)]
+
+  final_output = opt.output + '-final-1'
+  log('writing final output to ' + final_output)
+  final_output_fh = open(final_output, 'w')
+
+  for sent in eval_corpus_sec:
+    print >>final_output_fh, mk_parse_str(sent)
+
+  final_output_fh.close()
+
   log('building word frequencies')
   chunk_cl = WordFreqClusterCl(underlying_text_corpus(train_output_fname))
 
@@ -297,6 +339,8 @@ def main():
 
     run_cmd(cmd)
 
+  train_output_fname = get_output_fname(sec_train_output) 
+
   if exists(sec_eval_output):
     log('%s exists' % sec_eval_output)
 
@@ -310,36 +354,106 @@ def main():
 
     run_cmd(cmd)
 
+  eval_output_fname = get_output_fname(sec_eval_output)
 
+  eval_corpus_sec = [chunk_line_split(x) for x in open(eval_output_fname)]
+
+  for new_sent, orig_sent in izip(eval_corpus_sec, eval_corpus_orig):
+    w = 0
+    if len(orig_sent) != 0:
+      for j in range(len(new_sent)):
+        if new_sent[j] not in ('(', ')'):
+          try:
+            new_sent[j] = orig_sent[w].replace('_', ' ')
+          except IndexError, e:
+            print w
+            print ' '.join(new_sent)
+            print orig_sent
+            raise e
+          w += 1
+
+  final_output = opt.output + '-final-2'
+  log('writing final output to ' + final_output)
+  final_output_fh = open(final_output, 'w')
+
+  for sent in eval_corpus_sec:
+    print >>final_output_fh, mk_parse_str(sent)
+
+  final_output_fh.close()
+
+  log('building word (and pseudoword) frequencies')
+  chunk_cl = WordFreqClusterCl(underlying_text_corpus(train_output_fname))
+
+  log('reading in next chunker output')
+  train_corpus_orig = read_chunker_output(train_output_fname)
+  eval_corpus_orig = read_chunker_output(eval_output_fname)
+  eval_corpus_orig_arch = chunk_squeeze(eval_corpus_sec)
+
+  i = 1
+  # print train_corpus_orig[i]
+  train_corpus_new = create_new_corpus(train_corpus_orig, chunk_cl)
+  # print train_corpus_new[i]
+  # print '+++'
+
+  # print eval_corpus_orig[i]
+  eval_corpus_new = create_new_corpus(eval_corpus_orig, chunk_cl)
+  # print eval_corpus_new[i]
+  # print eval_corpus_sec[i]
+  # print eval_corpus_orig_arch[i]
+  
+  new_train_fname = sec_train_output + '-pw'
+
+  log('writing to ' + new_train_fname)
+  new_train_fh = open(new_train_fname, 'w')
+  for sent in train_corpus_new:
+    print >>new_train_fh, ' '.join(sent)
+  new_train_fh.close()
+
+  new_eval_fname = init_eval_output + '-pw'
+
+  log('writing to ' + new_eval_fname)
+  new_eval_fh = open(new_eval_fname, 'w')
+  for sent in eval_corpus_new:
+    print >>new_eval_fh, ' '.join(sent)
+  new_eval_fh.close()
+
+  thr_eval_output = opt.output + '-eval-03'
+
+  if exists(thr_eval_output):
+    log('%s exists' % thr_eval_output)
+
+  else:
+    cmd = base_cmd
+    cmd += ' -train ' + new_train_fname
+    cmd += ' -trainFileType SPL'
+    cmd += ' -test ' + new_eval_fname
+    cmd += ' -testFileType SPL'
+    cmd += ' -output ' + thr_eval_output
+
+    run_cmd(cmd)
+
+  
+  eval_output_fname = get_output_fname(thr_eval_output)
+  eval_corpus_thr = [chunk_line_split(x) for x in open(eval_output_fname)]
+  
+  for new_sent, orig_sent in izip(eval_corpus_thr, eval_corpus_orig_arch):
+    w = 0
+    for j in range(len(new_sent)):
+      if new_sent[j] not in ('(', ')'):
+        new_sent[j] = orig_sent[w].replace('_', ' ')
+        w += 1
+
+  final_output = opt.output + '-final-3'
+  final_output_fh = open(final_output, 'w')
+
+  for sent in eval_corpus_thr:
+    print >>final_output_fh, mk_parse_str(sent)
+  final_output_fh.close()
+
+  log('done')
 
   sys.exit(0)
 
-  if opt.cheat_cluster:
-
-    chunk_cl = WordFreqClusterCl(corpus)
-    intermediate_fname = opt.intermediate or \
-        dirname(opt.input) + '/../cheat_interm.txt'
-
-    log('reading chunk clusters from MCL output')
-    chunk_cl = read_chunk_clusters(graph_out_fname)
-
-    log('creating new corpus with psedowords')
-    intermediate_fname = opt.intermediate or graph_init_fname + '.upp.out-01'
-
-  new_corpus = create_new_corpus(corpus, chunk_cl)
-
-  log('creating training for upparse')
-  interm_out_dirname = intermediate_fname + '-out'
-
-  if exists(interm_out_dirname):
-    log('%s exists' % interm_out_dirname)
-
-  else:
-    intermediate_chunk(new_corpus, intermediate_fname, interm_out_dirname, \
-      opt.upparse_cmd)
-
-  log('getting the chunker output file')
-  chunk_output_files = [x for x in listdir(interm_out_dirname) if x[0] == 'I']
   assert len(chunk_output_files) == 1
   interm_chunk_output = chunk_output_files[0]
   new_chunked_corpus = [l.replace('(', '( ').replace(')',' )').split() \

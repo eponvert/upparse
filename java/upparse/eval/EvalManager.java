@@ -13,8 +13,13 @@ public class EvalManager {
 
   Alpha alpha;
 
-  public EvalManager(final Alpha a) {
+  public EvalManager(final Alpha a, PrintStream printStream) {
     alpha = a;
+    statusStream = printStream;
+  }
+  
+  public void setStatusStream(PrintStream stream) {
+    statusStream = stream;
   }
 
   private EvalReportType evalReportType = EvalReportType.PR;
@@ -35,6 +40,7 @@ public class EvalManager {
   private TreebankEval ubsFromClumpsEval;
   private TreebankEval ubsFromNPsEval;
   private boolean noSeg = false;
+  private PrintStream statusStream;
 
   public void setNoSeg(final boolean b) {
     noSeg = b;
@@ -175,7 +181,6 @@ public class EvalManager {
   private void checkClumpGoldStandard() throws EvalError {
     if (clumpGoldStandard == null)
       makeClumpGoldStandard();
-    assert clumpGoldStandard != null;
   }
 
   private ChunkedCorpus getClumpGoldStandard() throws EvalError {
@@ -198,7 +203,7 @@ public class EvalManager {
 
   private void makeEvalStopSegmentCorpus() throws CorpusError {
     testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha, corpusFiles,
-        testFileType, numSent, filterLength, noSeg);
+        testFileType, numSent, filterLength, noSeg, statusStream);
   }
 
   public boolean isNull() throws EvalError, CorpusError {
@@ -267,5 +272,9 @@ public class EvalManager {
 
   public int getFilterLen() { 
     return filterLength;
+  }
+
+  public boolean doEval() { 
+    return testFileType != CorpusType.SPL;
   }
 }

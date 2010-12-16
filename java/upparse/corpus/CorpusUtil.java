@@ -52,8 +52,8 @@ public class CorpusUtil {
   }
 
   public static StopSegmentCorpus splStopSegmentCorpus(final Alpha alpha,
-      final String[] corpusStr, final int numSent, final boolean noSeg)
-      throws CorpusError {
+      final String[] corpusStr, final int numSent, final boolean noSeg,
+      final PrintStream statusStream) throws CorpusError {
 
     // count the number of sentences:
     int s = 0;
@@ -74,6 +74,8 @@ public class CorpusUtil {
         throw new CorpusError(e1.getMessage());
       }
     }
+    statusStream
+        .format("Creating StopSegmentCorpus: counted %d sentences\n", s);
     final int[][][] corpus = new int[s][][];
 
     s = 0;
@@ -90,7 +92,8 @@ public class CorpusUtil {
               final List<int[]> segments = new ArrayList<int[]>();
               List<Integer> segment = new ArrayList<Integer>();
               for (final String word : line.split(" ")) {
-                if (KeepStop.isStoppingPunc(word) && !noSeg && !segment.isEmpty()) {
+                if (KeepStop.isStoppingPunc(word) && !noSeg
+                    && !segment.isEmpty()) {
                   segments.add(list2array(segment));
                   segment = new ArrayList<Integer>();
                 } else {
@@ -99,7 +102,7 @@ public class CorpusUtil {
               }
               if (!segment.isEmpty())
                 segments.add(list2array(segment));
-              
+
               corpus[s++] = lists2array(segments);
             }
           }
@@ -298,7 +301,8 @@ public class CorpusUtil {
    */
   public static StopSegmentCorpus stopSegmentCorpus(final Alpha alpha,
       final String[] corpusStr, final CorpusType fileType, final int numSent,
-      final int filterByLength, final boolean noSeg) throws CorpusError {
+      final int filterByLength, final boolean noSeg,
+      final PrintStream statusStream) throws CorpusError {
     final StopSegmentCorpus corpus;
     switch (fileType) {
       case WSJ:
@@ -318,7 +322,7 @@ public class CorpusUtil {
 
       case SPL:
         corpus = CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent,
-            noSeg);
+            noSeg, statusStream);
         break;
 
       case WPL:

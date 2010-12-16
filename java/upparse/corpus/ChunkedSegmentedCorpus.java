@@ -193,6 +193,55 @@ public class ChunkedSegmentedCorpus implements Corpus {
   private void writeToUnderscore(String output) throws IOException {
     ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeToUnderscore(output);
   }
+  
+  private void writeToUnderscoreCCL(String output) throws IOException {
+    BufferedWriter bw = new BufferedWriter(new FileWriter(new File(output)));
+    for (int[][][] s: corpus) {
+      for (int[][] seg: s) {
+        for (int[] chunk: seg) {
+          for (int i = 0; i < chunk.length; i++) {
+            bw.write(alpha.getString(chunk[i]));
+            if (i == chunk.length-1) {
+              bw.write(' ');
+            } else {
+              bw.write('_');
+            }
+          }
+        }
+        bw.write(" ; ");
+      }
+      bw.write("\n");
+    }
+    bw.close();
+  }
+  
+
+  private void writeToWithPunc(String output) throws IOException {
+    BufferedWriter bw = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream(output), "UTF8"));
+    for (int[][][] s: corpus) {
+      for (int[][] seg: s) {
+        for (int[] chunk: seg) {
+          if (chunk.length > 1)
+            bw.write(" (");
+          for (int i = 0; i < chunk.length; i++) {
+            bw.write(alpha.getString(chunk[i]));
+            if (i < chunk.length-1) {
+              bw.write(' ');
+            }
+          }
+          if (chunk.length > 1)
+            bw.write(") ");
+          else
+            bw.write(" ");
+        }
+        bw.write(" ; ");
+      }
+      bw.write("\n");
+    }
+    bw.close();
+  }
+
 
   public static ChunkedSegmentedCorpus fromArrays(
       int[][][][] clumpedCorpus, Alpha alpha) {
@@ -249,9 +298,17 @@ public class ChunkedSegmentedCorpus implements Corpus {
       case NPS:
         writeTo(output);
         break;
+        
+      case PUNC:
+        writeToWithPunc(output);
+        break;
        
       case UNDERSCORE:
         writeToUnderscore(output);
+        break;
+        
+      case UNDERSCORE4CCL:
+        writeToUnderscoreCCL(output);
         break;
         
       case TREEBANKRB:

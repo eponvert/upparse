@@ -9,7 +9,7 @@ import java.util.*;
 public abstract class FileTreeStringIter implements Iterator<String> {
 
   private int n = 0;
-  private final String[] lines;
+  private String[] lines;
   
   protected final String getLine() {
     return lines[n];
@@ -23,12 +23,25 @@ public abstract class FileTreeStringIter implements Iterator<String> {
     return n < lines.length;
   }
   
+  public FileTreeStringIter() { } 
+  
   public FileTreeStringIter(final String file) throws IOException { 
-    BufferedReader br = new BufferedReader(new FileReader(file));
-    int numLines = 0;
-    while (br.readLine() != null) numLines++;
+    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+    int n = 0;
+    while (br.readLine() != null) n++;
+    br.close();
+    br =  new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+    init(br, n);
+  }
+//    BufferedReader br = new BufferedReader(new FileReader(file));
+//    int numLines = 0;
+//    while (br.readLine() != null) numLines++;
+//    br = new BufferedReader(new FileReader(file));
+//    init(br, numLines);
+//  }
+  
+  public void init(final BufferedReader br, final int numLines) throws IOException {
     lines = new String[numLines];
-    br = new BufferedReader(new FileReader(file));
     int i = 0;
     String line;
     while ((line = br.readLine()) != null) lines[i++] = line;

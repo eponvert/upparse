@@ -4,7 +4,8 @@ package upparse.corpus;
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public enum OutputType {
-  CLUMP, NPS, TREEBANKRB, TREEBANKPREC, TREEBANKFLAT, UNDERSCORE, NONE;
+  CLUMP, NPS, TREEBANKRB, TREEBANKPREC, TREEBANKFLAT, UNDERSCORE, NONE, 
+  UNDERSCORE4CCL, PUNC;
 
   public static String outputTypesHelp() {
     return 

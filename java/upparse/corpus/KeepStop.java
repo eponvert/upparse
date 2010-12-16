@@ -4,30 +4,30 @@ package upparse.corpus;
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class KeepStop implements CorpusConstraints {
-  
+
   private final CorpusConstraints standard;
-  
+
   private KeepStop(CorpusConstraints _standard) {
     standard = _standard;
   }
-  
-  public static final KeepStop wsjKeepStop =
-    new KeepStop(WSJCorpusStandard.instance);
-  
-  public static final KeepStop negraKeepStop =
-    new KeepStop(NegraCorpusStandard.instance);
-  
-  public static final KeepStop ctbKeepStop =
-    new KeepStop(CTBCorpusStandard.instance);
-  
-  static String[] STOPPING_PUNC = new String[] {
-    ".", "?", "!", ";", ",", "--", 
-    "\uE38081", "\uEFBC8C", "\uE38082"  }; // Chinese stop, comma, enumeration
-  
+
+  public static final KeepStop wsjKeepStop = new KeepStop(
+      WSJCorpusStandard.instance);
+
+  public static final KeepStop negraKeepStop = new KeepStop(
+      NegraCorpusStandard.instance);
+
+  public static final KeepStop ctbKeepStop = new KeepStop(
+      CTBCorpusStandard.instance);
+
+  static String[] STOPPING_PUNC = new String[] { ".", "?", "!", ";", ",", "--",
+      "\u3002", "\u3001", "\uFF0C" }; // Chinese ideographic stop, ideographic
+                                      // comma, fullwidth comma
+
   public static final String STOP = "__stop__";
-  
+
   public static boolean isStoppingPunc(final String w) {
-    for (String p: STOPPING_PUNC)
+    for (String p : STOPPING_PUNC)
       if (p.equals(w))
         return true;
     return false;
