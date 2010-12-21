@@ -165,7 +165,7 @@ public class Main {
       } else if (testCorpusString.length > 0) {
         evalManager.setTestCorpusString(testCorpusString);
         evalManager.setFilterLen(filterTest);
-        
+
         if (evalManager.doEval())
           evalManager.setParserEvaluationTypes(eval);
       } else {
