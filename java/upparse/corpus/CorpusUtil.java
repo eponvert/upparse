@@ -1,5 +1,6 @@
 package upparse.corpus;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -13,66 +14,142 @@ public class CorpusUtil {
   }
 
   public static StopSegmentCorpus wsjStopSegmentCorpus(final Alpha alpha,
-      final String[] corpusFiles, final int numSent, boolean noSeg) {
-    Iterable<LabeledBracketSet> treeiter = WSJCorpusTreeIter.fromFiles(
+      final String[] corpusFiles, final int numSent, final boolean noSeg) {
+    final Iterable<LabeledBracketSet> treeiter = WSJCorpusTreeIter.fromFiles(
         corpusFiles, alpha);
     return treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.wsjKeepStop,
         numSent, noSeg);
   }
 
   public static StopSegmentCorpus negraStopSegmentCorpus(final Alpha alpha,
-      final String[] corpusFiles, final int numSent, boolean noSeg) {
-    Iterable<LabeledBracketSet> treeiter = NegraCorpusTreeIter.fromFiles(
+      final String[] corpusFiles, final int numSent, final boolean noSeg) {
+    final Iterable<LabeledBracketSet> treeiter = NegraCorpusTreeIter.fromFiles(
         corpusFiles, alpha);
     return treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.negraKeepStop,
         numSent, noSeg);
   }
 
   public static StopSegmentCorpus ctbStopSegmentCorpus(final Alpha alpha,
-      final String[] corpusFiles, final int numSent, boolean noSeg) {
-    Iterable<LabeledBracketSet> treeiter = CTBCorpusTreeIter.fromFiles(
+      final String[] corpusFiles, final int numSent, final boolean noSeg) {
+    final Iterable<LabeledBracketSet> treeiter = CTBCorpusTreeIter.fromFiles(
         corpusFiles, alpha);
     return treeIterStopSegmentCorpus(alpha, treeiter, KeepStop.ctbKeepStop,
         numSent, noSeg);
   }
 
-  public static StopSegmentCorpus splStopSegmentCorpus(Alpha alpha,
-      String[] corpusStr, final int numSent) {
-    // TODO Auto-generated method stub
-    return null;
+  private static int[] list2array(final List<Integer> segment) {
+    final int[] segArray = new int[segment.size()];
+    for (int i = 0; i < segArray.length; i++)
+      segArray[i] = segment.get(i);
+    return segArray;
   }
 
-  public static StopSegmentCorpus wplStopSegmentCorpus(Alpha alpha,
-      String[] corpusStr, final int numSent) {
+  private static int[][] lists2array(List<int[]> segments) {
+    final int[][] array = new int[segments.size()][];
+    for (int i = 0; i < segments.size(); i++)
+      array[i] = segments.get(i);
+    return array;
+  }
+
+  public static StopSegmentCorpus splStopSegmentCorpus(final Alpha alpha,
+      final String[] corpusStr, final int numSent, final boolean noSeg,
+      final PrintStream statusStream) throws CorpusError {
+
+    // count the number of sentences:
+    int s = 0;
+    for (final String file : corpusStr) {
+
+      BufferedReader br;
+      try {
+        br = new BufferedReader(new FileReader(new File(file)));
+        try {
+          while (br.readLine() != null)
+            s++;
+        } catch (final IOException e) {
+          throw new CorpusError(e.getMessage());
+        } finally {
+          br.close();
+        }
+      } catch (final IOException e1) {
+        throw new CorpusError(e1.getMessage());
+      }
+    }
+    statusStream
+        .format("Creating StopSegmentCorpus: counted %d sentences\n", s);
+    final int[][][] corpus = new int[s][][];
+
+    s = 0;
+    for (final String file : corpusStr) {
+      BufferedReader br;
+      try {
+        br = new BufferedReader(new FileReader(new File(file)));
+        String line;
+        try {
+          while ((line = br.readLine()) != null) {
+            if (line.trim().equals("")) {
+              corpus[s++] = new int[0][];
+            } else {
+              final List<int[]> segments = new ArrayList<int[]>();
+              List<Integer> segment = new ArrayList<Integer>();
+              for (final String word : line.split(" ")) {
+                if (KeepStop.isStoppingPunc(word) && !noSeg
+                    && !segment.isEmpty()) {
+                  segments.add(list2array(segment));
+                  segment = new ArrayList<Integer>();
+                } else {
+                  segment.add(alpha.getCode(word));
+                }
+              }
+              if (!segment.isEmpty())
+                segments.add(list2array(segment));
+
+              corpus[s++] = lists2array(segments);
+            }
+          }
+        } catch (final IOException e) {
+          throw new CorpusError(e.getMessage());
+        } finally {
+          br.close();
+        }
+      } catch (final IOException e1) {
+        throw new CorpusError(e1.getMessage());
+      }
+
+    }
+    return StopSegmentCorpus.fromArrays(alpha, corpus);
+  }
+
+  public static StopSegmentCorpus wplStopSegmentCorpus(final Alpha alpha,
+      final String[] corpusStr, final int numSent) {
     // TODO Auto-generated method stub
     return null;
   }
 
   public static StopSegmentCorpus treeIterStopSegmentCorpus(final Alpha alpha,
       final Iterable<LabeledBracketSet> treeiter, final CorpusConstraints cc,
-      final int numS, boolean noSeg) {
+      final int numS, final boolean noSeg) {
     final LabeledBracketSet[] lbs = lbsArrayFromIter(treeiter);
     final int len;
     if (numS == -1 || numS > lbs.length)
       len = lbs.length;
     else
       len = numS;
-    int[][][] corpus = new int[len][][];
+    final int[][][] corpus = new int[len][][];
     int i = 0;
 
     if (len > 0) {
-      for (LabeledBracketSet s : lbs) {
+      for (final LabeledBracketSet s : lbs) {
         final String str = s.tokenString(cc);
         final String[] segments = str.split(KeepStop.STOP);
         int m = 0;
-        for (String seg : segments)
+        for (final String seg : segments)
           if (seg.trim().length() > 0)
             m++;
         corpus[i] = new int[m][];
         int j = 0;
-        for (String seg : segments) {
+        for (final String seg : segments) {
           if (seg.trim().length() > 0) {
-            String[] tokens = seg.trim().split(" +");
+            final String[] tokens = seg.trim().split(" +");
             corpus[i][j] = new int[tokens.length];
             for (int k = 0; k < tokens.length; k++)
               corpus[i][j][k] = alpha.getCode(tokens[k]);
@@ -81,11 +158,11 @@ public class CorpusUtil {
         }
 
         if (noSeg) {
-          int l = sentLen(corpus[i]);
-          int[][] newsent = new int[1][l];
+          final int l = sentLen(corpus[i]);
+          final int[][] newsent = new int[1][l];
           int x = 0;
-          for (int[] seg : corpus[i])
-            for (int w : seg)
+          for (final int[] seg : corpus[i])
+            for (final int w : seg)
               newsent[0][x++] = w;
           corpus[i] = newsent;
         }
@@ -99,115 +176,115 @@ public class CorpusUtil {
     return StopSegmentCorpus.fromArrays(alpha, corpus);
   }
 
-  private static int sentLen(int[][] sent) {
+  private static int sentLen(final int[][] sent) {
     int s = 0;
-    for (int[] sg : sent)
+    for (final int[] sg : sent)
       s += sg.length;
     return s;
   }
 
   public static UnlabeledBracketSetCorpus wsjUnlabeledBracketSetCorpus(
-      Alpha alpha, String[] corpusFiles) {
+      final Alpha alpha, final String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(WSJCorpusTreeIter.fromFiles(
         corpusFiles, alpha).toUnlabeledIter(WSJCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus negraUnlabeledBrackSetCorpus(
-      Alpha alpha, String[] corpusFiles) {
+      final Alpha alpha, final String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(NegraCorpusTreeIter
         .fromFiles(corpusFiles, alpha).toUnlabeledIter(
             NegraCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus ctbUnlabeledBracketSetCorpus(
-      Alpha alpha, String[] corpusFiles) {
+      final Alpha alpha, final String[] corpusFiles) {
     return UnlabeledBracketSetCorpus.fromTreeIter(CTBCorpusTreeIter.fromFiles(
         corpusFiles, alpha).toUnlabeledIter(CTBCorpusStandard.instance));
   }
 
   public static UnlabeledBracketSetCorpus cclpUnlabeledBracketSetCorpus(
-      Alpha alpha, String[] files) {
+      final Alpha alpha, final String[] files) {
     return UnlabeledBracketSetCorpus.fromTreeIter(CCLParserCorpusTreeIter
         .fromFiles(files, alpha));
   }
 
-  public static ChunkedCorpus getChunkedCorpusClumps(Alpha alpha,
-      Iterable<UnlabeledBracketSet> iter) {
-    UnlabeledBracketSet[] uBraks = ubsArrayFromIter(iter);
-    int[][][] arrays = new int[uBraks.length][][];
+  public static ChunkedCorpus getChunkedCorpusClumps(final Alpha alpha,
+      final Iterable<UnlabeledBracketSet> iter) {
+    final UnlabeledBracketSet[] uBraks = ubsArrayFromIter(iter);
+    final int[][][] arrays = new int[uBraks.length][][];
     int i = 0;
-    for (UnlabeledBracketSet u : uBraks)
+    for (final UnlabeledBracketSet u : uBraks)
       arrays[i++] = u.clumps();
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
   private static UnlabeledBracketSet[] ubsArrayFromIter(
-      Iterable<UnlabeledBracketSet> iter) {
-    List<UnlabeledBracketSet> l = new ArrayList<UnlabeledBracketSet>();
-    for (UnlabeledBracketSet s : iter)
+      final Iterable<UnlabeledBracketSet> iter) {
+    final List<UnlabeledBracketSet> l = new ArrayList<UnlabeledBracketSet>();
+    for (final UnlabeledBracketSet s : iter)
       l.add(s);
     return l.toArray(new UnlabeledBracketSet[0]);
   }
 
-  public static ChunkedCorpus wsjClumpGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus wsjClumpGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         WSJCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             WSJCorpusStandard.instance));
   }
 
-  public static ChunkedCorpus negraClumpGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus negraClumpGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         NegraCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             NegraCorpusStandard.instance));
   }
 
-  public static ChunkedCorpus ctbClumpGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus ctbClumpGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
             CTBCorpusStandard.instance));
   }
 
-  private static ChunkedCorpus getChunkedCorpusNPs(Alpha alpha,
+  private static ChunkedCorpus getChunkedCorpusNPs(final Alpha alpha,
       final Iterable<LabeledBracketSet> iter, final String cat,
       final CorpusConstraints cc) {
-    LabeledBracketSet[] lBraks = lbsArrayFromIter(iter);
-    int[][][] arrays = new int[lBraks.length][][];
+    final LabeledBracketSet[] lBraks = lbsArrayFromIter(iter);
+    final int[][][] arrays = new int[lBraks.length][][];
     int i = 0;
-    for (LabeledBracketSet l : lBraks)
+    for (final LabeledBracketSet l : lBraks)
       arrays[i++] = l.lowestChunksOfType(cat, alpha, cc);
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
 
   private static LabeledBracketSet[] lbsArrayFromIter(
-      Iterable<LabeledBracketSet> unlabeledIter) {
-    List<LabeledBracketSet> l = new ArrayList<LabeledBracketSet>();
-    for (LabeledBracketSet u : unlabeledIter)
+      final Iterable<LabeledBracketSet> unlabeledIter) {
+    final List<LabeledBracketSet> l = new ArrayList<LabeledBracketSet>();
+    for (final LabeledBracketSet u : unlabeledIter)
       l.add(u);
     return l.toArray(new LabeledBracketSet[0]);
   }
 
-  public static ChunkedCorpus wsjNPsGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus wsjNPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         WSJCorpusTreeIter.fromFiles(corpusFiles, alpha), "NP",
         WSJCorpusStandard.instance);
   }
 
-  public static ChunkedCorpus negraNPsGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus negraNPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         NegraCorpusTreeIter.fromFiles(corpusFiles, alpha), "NP",
         NegraCorpusStandard.instance);
   }
 
-  public static ChunkedCorpus ctbNPsGoldStandard(Alpha alpha,
-      String[] corpusFiles) {
+  public static ChunkedCorpus ctbNPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha), "NP",
         CTBCorpusStandard.instance);
@@ -220,10 +297,12 @@ public class CorpusUtil {
    * @param filterByLength
    * @param noSeg
    * @return
+   * @throws IOException
    */
   public static StopSegmentCorpus stopSegmentCorpus(final Alpha alpha,
       final String[] corpusStr, final CorpusType fileType, final int numSent,
-      final int filterByLength, boolean noSeg) throws CorpusError {
+      final int filterByLength, final boolean noSeg,
+      final PrintStream statusStream) throws CorpusError {
     final StopSegmentCorpus corpus;
     switch (fileType) {
       case WSJ:
@@ -242,7 +321,8 @@ public class CorpusUtil {
         break;
 
       case SPL:
-        corpus = CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent);
+        corpus = CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent,
+            noSeg, statusStream);
         break;
 
       case WPL:
@@ -283,8 +363,8 @@ public class CorpusUtil {
   }
 
   public static UnlabeledBracketSetCorpus goldUnlabeledBracketSets(
-      CorpusType testFileType, Alpha alpha, String[] corpusFiles,
-      int filterLength) throws CorpusError {
+      final CorpusType testFileType, final Alpha alpha,
+      final String[] corpusFiles, final int filterLength) throws CorpusError {
     final UnlabeledBracketSetCorpus corpus;
     switch (testFileType) {
       case WSJ:

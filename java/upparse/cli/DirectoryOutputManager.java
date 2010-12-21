@@ -69,6 +69,8 @@ public class DirectoryOutputManager extends OutputManager {
 
   @Override
   public void writeOutput() throws CorpusError, IOException {
+    statusStream.format("Writing output : %d sentences", 
+        writeOutput.get(writeOutput.size()-1).nSentences());
     if (writeOutput.size() == 1)
       writeOutput.get(0).writeTo(getFname(0), outputType);
     else

@@ -25,7 +25,8 @@ public class Main {
 
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
-  private EvalManager evalManager = new EvalManager(alpha);
+  private final EvalManager evalManager = new EvalManager(alpha,
+      outputManager.getStatusStream());
   private String factor = "2,1,1";
   private int iter = -1;
   private double emdelta = .001;
@@ -45,12 +46,12 @@ public class Main {
   private boolean doContinuousEval = false;
   private boolean noSeg = false;
 
-  private Main(String[] args) throws CommandLineError, IOException, EvalError,
-      EncoderError, CorpusError {
+  private Main(final String[] args) throws CommandLineError, IOException,
+      EvalError, EncoderError, CorpusError {
     int i = 0;
     String arg;
 
-    boolean outputAll = false;
+    final boolean outputAll = false;
     OutputType outputType = OutputType.CLUMP;
     String eval = "";
     String[] testCorpusString = new String[0];
@@ -59,14 +60,16 @@ public class Main {
       throw new CommandLineError("Please specify an action");
 
     try {
-      List<String> otherArgs = new ArrayList<String>();
+      final List<String> otherArgs = new ArrayList<String>();
       encoder = TagEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
       int filterTest = -1;
       while (i < args.length) {
         arg = args[i++];
 
-        if (arg.equals("-output"))
+        if (arg.equals("-output")) {
           outputManager = OutputManager.fromDirname(args[i++]);
+          evalManager.setStatusStream(outputManager.getStatusStream());
+        }
 
         if (arg.equals("-noSeg"))
           noSeg = true;
@@ -99,14 +102,14 @@ public class Main {
           trainSents = Integer.parseInt(args[i++]);
 
         else if (arg.equals("-test")) {
-          List<String> sb = new ArrayList<String>();
+          final List<String> sb = new ArrayList<String>();
           while (i < args.length && args[i].charAt(0) != '-')
             sb.add(args[i++]);
           testCorpusString = sb.toArray(new String[0]);
         }
 
         else if (arg.equals("-train")) {
-          List<String> sb = new ArrayList<String>();
+          final List<String> sb = new ArrayList<String>();
           while (i < args.length && args[i].charAt(0) != '-')
             sb.add(args[i++]);
           trainCorpusString = sb.toArray(new String[0]);
@@ -155,27 +158,35 @@ public class Main {
       evalManager.setNoSeg(noSeg);
       if (testCorpusString.length == 1
           && testCorpusString[0].startsWith("subset")) {
-        int len = Integer.parseInt(testCorpusString[0].substring(6));
+        final int len = Integer.parseInt(testCorpusString[0].substring(6));
         evalManager.setFilterLen(len);
         evalManager.setTestCorpusString(trainCorpusString);
-      } else {
+        evalManager.setParserEvaluationTypes(eval);
+      } else if (testCorpusString.length > 0) {
         evalManager.setTestCorpusString(testCorpusString);
         evalManager.setFilterLen(filterTest);
+        
+        if (evalManager.doEval())
+          evalManager.setParserEvaluationTypes(eval);
+      } else {
+        evalManager.setTestFileType(trainFileType);
+        evalManager.setFilterLen(filterTrain);
+        evalManager.setTestCorpusString(trainCorpusString);
+        evalManager.setParserEvaluationTypes("NONE");
       }
-      evalManager.setParserEvaluationTypes(eval);
 
       // don't run EM more than 200 iterations
       if (iter < 0)
         iter = 200;
 
       outputManager.writeMetadata(this);
-    } catch (ArrayIndexOutOfBoundsException e) {
+    } catch (final ArrayIndexOutOfBoundsException e) {
       e.printStackTrace(System.err);
       throw new CommandLineError();
     }
   }
 
-  public void writeMetadata(PrintStream s) {
+  public void writeMetadata(final PrintStream s) {
     if (action.equals(CHUNK_ACTION)) {
       s.println(currentDate());
       s.println("  Version: " + VERSION);
@@ -192,7 +203,7 @@ public class Main {
         s.println("  Filter train by len: " + filterTrain);
       s.println("  Smoothing param: " + smooth);
       s.println("  Train files:");
-      for (String f : trainCorpusString)
+      for (final String f : trainCorpusString)
         s.println("    " + f);
       s.println("  Train file type: " + trainFileType);
       evalManager.writeMetadata(s);
@@ -204,8 +215,8 @@ public class Main {
   }
 
   private double[] getFactor() {
-    String[] fpieces = factor.split(",");
-    double[] f = new double[fpieces.length];
+    final String[] fpieces = factor.split(",");
+    final double[] f = new double[fpieces.length];
     for (int i = 0; i < fpieces.length; i++)
       f[i] = Double.parseDouble(fpieces[i]);
     return f;
@@ -216,8 +227,8 @@ public class Main {
    * 
    * @param stream
    */
-  private static void printUsage(PrintStream stream) {
-    String prog = Main.class.getName();
+  private static void printUsage(final PrintStream stream) {
+    final String prog = Main.class.getName();
     stream
         .println("Usage: java "
             + prog
@@ -271,8 +282,11 @@ public class Main {
   }
 
   private void makeTrainStopSegmentCorpus() throws CorpusError {
+    outputManager.getStatusStream().format(
+        "Creating train corpus from %d documents\n", trainCorpusString.length);
     trainStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha,
-        trainCorpusString, trainFileType, trainSents, filterTrain, noSeg);
+        trainCorpusString, trainFileType, trainSents, filterTrain, noSeg,
+        outputManager.getStatusStream());
     assert trainStopSegmentCorpus != null;
   }
 
@@ -293,7 +307,12 @@ public class Main {
     evalManager.addChunkerOutput(comment, chunkerOutput);
 
     if (!outputManager.isNull()) {
-      outputManager.addChunkerOutput(chunkerOutput, comment);
+      final int filterLen = evalManager.getFilterLen();
+      if (filterLen > 0)
+        outputManager
+            .addChunkerOutput(chunkerOutput.filter(filterLen), comment);
+      else
+        outputManager.addChunkerOutput(chunkerOutput, comment);
     }
   }
 
@@ -323,6 +342,9 @@ public class Main {
   private SequenceModel getSequenceModel() throws EncoderError,
       SequenceModelError, CorpusError, CommandLineError {
     final StopSegmentCorpus train = getTrainStopSegmentCorpus();
+    outputManager.getStatusStream().format(
+        "Training sequence model with %d sentences, using %s\n", train.size(),
+        chunkingStrategy);
     switch (chunkingStrategy) {
       case TWOSTAGE:
         final SimpleChunker c = getSimpleChunker();
@@ -352,7 +374,7 @@ public class Main {
   }
 
   private void cclpEval() throws EvalError, IOException, CorpusError {
-    UnlabeledBracketSetCorpus outputCorpus = getCCLParserOutput();
+    final UnlabeledBracketSetCorpus outputCorpus = getCCLParserOutput();
     evalManager.initializeCCLParserEval();
     evalManager.evalParserOutput(outputCorpus, outputManager);
     writeOutput();
@@ -363,9 +385,9 @@ public class Main {
     return CorpusUtil.cclpUnlabeledBracketSetCorpus(alpha, files);
   }
 
-  public static void main(String[] argv) {
+  public static void main(final String[] argv) {
     try {
-      Main prog = new Main(argv);
+      final Main prog = new Main(argv);
 
       if (prog.args.length == 0) {
         System.err.println("Please specify an action\n");
@@ -382,32 +404,32 @@ public class Main {
         usageError();
       }
 
-    } catch (CommandLineError e) {
+    } catch (final CommandLineError e) {
       System.err.println("Bad command line error: " + e.getMessage());
       usageError();
 
-    } catch (IOException e) {
+    } catch (final IOException e) {
       System.err.println("IO problem");
       e.printStackTrace(System.err);
       usageError();
 
-    } catch (EvalError e) {
+    } catch (final EvalError e) {
       System.err.println("Eval problem");
       e.printStackTrace(System.err);
       usageError();
 
-    } catch (EncoderError e) {
+    } catch (final EncoderError e) {
       System.err.println("Encoder problem");
       e.printStackTrace(System.err);
       usageError();
-    } catch (ChunkerError e) {
+    } catch (final ChunkerError e) {
       System.err.println("Problem with the chunker");
       e.printStackTrace(System.err);
       usageError();
-    } catch (CorpusError e) {
+    } catch (final CorpusError e) {
       System.err.println("Problem with corpus");
       e.printStackTrace(System.err);
-    } catch (SequenceModelError e) {
+    } catch (final SequenceModelError e) {
       System.err.println("Problem with sequence model");
       e.printStackTrace(System.err);
     }
