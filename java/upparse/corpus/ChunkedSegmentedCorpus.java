@@ -44,9 +44,9 @@ public class ChunkedSegmentedCorpus implements Corpus {
   };
 
   public UnlabeledBracketSet[] asChunked() {
-    return conv(CHUNKCONV);
+    return conv(CHUNKCONV, false);
   }
-  
+
   /** Utility to convert this corpus into a right-branching baseline */ 
   private static BracketConv RBCONV = new BracketConv() {
     @Override
@@ -104,16 +104,21 @@ public class ChunkedSegmentedCorpus implements Corpus {
   }
   
   
-  private UnlabeledBracketSet[] conv(BracketConv b) {
+  private UnlabeledBracketSet[] conv(BracketConv b, boolean countRoot) {
     UnlabeledBracketSet[] outputUB = 
       new UnlabeledBracketSet[nSentences()];
     
     for (int i = 0; i < nSentences(); i++) {
       final Collection<UnlabeledBracket> brackets = b.conv(corpus[i]);
-      outputUB[i] = new UnlabeledBracketSet(tokens(i), brackets, alpha);
+      outputUB[i] = new UnlabeledBracketSet(tokens(i), brackets, alpha, countRoot);
     }
     
     return outputUB;
+  }
+
+  
+  private UnlabeledBracketSet[] conv(BracketConv b) {
+    return conv(b, true);
   }
 
   /**
