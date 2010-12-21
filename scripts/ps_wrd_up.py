@@ -239,12 +239,17 @@ def main():
   op.add_option('-s', '--test')
   op.add_option('-o', '--output')
   op.add_option('-u', '--upparse_script')
+  op.add_option('-f', '--filter_test', type='int', default='-1')
 
   opt, args = op.parse_args()
 
   input_type = opt.input_type or guess_input_type(opt.train)
   log('guessing input type = ' + input_type)
   log('running initial chunking')
+
+  filter_flag = ''
+  if opt.filter_test > 0: 
+    filter_flag = ' -filterTest %d ' % opt.filter_test
 
   base_cmd = read_cmd(opt.upparse_script)
 
@@ -278,6 +283,7 @@ def main():
     cmd += ' -test ' + opt.test
     cmd += ' -testFileType ' + input_type
     cmd += ' -output ' + init_eval_output
+    cmd += filter_flag
 
     run_cmd(cmd)
 
@@ -357,10 +363,11 @@ def main():
   eval_output_fname = get_output_fname(sec_eval_output)
 
   eval_corpus_sec = [chunk_line_split(x) for x in open(eval_output_fname)]
+  notpunc = lambda x:x != ';'
 
   for new_sent, orig_sent in izip(eval_corpus_sec, eval_corpus_orig):
-    w = 0
-    if len(orig_sent) != 0:
+    w = 0 
+    if len(filter(notpunc, orig_sent)) != 0:
       for j in range(len(new_sent)):
         if new_sent[j] not in ('(', ')'):
           try:
