@@ -8,3 +8,8 @@ classes
 upparse.jar
 tmp*
 jrat*
+*.swp
+wsj
+negra
+ctb
+testout
