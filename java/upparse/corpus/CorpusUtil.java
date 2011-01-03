@@ -290,6 +290,27 @@ public class CorpusUtil {
         CTBCorpusStandard.instance);
   }
 
+  public static ChunkedCorpus wsjPPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
+    return getChunkedCorpusNPs(alpha,
+        WSJCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
+        WSJCorpusStandard.instance);
+  }
+
+  public static ChunkedCorpus negraPPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
+    return getChunkedCorpusNPs(alpha,
+        NegraCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
+        NegraCorpusStandard.instance);
+  }
+
+  public static ChunkedCorpus ctbPPsGoldStandard(final Alpha alpha,
+      final String[] corpusFiles) {
+    return getChunkedCorpusNPs(alpha,
+        CTBCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
+        CTBCorpusStandard.instance);
+  }
+
   /**
    * @param corpusStr
    * @param fileType
@@ -355,6 +376,32 @@ public class CorpusUtil {
 
       default:
         throw new CorpusError("Unexpected file type for NPs gold standard: "
+            + testFileType);
+    }
+
+    return filterLength > 0 ? corpus.filterBySentenceLength(filterLength)
+        : corpus;
+  }
+
+  public static ChunkedCorpus ppsGoldStandard(final CorpusType testFileType,
+      final Alpha alpha, final String[] corpusFiles, final int filterLength)
+      throws CorpusError {
+    final ChunkedCorpus corpus;
+    switch (testFileType) {
+      case WSJ:
+        corpus = CorpusUtil.wsjPPsGoldStandard(alpha, corpusFiles);
+        break;
+
+      case NEGRA:
+        corpus = CorpusUtil.negraPPsGoldStandard(alpha, corpusFiles);
+        break;
+
+      case CTB:
+        corpus = CorpusUtil.ctbPPsGoldStandard(alpha, corpusFiles);
+        break;
+
+      default:
+        throw new CorpusError("Unexpected file type for PPs gold standard: "
             + testFileType);
     }
 

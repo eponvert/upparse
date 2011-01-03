@@ -41,6 +41,8 @@ public class EvalManager {
   private TreebankEval ubsFromNPsEval;
   private boolean noSeg = false;
   private PrintStream statusStream;
+  private ChunkedCorpus ppsGoldStandard;
+  private TreebankEval ubsFromPPsEval;
 
   public void setNoSeg(final boolean b) {
     noSeg = b;
@@ -83,28 +85,30 @@ public class EvalManager {
     for (final OutputType t : evalTypes) {
       switch (t) {
         case CLUMP:
-          evals.add(ChunkingEval.fromChunkedCorpus(OutputType.CLUMP,
-              getClumpGoldStandard()));
+          evals.add(ChunkingEval.fromChunkedCorpus(t, getClumpGoldStandard()));
           break;
 
         case NPS:
-          evals.add(ChunkingEval.fromChunkedCorpus(OutputType.NPS,
-              getNPsGoldStandard()));
+          evals.add(ChunkingEval.fromChunkedCorpus(t, getNPsGoldStandard()));
+          break;
+          
+        case PPS:
+          evals.add(ChunkingEval.fromChunkedCorpus(t, getPPsGoldStandard()));
           break;
 
         case TREEBANKPREC:
-          evals.add(TreebankPrecisionEval.fromUnlabeledBracketSets(
-              OutputType.TREEBANKPREC, getGoldUnlabeledBracketSets()));
+          evals.add(TreebankPrecisionEval.fromUnlabeledBracketSets(t,
+              getGoldUnlabeledBracketSets()));
           break;
 
         case TREEBANKFLAT:
-          evals.add(TreebankFlatEval.fromUnlabeledBracketSets(
-              OutputType.TREEBANKFLAT, getGoldUnlabeledBracketSets()));
+          evals.add(TreebankFlatEval.fromUnlabeledBracketSets(t,
+              getGoldUnlabeledBracketSets()));
           break;
 
         case TREEBANKRB:
-          evals.add(TreebankRBEval.fromUnlabeledBracketSets(
-              OutputType.TREEBANKRB, getGoldUnlabeledBracketSets()));
+          evals.add(TreebankRBEval.fromUnlabeledBracketSets(t,
+              getGoldUnlabeledBracketSets()));
           break;
 
         case NONE:
@@ -144,6 +148,18 @@ public class EvalManager {
   private ChunkedCorpus getNPsGoldStandard() throws CorpusError {
     checkNPsGoldStandard();
     return npsGoldStandard;
+  }
+
+  private void checkPPsGoldStandard() throws CorpusError {
+    if (ppsGoldStandard == null)
+      ppsGoldStandard = CorpusUtil.ppsGoldStandard(testFileType, alpha,
+          corpusFiles, filterLength);
+    assert ppsGoldStandard != null;
+  }
+
+  private ChunkedCorpus getPPsGoldStandard() throws CorpusError {
+    checkPPsGoldStandard();
+    return ppsGoldStandard;
   }
 
   private void makeClumpGoldStandard() throws EvalError {
@@ -233,6 +249,7 @@ public class EvalManager {
 
   public void initializeCCLParserEval() throws EvalError, CorpusError {
     checkNPsGoldStandard();
+    checkPPsGoldStandard();
     checkClumpGoldStandard();
     treebankEval = new TreebankEval("asTrees", getGoldUnlabeledBracketSets());
     npsEval = ChunkingEval.fromChunkedCorpus(OutputType.NPS, npsGoldStandard);
@@ -242,6 +259,8 @@ public class EvalManager {
         clumpGoldStandard.toUnlabeledBracketSetCorpus());
     ubsFromNPsEval = new TreebankEval("NPs Recall",
         npsGoldStandard.toUnlabeledBracketSetCorpus());
+    ubsFromPPsEval = new TreebankEval("PPs Recall", 
+        ppsGoldStandard.toUnlabeledBracketSetCorpus());
   }
 
   public void evalParserOutput(final UnlabeledBracketSetCorpus output,
@@ -260,8 +279,11 @@ public class EvalManager {
 
     npsEval.addExperiment(npsEval.newChunkingExperiment("NPs", chunked));
     npsEval.writeSummary(evalReportType, man.getResultsStream(), false);
-
+    
     ubsFromNPsEval.getExperiment("", output.getTrees()).writeSummary(
+        man.getResultsStream());
+
+    ubsFromPPsEval.getExperiment("", output.getTrees()).writeSummary(
         man.getResultsStream());
 
     if (!man.isNull()) {

@@ -1,0 +1,7 @@
+java -Xmx1g -ea -jar upparse.jar chunk \
+-chunkingStrategy UNIFORM \
+-chunkerType PRLG \
+-emdelta .0001 \
+-smooth .1 \
+-trainFileType SPL \
+-outputType PUNC

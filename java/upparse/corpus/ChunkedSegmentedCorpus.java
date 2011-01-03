@@ -301,6 +301,7 @@ public class ChunkedSegmentedCorpus implements Corpus {
     switch (outputType) {
       case CLUMP:
       case NPS:
+      case PPS:
         writeTo(output);
         break;
         

@@ -5,7 +5,7 @@ package upparse.corpus;
  */
 public enum OutputType {
   CLUMP, NPS, TREEBANKRB, TREEBANKPREC, TREEBANKFLAT, UNDERSCORE, NONE, 
-  UNDERSCORE4CCL, PUNC;
+  UNDERSCORE4CCL, PUNC, PPS;
 
   public static String outputTypesHelp() {
     return 
