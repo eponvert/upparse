@@ -45,6 +45,7 @@ public class Main {
   private String cclparserOutput;
   private boolean doContinuousEval = false;
   private boolean noSeg = false;
+  private boolean reverse = false;
 
   private Main(final String[] args) throws CommandLineError, IOException,
       EvalError, EncoderError, CorpusError {
@@ -73,6 +74,9 @@ public class Main {
 
         if (arg.equals("-noSeg"))
           noSeg = true;
+        
+        else if (arg.equals("-reverse"))
+          reverse = true;
 
         else if (arg.equals("-continuousEval"))
           doContinuousEval = true;
@@ -156,6 +160,8 @@ public class Main {
 
       // Setup evalManager
       evalManager.setNoSeg(noSeg);
+      evalManager.setReverseEval(reverse);
+
       if (testCorpusString.length == 1
           && testCorpusString[0].startsWith("subset")) {
         final int len = Integer.parseInt(testCorpusString[0].substring(6));
@@ -174,7 +180,7 @@ public class Main {
         evalManager.setTestCorpusString(trainCorpusString);
         evalManager.setParserEvaluationTypes("NONE");
       }
-
+      
       // don't run EM more than 200 iterations
       if (iter < 0)
         iter = 200;
@@ -265,6 +271,7 @@ public class Main {
             + "  -smooth V           Smoothing parameter for emissions probabilities\n"
             + "  -dontCheckTerms     Don't check that the eval and output terms are equal\n"
             + "  -onlyLast           Only show evaluation of last itertation of EM\n"
+            + "  -reverse            Evaluate running sequence models backwards\n"
             + "\n" + "File types:\n" + "  WSJ    : WSJ/Penn Treebank corpus\n"
             + "  NEGRA  : Negra Treebank (Penn Treebank like)\n"
             + "  CTB    : Penn Chinese Treebank corpus\n"
@@ -286,7 +293,7 @@ public class Main {
         "Creating train corpus from %d documents\n", trainCorpusString.length);
     trainStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha,
         trainCorpusString, trainFileType, trainSents, filterTrain, noSeg,
-        outputManager.getStatusStream());
+        outputManager.getStatusStream(), reverse);
     assert trainStopSegmentCorpus != null;
   }
 

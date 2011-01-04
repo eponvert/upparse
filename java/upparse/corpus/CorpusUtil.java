@@ -317,14 +317,15 @@ public class CorpusUtil {
    * @param numSent
    * @param filterByLength
    * @param noSeg
+   * @param reverse
    * @return
    * @throws IOException
    */
   public static StopSegmentCorpus stopSegmentCorpus(final Alpha alpha,
       final String[] corpusStr, final CorpusType fileType, final int numSent,
       final int filterByLength, final boolean noSeg,
-      final PrintStream statusStream) throws CorpusError {
-    final StopSegmentCorpus corpus;
+      final PrintStream statusStream, boolean reverse) throws CorpusError {
+    StopSegmentCorpus corpus;
     switch (fileType) {
       case WSJ:
         corpus = CorpusUtil.wsjStopSegmentCorpus(alpha, corpusStr, numSent,
@@ -354,13 +355,20 @@ public class CorpusUtil {
         throw new CorpusError("Unexpected file-type: " + fileType);
     }
 
-    return filterByLength > 0 ? corpus.filterLen(filterByLength) : corpus;
+    if (filterByLength > 0)
+      corpus = corpus.filterLen(filterByLength);
+
+    if (reverse)
+      corpus.reverse();
+
+    return corpus;
   }
 
   public static ChunkedCorpus npsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength,
+      boolean reverse)
       throws CorpusError {
-    final ChunkedCorpus corpus;
+    ChunkedCorpus corpus;
     switch (testFileType) {
       case WSJ:
         corpus = CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
@@ -379,14 +387,21 @@ public class CorpusUtil {
             + testFileType);
     }
 
-    return filterLength > 0 ? corpus.filterBySentenceLength(filterLength)
-        : corpus;
+    if (filterLength > 0)
+      corpus = corpus.filterBySentenceLength(filterLength);
+    
+    if (reverse) {
+      corpus.reverse();
+    }
+    
+    return corpus;
   }
 
   public static ChunkedCorpus ppsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength,
+      boolean reverse)
       throws CorpusError {
-    final ChunkedCorpus corpus;
+    ChunkedCorpus corpus;
     switch (testFileType) {
       case WSJ:
         corpus = CorpusUtil.wsjPPsGoldStandard(alpha, corpusFiles);
@@ -405,13 +420,22 @@ public class CorpusUtil {
             + testFileType);
     }
 
-    return filterLength > 0 ? corpus.filterBySentenceLength(filterLength)
-        : corpus;
+    if (filterLength > 0)
+      corpus = corpus.filterBySentenceLength(filterLength);
+    
+    if (reverse)
+      corpus.reverse();
+    
+    return corpus;
   }
 
   public static UnlabeledBracketSetCorpus goldUnlabeledBracketSets(
       final CorpusType testFileType, final Alpha alpha,
-      final String[] corpusFiles, final int filterLength) throws CorpusError {
+      final String[] corpusFiles, final int filterLength, boolean reverse)
+      throws CorpusError {
+    if (reverse)
+      throw new UnsupportedOperationException("Cannot reverse bracket sets yet");
+
     final UnlabeledBracketSetCorpus corpus;
     switch (testFileType) {
       case WSJ:

@@ -240,6 +240,7 @@ def main():
   op.add_option('-o', '--output')
   op.add_option('-u', '--upparse_script')
   op.add_option('-f', '--filter_test', type='int', default='-1')
+  op.add_option('-r', '--reverse', action='store_true')
 
   opt, args = op.parse_args()
 
@@ -251,7 +252,11 @@ def main():
   if opt.filter_test > 0: 
     filter_flag = ' -filterTest %d ' % opt.filter_test
 
-  base_cmd = read_cmd(opt.upparse_script)
+  reverse_flag = ''
+  if opt.reverse:
+    reverse_flag = ' -reverse '
+
+  base_cmd = read_cmd(opt.upparse_script) + reverse_flag
 
   init_train_output = opt.output + '-train-01'
   if exists(init_train_output):

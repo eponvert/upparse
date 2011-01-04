@@ -3,26 +3,28 @@ package upparse.corpus;
 import java.io.*;
 import java.util.*;
 
+import upparse.util.*;
 
 /**
  * Simple data structure for corpus with sentences split by phrasal punctuation
+ * 
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
 public class StopSegmentCorpus {
-  
-  final int[][][] corpus;
+
+  int[][][] corpus;
   private final Alpha alpha;
-  
+
   private StopSegmentCorpus(final Alpha _alpha, final int[][][] _corpus) {
     alpha = _alpha;
     corpus = _corpus;
   }
-  
-  public static StopSegmentCorpus fromArrays(
-      final Alpha alpha, final int[][][] corpus) {
+
+  public static StopSegmentCorpus fromArrays(final Alpha alpha,
+      final int[][][] corpus) {
     return new StopSegmentCorpus(alpha, corpus);
   }
-  
+
   public ChunkedSegmentedCorpus toBaseChunkedSegmentedCorpus(Alpha alpha) {
     int[][][][] arrays = new int[corpus.length][][][];
     for (int i = 0; i < corpus.length; i++) {
@@ -34,8 +36,8 @@ public class StopSegmentCorpus {
         }
       }
     }
-    
-    return ChunkedSegmentedCorpus.fromArrays(arrays, alpha); 
+
+    return ChunkedSegmentedCorpus.fromArrays(arrays, alpha);
   }
 
   /** Create a sub-corpus of setences whose length is lte to num */
@@ -43,9 +45,9 @@ public class StopSegmentCorpus {
     boolean[] filt = new boolean[corpus.length];
     int i = 0;
     int n = 0;
-    for (int[][] s: corpus) {
+    for (int[][] s : corpus) {
       int len = 0;
-      for (int[] seg: s)
+      for (int[] seg : s)
         len += seg.length;
       if (len <= num) {
         n++;
@@ -53,34 +55,34 @@ public class StopSegmentCorpus {
       }
       i++;
     }
-    
+
     int[][][] _corpus = new int[n][][];
     i = 0;
     for (int j = 0; j < corpus.length; j++)
       if (filt[j])
         _corpus[i++] = corpus[j];
-    
+
     return fromArrays(getAlpha(), _corpus);
   }
 
   public Iterable<int[][]> arrayIter() {
     return new Iterable<int[][]>() {
-      
+
       @Override
       public Iterator<int[][]> iterator() {
         return new Iterator<int[][]>() {
           int i = 0;
-          
+
           @Override
           public void remove() {
             throw new UnsupportedOperationException();
           }
-          
+
           @Override
           public int[][] next() {
             return corpus[i++];
           }
-          
+
           @Override
           public boolean hasNext() {
             return i < corpus.length;
@@ -96,10 +98,10 @@ public class StopSegmentCorpus {
 
   public void writeTo(String output) throws IOException {
     BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-    for (int[][] sent: corpus) { 
+    for (int[][] sent : corpus) {
       bw.write("__stop__");
-      for (int[] seg: sent) {
-        for (int w: seg) {
+      for (int[] seg : sent) {
+        for (int w : seg) {
           bw.write(" ");
           bw.write(getAlpha().getString(w));
         }
@@ -114,7 +116,12 @@ public class StopSegmentCorpus {
     return alpha;
   }
 
-  public int size() { 
+  public int size() {
     return corpus.length;
+  }
+
+  /** Reverse sequence of words in corpus */
+  public void reverse() {
+    corpus = Util.reverse(corpus);
   }
 }

@@ -43,4 +43,28 @@ public class Util {
     for (double d: ds) if (d != 0) c++;
     return (double) c;
   }
+
+  public static int[][][] reverse(int[][][] corpus) {
+    int n = corpus.length;
+    int[][][] newCorpus = new int[n][][];
+    for (int i = 0; i < n; i++)
+      newCorpus[i] = reverse(corpus[n - i - 1]);
+    return newCorpus;
+  }
+
+  private static int[][] reverse(int[][] sent) {
+    int n = sent.length;
+    int[][] newSent = new int[n][];
+    for (int i = 0; i < n; i++)
+      newSent[i] = reverse(sent[n - i - 1]);
+    return newSent;
+  }
+
+  private static int[] reverse(int[] seg) {
+    int n = seg.length;
+    int[] newSeg = new int[n];
+    for (int i = 0; i < n; i++)
+      newSeg[i] = seg[n - i - 1];
+    return newSeg;
+  }
 }

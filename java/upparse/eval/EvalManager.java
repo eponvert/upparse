@@ -43,6 +43,7 @@ public class EvalManager {
   private PrintStream statusStream;
   private ChunkedCorpus ppsGoldStandard;
   private TreebankEval ubsFromPPsEval;
+  private boolean reverse = false;
 
   public void setNoSeg(final boolean b) {
     noSeg = b;
@@ -134,14 +135,14 @@ public class EvalManager {
   private void checkGoldUnlabeledBracketSet() throws CorpusError {
     if (goldUnlabeledBracketSet == null)
       goldUnlabeledBracketSet = CorpusUtil.goldUnlabeledBracketSets(
-          testFileType, alpha, corpusFiles, filterLength);
+          testFileType, alpha, corpusFiles, filterLength, reverse);
     assert goldUnlabeledBracketSet != null;
   }
 
   private void checkNPsGoldStandard() throws CorpusError {
     if (npsGoldStandard == null)
       npsGoldStandard = CorpusUtil.npsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength);
+          corpusFiles, filterLength, reverse);
     assert npsGoldStandard != null;
   }
 
@@ -153,7 +154,7 @@ public class EvalManager {
   private void checkPPsGoldStandard() throws CorpusError {
     if (ppsGoldStandard == null)
       ppsGoldStandard = CorpusUtil.ppsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength);
+          corpusFiles, filterLength, reverse);
     assert ppsGoldStandard != null;
   }
 
@@ -192,6 +193,9 @@ public class EvalManager {
     if (filterLength > 0)
       clumpGoldStandard = clumpGoldStandard
           .filterBySentenceLength(filterLength);
+    
+    if (reverse)
+      clumpGoldStandard.reverse();
   }
 
   private void checkClumpGoldStandard() throws EvalError {
@@ -219,7 +223,7 @@ public class EvalManager {
 
   private void makeEvalStopSegmentCorpus() throws CorpusError {
     testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha, corpusFiles,
-        testFileType, numSent, filterLength, noSeg, statusStream);
+        testFileType, numSent, filterLength, noSeg, statusStream, reverse);
   }
 
   public boolean isNull() throws EvalError, CorpusError {
@@ -298,5 +302,9 @@ public class EvalManager {
 
   public boolean doEval() { 
     return testFileType != CorpusType.SPL;
+  }
+
+  public void setReverseEval(final boolean r) {
+    reverse = r;
   }
 }

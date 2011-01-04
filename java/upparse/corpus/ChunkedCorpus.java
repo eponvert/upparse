@@ -3,6 +3,8 @@ package upparse.corpus;
 import java.io.*;
 import java.util.*;
 
+import upparse.util.*;
+
 /**
  * Stucture representing a corpus -- which has clumps, but may not include 
  * sentence segments (i.e. seperated at punctuation)
@@ -10,7 +12,7 @@ import java.util.*;
  */
 public class ChunkedCorpus {
   
-  private final int[][][] corpus;
+  private int[][][] corpus;
   final Alpha alpha;
 
   private ChunkedCorpus(final int[][][] _corpus, final Alpha _alpha) {
@@ -228,5 +230,10 @@ public class ChunkedCorpus {
 
   public UnlabeledBracketSetCorpus toUnlabeledBracketSetCorpus() {
     return UnlabeledBracketSetCorpus.fromArrays(toUnlabeledBracketSets());
+  }
+
+  /** Reverse sequence of tokens and sentences */
+  public void reverse() {
+    corpus = Util.reverse(corpus);
   }
 }
