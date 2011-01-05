@@ -142,7 +142,7 @@ public class EvalManager {
   private void checkNPsGoldStandard() throws CorpusError {
     if (npsGoldStandard == null)
       npsGoldStandard = CorpusUtil.npsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength, reverse);
+          corpusFiles, filterLength);
     assert npsGoldStandard != null;
   }
 
@@ -154,7 +154,7 @@ public class EvalManager {
   private void checkPPsGoldStandard() throws CorpusError {
     if (ppsGoldStandard == null)
       ppsGoldStandard = CorpusUtil.ppsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength, reverse);
+          corpusFiles, filterLength);
     assert ppsGoldStandard != null;
   }
 
@@ -193,9 +193,6 @@ public class EvalManager {
     if (filterLength > 0)
       clumpGoldStandard = clumpGoldStandard
           .filterBySentenceLength(filterLength);
-    
-    if (reverse)
-      clumpGoldStandard.reverse();
   }
 
   private void checkClumpGoldStandard() throws EvalError {

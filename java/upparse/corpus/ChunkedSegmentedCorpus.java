@@ -3,6 +3,8 @@ package upparse.corpus;
 import java.io.*;
 import java.util.*;
 
+import upparse.util.*;
+
 /**
  * @author ponvert@mail.utexas.edu (Elias Ponvert)
  */
@@ -14,7 +16,7 @@ public class ChunkedSegmentedCorpus implements Corpus {
     Collection<UnlabeledBracket> conv(int[][][] s);
   }
   
-  private final int[][][][] corpus;
+  private int[][][][] corpus;
   final Alpha alpha;
   
   private ChunkedSegmentedCorpus(final int[][][][] _corpus, final Alpha _alpha) {
@@ -341,5 +343,9 @@ public class ChunkedSegmentedCorpus implements Corpus {
         newCorpusConstr.add(corpus[i]);
     int[][][][] newCorpus = newCorpusConstr.toArray(new int[0][][][]);
     return new ChunkedSegmentedCorpus(newCorpus, alpha);
+  }
+
+  public void reverse() {
+    corpus = Util.reverse(corpus);
   }
 }

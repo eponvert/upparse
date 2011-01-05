@@ -50,6 +50,7 @@ def main():
   op.add_option('-o', '--output')
   op.add_option('-r', '--reverse', action='store_true')
   op.add_option('-f', '--filter_test', type='int', default='-1')
+  op.add_option('-m', '--model', default='prlg-uni')
   op.add_option('-M', '--memflag', default='-Xmx1g')
 
   opt, args = op.parse_args()
@@ -76,9 +77,20 @@ def main():
   if opt.filter_test > 0: 
     filter_flag = ' -filterTest %d ' % opt.filter_test
 
+  if opt.model == 'prlg-uni':
+    model_flag = ' -chunkerType PRLG -chunkingStrategy UNIFORM '
+  elif opt.model == 'hmm-uni':
+    model_flag = ' -chunkerType HMM -chunkingStrategy UNIFORM '
+  elif opt.model == 'prlg-2st':
+    model_flag = ' -chunkerType PRLG -chunkingStrategy TWOSTAGE -F 2 '
+  elif opt.model == 'hmm-2st':
+    model_flag = ' -chunkerType HMM -chunkingStrategy TWOSTAGE -F 2 '
+  else:
+    print >>sys.stderr, 'Unexpected model option:', opt.model
+    sys.exit(1)
+
   cmd = 'java -ea ' + opt.memflag + ' -jar upparse.jar chunk'
-  cmd += ' -chunkingStrategy UNIFORM '
-  cmd += ' -chunkerType PRLG '
+  cmd += model_flag
   cmd += ' -emdelta .0001 '
   cmd += ' -smooth .1 '
 

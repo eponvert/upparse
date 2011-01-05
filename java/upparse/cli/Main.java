@@ -308,19 +308,20 @@ public class Main {
     if (outputManager.isNull() && evalManager.isNull())
       return;
 
-    final ChunkedSegmentedCorpus chunkerOutput = chunker
+    ChunkedSegmentedCorpus chunkerOutput = chunker
         .getChunkedCorpus(evalManager.getEvalStopSegmentCorpus());
 
+    final int filterLen = evalManager.getFilterLen();
+    if (filterLen > 0)
+      chunkerOutput = chunkerOutput.filter(filterLen);
+    
+    if (reverse)
+      chunkerOutput.reverse();
+    
     evalManager.addChunkerOutput(comment, chunkerOutput);
 
-    if (!outputManager.isNull()) {
-      final int filterLen = evalManager.getFilterLen();
-      if (filterLen > 0)
-        outputManager
-            .addChunkerOutput(chunkerOutput.filter(filterLen), comment);
-      else
-        outputManager.addChunkerOutput(chunkerOutput, comment);
-    }
+    if (!outputManager.isNull()) 
+      outputManager.addChunkerOutput(chunkerOutput, comment);
   }
 
   private static void usageError() {

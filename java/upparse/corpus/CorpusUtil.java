@@ -357,7 +357,7 @@ public class CorpusUtil {
 
     if (filterByLength > 0)
       corpus = corpus.filterLen(filterByLength);
-
+    
     if (reverse)
       corpus.reverse();
 
@@ -365,8 +365,7 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus npsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength,
-      boolean reverse)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength)
       throws CorpusError {
     ChunkedCorpus corpus;
     switch (testFileType) {
@@ -390,16 +389,11 @@ public class CorpusUtil {
     if (filterLength > 0)
       corpus = corpus.filterBySentenceLength(filterLength);
     
-    if (reverse) {
-      corpus.reverse();
-    }
-    
     return corpus;
   }
 
   public static ChunkedCorpus ppsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength,
-      boolean reverse)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength)
       throws CorpusError {
     ChunkedCorpus corpus;
     switch (testFileType) {
@@ -423,9 +417,6 @@ public class CorpusUtil {
     if (filterLength > 0)
       corpus = corpus.filterBySentenceLength(filterLength);
     
-    if (reverse)
-      corpus.reverse();
-    
     return corpus;
   }
 
@@ -433,8 +424,6 @@ public class CorpusUtil {
       final CorpusType testFileType, final Alpha alpha,
       final String[] corpusFiles, final int filterLength, boolean reverse)
       throws CorpusError {
-    if (reverse)
-      throw new UnsupportedOperationException("Cannot reverse bracket sets yet");
 
     final UnlabeledBracketSetCorpus corpus;
     switch (testFileType) {

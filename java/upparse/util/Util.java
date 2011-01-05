@@ -67,4 +67,12 @@ public class Util {
       newSeg[i] = seg[n - i - 1];
     return newSeg;
   }
+
+  public static int[][][][] reverse(int[][][][] corpus) {
+    int n = corpus.length;
+    int[][][][] newCorpus = new int[n][][][];
+    for (int i = 0; i < n; i++)
+      newCorpus[i] = reverse(corpus[n-i-1]);
+    return newCorpus;
+  }
 }
