@@ -52,6 +52,7 @@ def main():
   op.add_option('-f', '--filter_test', type='int', default='-1')
   op.add_option('-m', '--model', default='prlg-uni')
   op.add_option('-M', '--memflag', default='-Xmx1g')
+  op.add_option('-c', '--coding', default='BIO')
 
   opt, args = op.parse_args()
 
@@ -89,8 +90,13 @@ def main():
     print >>sys.stderr, 'Unexpected model option:', opt.model
     sys.exit(1)
 
+  assert opt.coding in ['BIO','BILO','BIO_GP','BIO_GP_NOSTOP']
+  coding_flag = ' -G ' + opt.coding
+
+
   cmd = 'java -ea ' + opt.memflag + ' -jar upparse.jar chunk'
   cmd += model_flag
+  cmd += coding_flag
   cmd += ' -emdelta .0001 '
   cmd += ' -smooth .1 '
 

@@ -13,9 +13,10 @@ import upparse.util.*;
 public abstract class TagEncoder {
 
   public static enum EncoderType {
-    BIO_GP_NOSTOP, BIO_GP, BIO;
+    BIO_GP_NOSTOP, BIO_GP, BIO, BILO;
     public static String encoderTypeHelp() {
       return "  BIO            Basic BIO encoding\n"
+          + "  BILO           Basic BILO encoding\n"
           + "  BIO_GP         BIO encoding with 2nd order tagset\n"
           + "  BIO_GP_NOSTOP  BIO encoding with 2nd order tagset (except on STOP)";
     }
@@ -60,6 +61,9 @@ public abstract class TagEncoder {
 
       case BIO:
         return new SimpleBIOEncoder(stop, alpha);
+        
+      case BILO:
+        return new SimpleBILOEncoder(stop, alpha);
 
       default:
         throw new EncoderError("Unexpected GP option " + gp);

@@ -263,7 +263,6 @@ public class Main {
             + "  -outputAll          Produce model output for all EM iterations\n"
             + "  -F|-factor N1,N2... Factors for Stage 1 chunking\n"
             + "  -G|-encoderType T   Use chunk-encoder type T\n"
-            + "  -GG|-grandparentsN  Use pseudo 2nd order tagset without altering STOP tag\n"
             + "  -E|-evalReportType  Evaluation report (eg PRL)\n"
             + "  -e|-evalTypes E1,E2 Evaluation types \n"
             + "  -iterations N       Iterations of EM\n"
