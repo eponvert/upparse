@@ -19,7 +19,6 @@ public class Main {
     TWOSTAGE, SOFT, UNIFORM, RANDOM, SUPERVISED_CLUMP, SUPERVISED_NPS;
   }
 
-  private static String VERSION = "101:35180c7a9bc3";
   private static final String CCLPARSER_EVAL_ACTION = "cclp-eval";
   private static final String CHUNK_ACTION = "chunk";
 
@@ -196,7 +195,6 @@ public class Main {
   public void writeMetadata(final PrintStream s) {
     if (action.equals(CHUNK_ACTION)) {
       s.println(currentDate());
-      s.println("  Version: " + VERSION);
       s.println("Chunk experiment");
       s.println("  Experiment strategy: " + chunkingStrategy);
       s.println("  Chunker type: " + chunkerType);
