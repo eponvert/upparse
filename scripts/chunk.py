@@ -53,6 +53,7 @@ def main():
   op.add_option('-m', '--model', default='prlg-uni')
   op.add_option('-M', '--memflag', default='-Xmx1g')
   op.add_option('-c', '--coding', default='BIO')
+  op.add_option('-P', '--nopunc', action='store_true')
 
   opt, args = op.parse_args()
 
@@ -60,23 +61,32 @@ def main():
   log('guessing input type = ' + input_type)
   log('running initial chunking')
 
-  if exists(opt.output):
-    answer = 'x'
-    yn = ['y','n']
-    while answer not in yn:
-      answer = raw_input('Overwrite diretory ' + opt.output + '? [y/n] ').strip()
-      if answer not in yn:
-        print "Answer 'y' or 'n'"
+  output_flag = ''
+  
+  if opt.output is not None:
+    if exists(opt.output):
+      answer = 'x'
+      yn = ['y','n']
+      while answer not in yn:
+        answer = raw_input('Overwrite diretory ' + opt.output + '? [y/n] ').strip()
+        if answer not in yn:
+          print "Answer 'y' or 'n'"
 
-    if answer == 'n':
-      sys.exit(0)
+      if answer == 'n':
+        sys.exit(0)
 
-    else:
-      rmtree(opt.output)
+      else:
+        rmtree(opt.output)
+
+    output_flag = ' -output ' + opt.output
 
   filter_flag = ''
   if opt.filter_test > 0: 
     filter_flag = ' -filterTest %d ' % opt.filter_test
+
+  seg_flag = ''
+  if opt.nopunc:
+    seg_flag = ' -noSeg '
 
   if opt.model == 'prlg-uni':
     model_flag = ' -chunkerType PRLG -chunkingStrategy UNIFORM '
@@ -86,6 +96,14 @@ def main():
     model_flag = ' -chunkerType PRLG -chunkingStrategy TWOSTAGE -F 2 '
   elif opt.model == 'hmm-2st':
     model_flag = ' -chunkerType HMM -chunkingStrategy TWOSTAGE -F 2 '
+  elif opt.model == 'prlg-sup-clump':
+    model_flag = ' -chunkerType PRLG -chunkingStrategy SUPERVISED_CLUMP -iterations 0 '
+  elif opt.model == 'hmm-sup-clump':
+    model_flag = ' -chunkerType HMM -chunkingStrategy SUPERVISED_CLUMP -iterations 0 '
+  elif opt.model == 'prlg-sup-nps':
+    model_flag = ' -chunkerType PRLG -chunkingStrategy SUPERVISED_NPS -iterations 0 '
+  elif opt.model == 'hmm-sup-nps':
+    model_flag = ' -chunkerType HMM -chunkingStrategy SUPERVISED_NPS -iterations 0 '
   else:
     print >>sys.stderr, 'Unexpected model option:', opt.model
     sys.exit(1)
@@ -97,6 +115,8 @@ def main():
   cmd = 'java -ea ' + opt.memflag + ' -jar upparse.jar chunk'
   cmd += model_flag
   cmd += coding_flag
+  cmd += seg_flag
+  cmd += output_flag
   cmd += ' -emdelta .0001 '
   cmd += ' -smooth .1 '
 
@@ -104,7 +124,6 @@ def main():
   cmd += ' -trainFileType ' + input_type
   cmd += ' -test ' + opt.test
   cmd += ' -testFileType ' + input_type
-  cmd += ' -output ' + opt.output
   cmd += ' -E PRCL -e CLUMP,NPS'
   if opt.reverse:
     cmd += ' -reverse '

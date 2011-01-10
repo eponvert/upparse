@@ -236,4 +236,11 @@ public class ChunkedCorpus {
   public void reverse() {
     corpus = Util.reverse(corpus);
   }
+
+  public ChunkedSegmentedCorpus toSimpleChunkedSegmentedCorpus() {
+    int[][][][] newCorpus = new int[corpus.length][1][][];
+    for (int i = 0; i < corpus.length; i++)
+      newCorpus[i][0] = corpus[i];
+    return ChunkedSegmentedCorpus.fromArrays(newCorpus, alpha);
+  }
 }

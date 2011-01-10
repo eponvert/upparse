@@ -169,4 +169,15 @@ public class LabeledBracketSet {
       new LabeledBracketSet(tokens, newBraks, alpha).unlabeled(cc); 
     return u.clumps();
   }
+
+  public String[] getPos() {
+    return pos;
+  }
+
+  public String[] getTokensS() {
+    String[] tok = new String[tokens.length];
+    for (int i = 0; i < tok.length; i++)
+      tok[i] = alpha.getString(tokens[i]);
+    return tok;
+  }
 }

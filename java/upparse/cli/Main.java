@@ -16,7 +16,7 @@ import upparse.model.*;
 public class Main {
 
   private static enum ChunkingStrategy {
-    TWOSTAGE, SOFT, UNIFORM, RANDOM;
+    TWOSTAGE, SOFT, UNIFORM, RANDOM, SUPERVISED_CLUMP, SUPERVISED_NPS;
   }
 
   private static String VERSION = "101:35180c7a9bc3";
@@ -46,6 +46,7 @@ public class Main {
   private boolean doContinuousEval = false;
   private boolean noSeg = false;
   private boolean reverse = false;
+  private ChunkedSegmentedCorpus trainChunkedSegmentedCorpus;
 
   private Main(final String[] args) throws CommandLineError, IOException,
       EvalError, EncoderError, CorpusError {
@@ -74,7 +75,7 @@ public class Main {
 
         if (arg.equals("-noSeg"))
           noSeg = true;
-        
+
         else if (arg.equals("-reverse"))
           reverse = true;
 
@@ -180,7 +181,7 @@ public class Main {
         evalManager.setTestCorpusString(trainCorpusString);
         evalManager.setParserEvaluationTypes("NONE");
       }
-      
+
       // don't run EM more than 200 iterations
       if (iter < 0)
         iter = 200;
@@ -307,19 +308,19 @@ public class Main {
     if (outputManager.isNull() && evalManager.isNull())
       return;
 
-    ChunkedSegmentedCorpus chunkerOutput = chunker
-        .getChunkedCorpus(evalManager.getEvalStopSegmentCorpus());
+    ChunkedSegmentedCorpus chunkerOutput = chunker.getChunkedCorpus(evalManager
+        .getEvalStopSegmentCorpus());
 
     final int filterLen = evalManager.getFilterLen();
     if (filterLen > 0)
       chunkerOutput = chunkerOutput.filter(filterLen);
-    
+
     if (reverse)
       chunkerOutput.reverse();
-    
+
     evalManager.addChunkerOutput(comment, chunkerOutput);
 
-    if (!outputManager.isNull()) 
+    if (!outputManager.isNull())
       outputManager.addChunkerOutput(chunkerOutput, comment);
   }
 
@@ -358,6 +359,17 @@ public class Main {
         final ChunkedSegmentedCorpus psuedoTraining = c.getChunkedCorpus(train);
         return SequenceModel.mleEstimate(chunkerType, psuedoTraining, encoder,
             smooth);
+
+      case SUPERVISED_CLUMP:
+        makeTrainChunkedSegmentedCorpusForClumps();
+        return SequenceModel.mleEstimate(chunkerType,
+            trainChunkedSegmentedCorpus, encoder, smooth);
+
+      case SUPERVISED_NPS:
+        makeTrainChunkedSegmentedCorpusForNPs();
+        return SequenceModel.mleEstimate(chunkerType,
+            trainChunkedSegmentedCorpus, encoder, smooth);
+
       case SOFT:
         return SequenceModel.softEstimate(chunkerType, train, encoder, smooth);
 
@@ -375,9 +387,67 @@ public class Main {
     }
   }
 
+  private void makeTrainChunkedSegmentedCorpusForNPs() {
+    evalManager.setNoSeg(true);
+    final ChunkedCorpus trainChunkedCorpus;
+    switch (trainFileType) {
+      case WSJ:
+        trainChunkedCorpus = CorpusUtil.wsjNPsGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      case NEGRA:
+        trainChunkedCorpus = CorpusUtil.negraNPsGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      case CTB:
+        trainChunkedCorpus = CorpusUtil.ctbNPsGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      default:
+        throw new RuntimeException(
+            "Unsupported train file type for supervised clump eval: "
+                + trainFileType);
+    }
+    trainChunkedSegmentedCorpus = trainChunkedCorpus
+        .toSimpleChunkedSegmentedCorpus();
+  }
+
+  private void makeTrainChunkedSegmentedCorpusForClumps() {
+    evalManager.setNoSeg(true);
+    outputManager.getStatusStream().format(
+        "Creating train corpus from %d documents\n", trainCorpusString.length);
+    final ChunkedCorpus trainChunkedCorpus;
+    switch (trainFileType) {
+      case WSJ:
+        trainChunkedCorpus = CorpusUtil.wsjClumpGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      case NEGRA:
+        trainChunkedCorpus = CorpusUtil.negraClumpGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      case CTB:
+        trainChunkedCorpus = CorpusUtil.ctbClumpGoldStandard(alpha,
+            trainCorpusString);
+        break;
+
+      default:
+        throw new RuntimeException(
+            "Unsupported train file type for supervised clump eval: "
+                + trainFileType);
+    }
+    trainChunkedSegmentedCorpus = trainChunkedCorpus
+        .toSimpleChunkedSegmentedCorpus();
+  }
+
   private void chunk() throws CommandLineError, IOException, EvalError,
       ChunkerError, CorpusError, EncoderError, SequenceModelError {
-    chunkerEval(new SequenceModelChunker(getSequenceModel(), emdelta));
+    chunkerEval(new SequenceModelChunker(getSequenceModel(), emdelta, iter));
   }
 
   private void cclpEval() throws EvalError, IOException, CorpusError {

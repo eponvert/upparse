@@ -13,11 +13,18 @@ public class SequenceModelChunker {
   private int currIter = 0;
   private final SequenceModel model;
   private final double emdelta;
+  public final int totalIter;
   
   public SequenceModelChunker(
       final SequenceModel _model, final double _emdelta) {
+    this(_model, _emdelta, -1);
+  }
+  
+  public SequenceModelChunker(
+      final SequenceModel _model, final double _emdelta, final int _iter) {
     model = _model;
     emdelta = _emdelta;
+    totalIter = _iter;
   }
   
   public Chunker getCurrentChunker() {
@@ -49,7 +56,12 @@ public class SequenceModelChunker {
   }
   
   public boolean anotherIteration() {
-    return lastPerplex < 0 || emdelta < currDelta();
+    if (totalIter == 0) 
+      return false;
+    if (totalIter > 0)
+      return currIter < totalIter && (lastPerplex < 0 || emdelta < currDelta());
+    else
+      return lastPerplex < 0 || emdelta < currDelta();
   }
   
   public void updateWithEM(PrintStream verboseOut) {

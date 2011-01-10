@@ -1,0 +1,8 @@
+java -Xmx1g -ea -jar upparse.jar chunk \
+-G BILO \
+-chunkingStrategy UNIFORM \
+-chunkerType HMM \
+-emdelta .0001 \
+-smooth .1 \
+-trainFileType SPL \
+-outputType PUNC
