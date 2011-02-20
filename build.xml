@@ -11,7 +11,7 @@
     <delete dir="${destdir}"/>
   </target>
   
-  <target name="compile" depends="clean">
+  <target name="compile">
     <mkdir dir="${destdir}"/>
     <javac srcdir="${srcdir}" destdir="${destdir}" debug="true" excludes="**/tests/*.java" includeantruntime="false">
       <compilerarg value="-Xlint"/>
