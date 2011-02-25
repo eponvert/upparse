@@ -54,6 +54,7 @@ def main():
   op.add_option('-M', '--memflag', default='-Xmx1g')
   op.add_option('-c', '--coding', default='BIO')
   op.add_option('-P', '--nopunc', action='store_true')
+  op.add_option('-E', '--emdelta', type='float', default=.0001)
 
   opt, args = op.parse_args()
 
@@ -117,7 +118,7 @@ def main():
   cmd += coding_flag
   cmd += seg_flag
   cmd += output_flag
-  cmd += ' -emdelta .0001 '
+  cmd += ' -emdelta %f' % opt.emdelta
   cmd += ' -smooth .1 '
 
   cmd += ' -train ' + opt.train

@@ -124,4 +124,22 @@ public class StopSegmentCorpus {
   public void reverse() {
     corpus = Util.reverse(corpus);
   }
+
+  public void writeTokenizedPlaintextTo(String output) throws IOException {
+    BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+    for (int[][] sent : corpus) {
+      final int n = sent.length;
+      for (int i = 0; i < n; i++) {
+        final int[] seg = sent[i];
+        for (int w : seg) {
+          bw.write(getAlpha().getString(w));
+          bw.write(" ");
+        }
+        if (i != n - 1)
+          bw.write(", ");
+      }
+      bw.write(".\n");
+    }
+    bw.close();
+  }
 }

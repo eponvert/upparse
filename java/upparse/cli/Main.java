@@ -21,6 +21,7 @@ public class Main {
 
   private static final String CCLPARSER_EVAL_ACTION = "cclp-eval";
   private static final String CHUNK_ACTION = "chunk";
+  private static final String DUMP_TEXT_ACTION = "dump-text";
 
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
@@ -46,6 +47,7 @@ public class Main {
   private boolean noSeg = false;
   private boolean reverse = false;
   private ChunkedSegmentedCorpus trainChunkedSegmentedCorpus;
+  private String outputString;
 
   private Main(final String[] args) throws CommandLineError, IOException,
       EvalError, EncoderError, CorpusError {
@@ -72,7 +74,11 @@ public class Main {
           evalManager.setStatusStream(outputManager.getStatusStream());
         }
 
-        if (arg.equals("-noSeg"))
+        else if (arg.equals("-outputTo")) {
+          outputString = args[i++];
+        }
+
+        else if (arg.equals("-noSeg"))
           noSeg = true;
 
         else if (arg.equals("-reverse"))
@@ -240,8 +246,15 @@ public class Main {
             + " action [options] [args]\n"
             + "\n"
             + "Actions:\n"
-            + "  " + CHUNK_ACTION + "\n"
-            + "  " + CCLPARSER_EVAL_ACTION + "\n"
+            + "  "
+            + CHUNK_ACTION
+            + "\n"
+            + "  "
+            + DUMP_TEXT_ACTION
+            + "\n"
+            + "  "
+            + CCLPARSER_EVAL_ACTION
+            + "\n"
             + "\n"
             + "Options:\n"
             + "  -noSeg              Ignore all punctuation\n"
@@ -459,6 +472,13 @@ public class Main {
     return CorpusUtil.cclpUnlabeledBracketSetCorpus(alpha, files);
   }
 
+  private void dumpText() throws IOException, CorpusError {
+    StopSegmentCorpus corpus = CorpusUtil.stopSegmentCorpus(alpha,
+        Arrays.copyOfRange(args, 1, args.length), trainFileType, trainSents,
+        filterTrain, noSeg, outputManager.getStatusStream(), reverse);
+    corpus.writeTokenizedPlaintextTo(outputString);
+  }
+
   public static void main(final String[] argv) {
     try {
       final Main prog = new Main(argv);
@@ -470,8 +490,12 @@ public class Main {
 
       if (prog.action.equals(CHUNK_ACTION))
         prog.chunk();
+
       else if (prog.action.equals(CCLPARSER_EVAL_ACTION))
         prog.cclpEval();
+
+      else if (prog.action.equals(DUMP_TEXT_ACTION))
+        prog.dumpText();
 
       else {
         System.err.println("Unexpected action: " + prog.action);
