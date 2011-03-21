@@ -61,7 +61,8 @@ public class CorpusUtil {
 
       BufferedReader br;
       try {
-        br = new BufferedReader(new FileReader(new File(file)));
+        br = new BufferedReader(
+            new InputStreamReader(new FileInputStream(file), "UTF8"));
         try {
           while (br.readLine() != null)
             s++;
@@ -82,7 +83,8 @@ public class CorpusUtil {
     for (final String file : corpusStr) {
       BufferedReader br;
       try {
-        br = new BufferedReader(new FileReader(new File(file)));
+        br = new BufferedReader(
+            new InputStreamReader(new FileInputStream(file), "UTF8"));
         String line;
         try {
           while ((line = br.readLine()) != null) {

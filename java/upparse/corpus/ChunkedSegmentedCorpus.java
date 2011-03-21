@@ -202,7 +202,8 @@ public class ChunkedSegmentedCorpus implements Corpus {
   }
   
   private void writeToUnderscoreCCL(String output) throws IOException {
-    BufferedWriter bw = new BufferedWriter(new FileWriter(new File(output)));
+    BufferedWriter bw = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream(output), "UTF8"));
     for (int[][][] s: corpus) {
       for (int[][] seg: s) {
         for (int[] chunk: seg) {

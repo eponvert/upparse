@@ -66,7 +66,7 @@ def guess_input_type(fname):
   else:
     return 'SPL'
 
-def run_cmd(cmd):
+def run_cmd(cmd, fh=None):
   log('cmd: ' + cmd)
   p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
   while True:
@@ -75,6 +75,8 @@ def run_cmd(cmd):
       break
     else:
       sys.stderr.write(o)
+      if fh is not None:
+        fh.write(o)
 
   p.wait()
   assert p.returncode == 0
@@ -129,7 +131,8 @@ class OptionHelper:
         answer = 'x'
         yn = ['y','n']
         while answer not in yn:
-          answer = raw_input('Overwrite diretory ' + opt.output + '? [y/n] ').strip()
+          answer = raw_input("Overwrite diretory '" \
+                             + opt.output + "'? [y/n] ").strip()
           if answer not in yn:
             print "Answer 'y' or 'n'"
   
@@ -184,7 +187,13 @@ class OptionHelper:
     return coding_flag
 
   def java_cmd(self):
-    return 'java -ea ' + self.opt.memflag + ' -jar upparse.jar chunk'
+    return 'java -ea ' + self.opt.memflag + ' -jar upparse.jar'
+
+  def chunk_cmd(self):
+    return self.java_cmd() + ' chunk'
+
+  def eval_cmd(self):
+    return self.java_cmd() + ' cclp-eval -E PRCL '
 
   def emdelta_flag(self):
     return ' -emdelta %f' % self.opt.emdelta
@@ -196,7 +205,7 @@ class OptionHelper:
     return self.opt.reverse and ' -reverse' or ''
 
   def basic_cmd(self):
-    cmd = self.java_cmd()
+    cmd = self.chunk_cmd()
     cmd += self.model_flag()
     cmd += self.coding_flag()
     cmd += self.seg_flag()
@@ -240,6 +249,7 @@ def main():
     opt_h.check_output()
     cascade_dir = '%s/cascade00' % opt_h.output()
     makedirs(cascade_dir)
+    results_fh = open('%s/results' % opt_h.output(), 'w')
     cascade_train_out = '%s/train-out' % cascade_dir
     cascade_test_out = '%s/test-out' % cascade_dir
 
@@ -263,12 +273,52 @@ def main():
     cascade_iter = 1
 
     new_cascade_train_out_fname = get_output_fname(cascade_train_out)
+    cascade_expand_last = None
     while True:
 
       # convert test output to trees
-      cascade_test_out_fname = get_output_fname(cascade_train_out)
+      cascade_test_out_fname = get_output_fname(cascade_test_out)
+      cascade_expand = []
+      log('building corpus record from ' + cascade_test_out)
+      for s_ind, sentence in enumerate(open(cascade_test_out_fname)):
+        i = 0
+        sentence_str = []
+        for chunk in sentence.split():
+          chunk = chunk.split('_')
+          chunk_str = []
+          for word in chunk:
+            if word.startswith('=') and len(word) > 1:
+              chunk_str.append(cascade_expand_last[s_ind][i])
+            else:
+              chunk_str.append(word)
+
+            i += 1
+
+          if len(chunk) == 1:
+            sentence_str.append(chunk_str[0])
+
+          else:
+            sentence_str.append('(' + (' '.join(chunk_str)) + ')')
+
+        cascade_expand.append(sentence_str)
+
+      cascade_test_eval_fname = cascade_dir + '/test-eval'
+      eval_fh = open(cascade_test_eval_fname, 'w')
+      for sent in cascade_expand:
+        print >>eval_fh, '(' + (' '.join(sent)).replace(' ;', '') + ')'
+      eval_fh.close()
 
       # evaluate test output as trees
+
+      run_cmd(opt_h.eval_cmd() \
+              + opt_h.starter_test() \
+              + ' -cclpOutput ' + cascade_test_eval_fname \
+              + opt_h.filter_flag(), fh=results_fh)
+
+
+      cascade_expand_last = cascade_expand
+
+      log('running cascade level ' + str(cascade_iter))
 
       # build term frequency map from last train output
       cascade_train_out_fname = new_cascade_train_out_fname
@@ -314,6 +364,8 @@ def main():
 
       cascade_dir = new_cascade_dir
       cascade_iter += 1
+
+    results_fh.close()
 
   else:
     cmd = opt_h.basic_cmd()
