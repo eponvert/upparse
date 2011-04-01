@@ -146,7 +146,12 @@ public class EvalManager {
     assert npsGoldStandard != null;
   }
 
-  private ChunkedCorpus getNPsGoldStandard() throws CorpusError {
+  /**
+   * Please don't use this method, except to dump gold-standard clumps to 
+   * file
+   * @return the clumping gold-standard
+   */
+  public ChunkedCorpus getNPsGoldStandard() throws CorpusError {
     checkNPsGoldStandard();
     return npsGoldStandard;
   }
@@ -200,7 +205,12 @@ public class EvalManager {
       makeClumpGoldStandard();
   }
 
-  private ChunkedCorpus getClumpGoldStandard() throws EvalError {
+  /**
+   * Please don't use this method, except to dump gold-standard clumps to 
+   * file
+   * @return the clumping gold-standard
+   */
+  public ChunkedCorpus getClumpGoldStandard() throws EvalError {
     checkClumpGoldStandard();
     return clumpGoldStandard;
   }

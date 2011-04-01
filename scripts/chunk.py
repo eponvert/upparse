@@ -52,7 +52,6 @@ class PhrasalTerms:
     return argmax
     
 
-# TODO try to import this function from ps_wrd_up
 def guess_input_type(fname):
   if fname.endswith('.mrg'): 
     return 'WSJ'
@@ -101,6 +100,7 @@ class OptionHelper:
     op.add_option('-P', '--nopunc', action='store_true')
     op.add_option('-E', '--emdelta', type='float', default=.0001)
     op.add_option('-C', '--cascade', action='store_true')
+    op.add_option('-S', '--smooth', type='float', default=.1)
   
     opt, args = op.parse_args()
 
@@ -199,7 +199,7 @@ class OptionHelper:
     return ' -emdelta %f' % self.opt.emdelta
 
   def smooth_flag(self):
-    return ' -smooth .1'
+    return ' -smooth %f' % self.opt.smooth
 
   def reverse_flag(self):
     return self.opt.reverse and ' -reverse' or ''

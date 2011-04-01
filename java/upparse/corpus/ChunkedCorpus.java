@@ -25,7 +25,10 @@ public class ChunkedCorpus {
   }
   
   public void writeTo(String filename) throws IOException {
-    BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+    BufferedWriter bw = new BufferedWriter(
+        new OutputStreamWriter(
+            new FileOutputStream(new File(filename)), "UTF-8"));
+        
     int i, j, k;
     for (i = 0; i < corpus.length; i++) {
       for (j = 0; j < corpus[i].length; j++) {

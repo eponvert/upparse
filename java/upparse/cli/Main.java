@@ -22,6 +22,8 @@ public class Main {
   private static final String CCLPARSER_EVAL_ACTION = "cclp-eval";
   private static final String CHUNK_ACTION = "chunk";
   private static final String DUMP_TEXT_ACTION = "dump-text";
+  private static final Object DUMP_CLUMPS_ACTION = "dump-clumps";
+  private static final Object DUMP_NPS_ACTION = "dump-nps";
 
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
@@ -478,7 +480,7 @@ public class Main {
         filterTrain, noSeg, outputManager.getStatusStream(), reverse);
     corpus.writeTokenizedPlaintextTo(outputString);
   }
-
+  
   public static void main(final String[] argv) {
     try {
       final Main prog = new Main(argv);
@@ -496,7 +498,13 @@ public class Main {
 
       else if (prog.action.equals(DUMP_TEXT_ACTION))
         prog.dumpText();
-
+      
+      else if (prog.action.equals(DUMP_CLUMPS_ACTION)) 
+        prog.evalManager.getClumpGoldStandard().writeTo(prog.outputString);
+      
+      else if (prog.action.equals(DUMP_NPS_ACTION))
+        prog.evalManager.getNPsGoldStandard().writeTo(prog.outputString);
+      
       else {
         System.err.println("Unexpected action: " + prog.action);
         usageError();
