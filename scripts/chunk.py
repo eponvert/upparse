@@ -101,6 +101,7 @@ class OptionHelper:
     op.add_option('-E', '--emdelta', type='float', default=.0001)
     op.add_option('-C', '--cascade', action='store_true')
     op.add_option('-S', '--smooth', type='float', default=.1)
+    op.add_option('-I', '--iter', type='int', default=-1)
   
     opt, args = op.parse_args()
 
@@ -178,6 +179,9 @@ class OptionHelper:
       print >>sys.stderr, 'Unexpected model option:', opt.model
       sys.exit(1)
 
+    if opt.iter >= 0:
+      model_flag += ' -iterations %d' % opt.iter
+
     return model_flag
 
   def coding_flag(self):
@@ -196,7 +200,10 @@ class OptionHelper:
     return self.java_cmd() + ' cclp-eval -E PRCL '
 
   def emdelta_flag(self):
-    return ' -emdelta %f' % self.opt.emdelta
+    if self.opt.iter >= 0:
+      return ' -emdelta 1E-100'
+    else:
+      return ' -emdelta %f' % self.opt.emdelta
 
   def smooth_flag(self):
     return ' -smooth %f' % self.opt.smooth
@@ -233,9 +240,7 @@ class OptionHelper:
     return cmd
 
 def get_output_fname(output_dir):
-  files = [f for f in listdir(output_dir) if f.startswith('Iter')]
-  assert len(files) == 1
-  return output_dir + sep + files[0]
+  return output_dir + 'OUTPUT'
    
 def main():
 

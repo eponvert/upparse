@@ -71,11 +71,12 @@ public class DirectoryOutputManager extends OutputManager {
   public void writeOutput() throws CorpusError, IOException {
     statusStream.format("Writing output : %d sentences", 
         writeOutput.get(writeOutput.size()-1).nSentences());
-    if (writeOutput.size() == 1)
-      writeOutput.get(0).writeTo(getFname(0), outputType);
-    else
+    if (writeOutput.size() > 1)
       for (int i = 0; i < writeOutput.size(); i++)
         writeOutput.get(i).writeTo(getFname(i), outputType);
+    
+    final String outputFilename = dir + File.separator + "OUTPUT";
+    writeOutput.get(writeOutput.size()-1).writeTo(outputFilename, outputType);
   }
 
   public static OutputManager fromDirname(final String filename) 
