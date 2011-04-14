@@ -1,7 +1,7 @@
 upparse -- Unsupervised parsing and noun phrase identification.
 
 Elias Ponvert <elias@ponvert.net>
-March 23, 2011
+April 13, 2011
 
 This software contains efficient implementations of hidden Markov
 models (HMMs) and probablistic right linear grammars (PRLGs) for
@@ -41,22 +41,73 @@ II. Installation and usage
 
 The following assume you're working in a Unix environment and
 interfacing with the OS using bash (Bourne again shell). $ indicates
-shell prompt.
+shell prompt. 
 
-A. Installation
+A. Getting the source
 
-To install the most recent version from Bitbucket, run:
+If you are using the compiled distribution of this software, then this
+section is not relevant to your needs.  Also, if you have already
+acquired the source code for this proejct via a source distibution (a
+zip or a tarball, in other words), then you can skip to II.B
+Installation. 
+
+To acquire the most recent changes to this project, use Mercurial SCM,
+for info see
+
+http://mercurial.selenic.com/
+
+The following assumes you have Mercurial installed, and hg refers to
+the Mercurial command, as usual.  To install the most recent version
+from Bitbucket, run:
 
 $ hg clone http://bitbucket.org/eponvert/upparse
 
 By default, this will create a new directory called 'upparse'. 
 
-To create an executable Jar file, run:
+B. Installation
+
+Using the command line, make sure you are in the source code
+directory, e.g.:
 
 $ cd upparse
+
+To create an executable Jar file, run:
+
 $ ant jar
 
+And that's it. 
+
 B. Using the convenience script chunk.py
+
+For most purposes, including replicating reported results, the
+convenience script chunk.py is the easiest way to use the system. 
+
+1. Chunking
+
+To simply run the system on train and evaluation datasets, let's call
+them WSJ-TRAIN.mrg and WSJ-EVAL.mrg, the command is:
+
+$ ./scripts/chunk.py -t WSJ-TRAIN.mrg -s WSJ-EVAL.mrg
+
+You have to be in the project directory to run that command, at
+present.  Also: the script determines the file type from the filename
+suffix:
+
+.mrg  : Penn Treebank MRG annotated files
+.fid  : Penn Chinese Treebank bracketed files (in UTF-8, see below)
+.penn : Negra corpus in Penn Treebank format
+
+Any other files are assumed to be tokenized, tokens separated by
+whitespace, one-sentence-per-line.
+
+The command above prints numerical results of the experiment.  To
+actually get chunker output, use the -o flag to specify an output
+directory: 
+
+$ ./scripts/chunk.py -t WSJ-TRAIN.mrg -s WSJ-EVAL.mrg -o out
+
+If that directory already exists, you will be prompted to make sure
+you wish to overwrite. 
 
 C. Running from the Jar file
 
@@ -238,9 +289,14 @@ inefficient and pretty dumb, since the model has to re-train.)
 
 TODO output
 
-V. Licencse
+V. Extending
 
-VI. Citation
+VI. Licencse
+
+This code is released under the Apache License Version 2.0.  See
+LICENSE.txt for details. 
+
+VII. Citation
 
 If you use this system in academic research with published results,
 please cite the following paper:
