@@ -142,7 +142,7 @@ public class EvalManager {
   private void checkNPsGoldStandard() throws CorpusError {
     if (npsGoldStandard == null)
       npsGoldStandard = CorpusUtil.npsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength);
+          corpusFiles, filterLength, statusStream);
     assert npsGoldStandard != null;
   }
 
@@ -159,7 +159,7 @@ public class EvalManager {
   private void checkPPsGoldStandard() throws CorpusError {
     if (ppsGoldStandard == null)
       ppsGoldStandard = CorpusUtil.ppsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength);
+          corpusFiles, filterLength, statusStream);
     assert ppsGoldStandard != null;
   }
 
@@ -171,16 +171,18 @@ public class EvalManager {
   private void makeClumpGoldStandard() throws EvalError {
     switch (testFileType) {
       case WSJ:
-        clumpGoldStandard = CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
+        clumpGoldStandard = 
+          CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles, statusStream);
         break;
 
       case NEGRA:
-        clumpGoldStandard = CorpusUtil.negraClumpGoldStandard(alpha,
-            corpusFiles);
+        clumpGoldStandard = 
+          CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles, statusStream);
         break;
 
       case CTB:
-        clumpGoldStandard = CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
+        clumpGoldStandard = 
+          CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles, statusStream);
         break;
         
       case SPL:
@@ -277,7 +279,7 @@ public class EvalManager {
   public void evalParserOutput(final UnlabeledBracketSetCorpus output,
       final OutputManager man) throws CorpusError, EvalError, IOException {
     final ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha,
-        output);
+        output, statusStream);
     treebankEval.getExperiment("asTrees", output.getTrees()).writeSummary(
         man.getResultsStream());
 

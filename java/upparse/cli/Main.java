@@ -405,17 +405,17 @@ public class Main {
     switch (trainFileType) {
       case WSJ:
         trainChunkedCorpus = CorpusUtil.wsjNPsGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       case NEGRA:
         trainChunkedCorpus = CorpusUtil.negraNPsGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       case CTB:
         trainChunkedCorpus = CorpusUtil.ctbNPsGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       default:
@@ -435,17 +435,17 @@ public class Main {
     switch (trainFileType) {
       case WSJ:
         trainChunkedCorpus = CorpusUtil.wsjClumpGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       case NEGRA:
         trainChunkedCorpus = CorpusUtil.negraClumpGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       case CTB:
         trainChunkedCorpus = CorpusUtil.ctbClumpGoldStandard(alpha,
-            trainCorpusString);
+            trainCorpusString, null);
         break;
 
       default:
@@ -499,8 +499,10 @@ public class Main {
       else if (prog.action.equals(DUMP_TEXT_ACTION))
         prog.dumpText();
       
-      else if (prog.action.equals(DUMP_CLUMPS_ACTION)) 
+      else if (prog.action.equals(DUMP_CLUMPS_ACTION)) {
+        prog.evalManager.setStatusStream(System.err);
         prog.evalManager.getClumpGoldStandard().writeTo(prog.outputString);
+      }
       
       else if (prog.action.equals(DUMP_NPS_ACTION))
         prog.evalManager.getNPsGoldStandard().writeTo(prog.outputString);

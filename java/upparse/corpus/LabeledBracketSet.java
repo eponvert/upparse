@@ -173,6 +173,10 @@ public class LabeledBracketSet {
   public String[] getPos() {
     return pos;
   }
+  
+  public int numBrackets() {
+    return brackets.size();
+  }
 
   public String[] getTokensS() {
     String[] tok = new String[tokens.length];
