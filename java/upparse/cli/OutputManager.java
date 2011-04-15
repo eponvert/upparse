@@ -26,8 +26,6 @@ public abstract class OutputManager {
 
   public abstract boolean isNull();
 
-  public void setOutputAllIter(boolean outputAll) { outputAllIter = outputAll; }
-  
   public abstract PrintStream getResultsStream();
   public abstract PrintStream getStatusStream();
   

@@ -56,7 +56,7 @@ public class Main {
     int i = 0;
     String arg;
 
-    final boolean outputAll = false;
+    boolean outputAll = false;
     OutputType outputType = OutputType.CLUMP;
     String eval = "";
     String[] testCorpusString = new String[0];
@@ -153,7 +153,7 @@ public class Main {
           eval = args[i++];
 
         else if (arg.equals("-outputAll"))
-          outputManager.setOutputAll(true);
+          outputAll = true;
 
         else
           otherArgs.add(arg);
@@ -163,7 +163,7 @@ public class Main {
       this.action = this.args[0];
 
       // Setup outputManager
-      outputManager.setOutputAllIter(outputAll);
+      outputManager.setOutputAll(outputAll);
       outputManager.setOutputType(outputType);
 
       // Setup evalManager
