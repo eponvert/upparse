@@ -240,7 +240,7 @@ class OptionHelper:
     return cmd
 
 def get_output_fname(output_dir):
-  return output_dir + 'OUTPUT'
+  return output_dir + '/OUTPUT'
    
 def main():
 
