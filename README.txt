@@ -1,7 +1,7 @@
 upparse -- Unsupervised parsing and noun phrase identification.
 
 Elias Ponvert <elias@ponvert.net>
-April 13, 2011
+April 15, 2011
 
 This software contains efficient implementations of hidden Markov
 models (HMMs) and probabilistic right linear grammars (PRLGs) for
