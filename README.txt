@@ -25,7 +25,7 @@ Katrin Erk, to appear in Proceedings of the 49th Annual Meeting of the
 Association for Computational Linguistics: Human Language
 Technologies, June, 2011. 
 
-I. Information
+I. Installation and usage
 
 The core of this system is implemented in Java 6 and makes use of
 Apache Ant for project building and JUnit for unit testing.  Most
@@ -36,8 +36,6 @@ Python 2.6.
 The system is designed to work with the Penn Treebank, the Negra
 German treebank, and the Penn Chinese Treebank with minimal data
 preparation.  
-
-II. Installation and usage
 
 The following assume you're working in a Unix environment and
 interfacing with the OS using bash (Bourne again shell). $ indicates
@@ -436,7 +434,7 @@ Here are most of the command line options for calling
 -reverse          Evaluate as a right-to-left sequence model
 
 
-III. Replicating published results
+II. Replicating published results
 
 If you have downloaded this code from a repository, then to replicate
 the results reported in the ACL paper cited above, consider using the
@@ -615,7 +613,7 @@ This script will print numerical results to screen as it operates.
 For info about final model output, and the saved results file, see
 above. 
 
-V. Extending and contributing
+III. Extending and contributing
 
 upparse is open-source software, under an Apache license.  The project
 is currently hosted on Bitbucket:
@@ -634,12 +632,10 @@ https://bitbucket.org/eponvert/upparse/wiki
 though this resource contains much the same information as this
 README.
 
-VI. License
-
 This code is released under the Apache License Version 2.0.  See
 LICENSE.txt for details. 
 
-VII. Citation
+IV. Citation
 
 If you use this system in academic research with published results,
 please cite the following paper:
