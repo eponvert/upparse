@@ -19,11 +19,26 @@ English, German and Chinese -- possibly others, those are just the
 ones we tried.
 
 A description of the methods implemented in this project can be found
-in the paper "Simple Unsupervised Grammar Induction from Raw Text with
-Cascaded Finite State Models" by Elias Ponvert, Jason Baldridge and
-Katrin Erk, to appear in Proceedings of the 49th Annual Meeting of the
-Association for Computational Linguistics: Human Language
-Technologies, June, 2011. 
+in the paper 
+
+Elias Ponvert, Jason Baldridge and Katrin Erk (2011), "Simple
+    Unsupervised Grammar Induction from Raw Text with Cascaded Finite
+    State Models" in Proceedings of the 49th Annual Meeting of the
+    Association for Computational Linguistics: Human Language
+    Technologies, Portland, Oregon, USA, June 2011.
+
+If you use this system in academic research with published results,
+please cite this paper, or use this Bibtex:
+
+@InProceedings{ponvert-baldridge-erk:2011:ACL,
+  author    = {Ponvert, Elias and Baldridge, Jason and Erk, Katrin},
+  title     = {Simple Unsupervised Grammar Induction from Raw Text with Cascaded Finite State Models},
+  booktitle = {Proceedings of the 49th Annual Meeting of the Association for Computational Linguistics: Human Language Technologies},
+  month     = {June},
+  year      = {2011},
+  address   = {Portland, Oregon, USA},
+  publisher = {Association for Computational Linguistics}
+}
 
 I. Installation and usage
 
@@ -635,25 +650,3 @@ README.
 This code is released under the Apache License Version 2.0.  See
 LICENSE.txt for details. 
 
-IV. Citation
-
-If you use this system in academic research with published results,
-please cite the following paper:
-
-Elias Ponvert, Jason Baldridge and Katrin Erk (2011), "Simple
-    Unsupervised Grammar Induction from Raw Text with Cascaded Finite
-    State Models" in Proceedings of the 49th Annual Meeting of the
-    Association for Computational Linguistics: Human Language
-    Technologies, Portland, Oregon, USA, June 2011.
-
-or use this Bibtex:
-
-@InProceedings{ponvert-baldridge-erk:2011:ACL,
-  author    = {Ponvert, Elias and Baldridge, Jason and Erk, Katrin},
-  title     = {Simple Unsupervised Grammar Induction from Raw Text with Cascaded Finite State Models},
-  booktitle = {Proceedings of the 49th Annual Meeting of the Association for Computational Linguistics: Human Language Technologies},
-  month     = {June},
-  year      = {2011},
-  address   = {Portland, Oregon, USA},
-  publisher = {Association for Computational Linguistics}
-}
