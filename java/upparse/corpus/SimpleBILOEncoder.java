@@ -7,7 +7,7 @@ import upparse.util.*;
 /**
  * Utility for encoding clumped corpus and BIO tagged training set for HMM
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class SimpleBILOEncoder extends TagEncoder {
 

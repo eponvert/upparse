@@ -8,7 +8,7 @@ import upparse.util.*;
 /**
  * Utility for encoding a clumped corpus as a BIO-tagged training set
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public abstract class TagEncoder {
 

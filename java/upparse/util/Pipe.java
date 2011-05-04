@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * A wrapper for easy create of pipeline style chains of iterables
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public abstract class Pipe<S,T> implements Iterable<T> {
   

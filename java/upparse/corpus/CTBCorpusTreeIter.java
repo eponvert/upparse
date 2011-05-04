@@ -1,7 +1,7 @@
 package upparse.corpus;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class CTBCorpusTreeIter extends CorpusTreeIter {
 

@@ -4,7 +4,7 @@ import java.io.*;
 
 /**
  * Very simple corpus data structure: arrays of string
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class BasicCorpus {
 

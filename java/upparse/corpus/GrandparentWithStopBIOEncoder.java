@@ -5,7 +5,7 @@ import upparse.util.*;
 /**
  * Utility to encode clumped corpus as a BIO encoded training set with 
  * "grandparent" tags, for emulating a second-order HMM
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class GrandparentWithStopBIOEncoder extends TagEncoder {
   

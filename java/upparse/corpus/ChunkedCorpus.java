@@ -8,7 +8,7 @@ import upparse.util.*;
 /**
  * Stucture representing a corpus -- which has clumps, but may not include 
  * sentence segments (i.e. seperated at punctuation)
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class ChunkedCorpus {
   

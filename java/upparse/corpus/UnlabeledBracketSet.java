@@ -6,7 +6,7 @@ import java.util.*;
  * A set of unlabeled brackets representing a syntax tree without category
  * labels
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class UnlabeledBracketSet {
 

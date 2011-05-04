@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 
 /**
  * Testing clumped corpus string output etc
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class ClumpedCorpusTests {
 

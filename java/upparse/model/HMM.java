@@ -7,7 +7,7 @@ import upparse.util.*;
 /**
  * Hidden Markov model
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class HMM extends SequenceModel {
 

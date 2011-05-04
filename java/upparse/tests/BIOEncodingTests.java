@@ -8,7 +8,7 @@ import static upparse.corpus.SimpleBIOEncoder.*;
 
 /**
  * Unit tests for HMM BIO encoding methods
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class BIOEncodingTests {
 

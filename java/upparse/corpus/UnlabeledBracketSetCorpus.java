@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class UnlabeledBracketSetCorpus 
 implements Iterable<UnlabeledBracketSet> { 

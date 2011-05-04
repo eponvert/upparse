@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * Simple alphabet data structure
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class Alpha {
   

@@ -3,7 +3,7 @@ package upparse.corpus;
 import java.io.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class WSJFileTreeStringIter extends FileTreeStringIter {
 

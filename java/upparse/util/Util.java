@@ -4,7 +4,7 @@ import static java.lang.Math.*;
 
 /**
  * Static math utilities 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class Util {
 

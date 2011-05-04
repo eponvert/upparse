@@ -3,7 +3,7 @@ package upparse.util;
 import java.util.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
 P */
 public abstract class PipeIterator<S, T> implements Iterator<T> {
   

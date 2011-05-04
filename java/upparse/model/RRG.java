@@ -5,7 +5,7 @@ import upparse.corpus.*;
 /**
  * Right-regular grammar model
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class RRG extends SequenceModel {
 

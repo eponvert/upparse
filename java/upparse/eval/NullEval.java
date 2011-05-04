@@ -3,7 +3,7 @@ package upparse.eval;
 import upparse.corpus.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class NullEval extends Eval {
   

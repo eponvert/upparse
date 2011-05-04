@@ -10,7 +10,7 @@ import upparse.util.*;
 
 /**
  * Class for calculating emission probabilities
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class EmissionProbs {
   

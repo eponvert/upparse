@@ -9,7 +9,7 @@ import upparse.corpus.*;
 /**
  * Class for evaluating chunker output
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class ChunkingEval extends Eval {
 

@@ -10,8 +10,7 @@ import upparse.model.*;
 
 /**
  * Main class manages command-line interface to UPP
- * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class Main {
 

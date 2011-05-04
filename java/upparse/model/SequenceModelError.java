@@ -1,7 +1,7 @@
 package upparse.model;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class SequenceModelError extends Exception {
   private static final long serialVersionUID = 1L;

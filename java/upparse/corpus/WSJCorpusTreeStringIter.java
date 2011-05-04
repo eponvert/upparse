@@ -4,7 +4,7 @@ import java.io.*;
 
 /**
  * Iterable of the tree strings associated with WSJ corpus files
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class WSJCorpusTreeStringIter extends CorpusTreeStringIter {
   

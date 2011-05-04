@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * Labeled bracket set, which represents a tree
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class LabeledBracketSet {
   

@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * Simple structure for counting arrays of int
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class NgramCounts {
   private static class Key {

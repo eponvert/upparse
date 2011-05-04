@@ -2,7 +2,7 @@ package upparse.cli;
 
 /**
  * Exception indicating command-line options usage error
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class CommandLineError extends Exception {
 

@@ -5,7 +5,7 @@ import static upparse.util.Util.*;
 
 /**
  * Combined emission-transition probilities for right-regular grammar
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class CombinedProb {
 

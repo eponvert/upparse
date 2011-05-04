@@ -7,7 +7,7 @@ import upparse.corpus.*;
 /**
  * Simple count oriented clumper
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class SimpleChunker implements Chunker {
 

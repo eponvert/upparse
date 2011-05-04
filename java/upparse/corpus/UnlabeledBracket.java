@@ -2,7 +2,7 @@ package upparse.corpus;
 
 /**
  * Data structure representing a bracket, not including a category label
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class UnlabeledBracket implements Comparable<UnlabeledBracket> {
   

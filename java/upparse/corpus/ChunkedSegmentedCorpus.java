@@ -6,7 +6,7 @@ import java.util.*;
 import upparse.util.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class ChunkedSegmentedCorpus implements Corpus {
 

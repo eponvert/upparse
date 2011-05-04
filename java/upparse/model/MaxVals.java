@@ -2,7 +2,7 @@ package upparse.model;
 
 /**
  * Simple class for managing the maximum of a set of double
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public final class MaxVals {
   int argmax = -1;

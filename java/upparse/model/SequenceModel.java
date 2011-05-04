@@ -6,7 +6,7 @@ import upparse.corpus.*;
 import upparse.util.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public abstract class SequenceModel {
 

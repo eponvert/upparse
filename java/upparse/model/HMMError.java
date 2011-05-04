@@ -2,7 +2,7 @@ package upparse.model;
 
 /**
  * Exceptions for problems creating and using HMM
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class HMMError extends SequenceModelError {
   private static final long serialVersionUID = 1L;

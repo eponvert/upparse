@@ -7,7 +7,7 @@ import upparse.cli.*;
 import upparse.corpus.*;
 
 /**
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class EvalManager {
 

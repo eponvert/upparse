@@ -8,7 +8,7 @@ import upparse.util.*;
 /**
  * Simple data structure for corpus with sentences split by phrasal punctuation
  * 
- * @author ponvert@mail.utexas.edu (Elias Ponvert)
+ * @author eponvert@utexas.edu (Elias Ponvert)
  */
 public class StopSegmentCorpus {
 
