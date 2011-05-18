@@ -26,8 +26,7 @@ public class Main {
 
   private final Alpha alpha = new Alpha();
   private OutputManager outputManager = OutputManager.nullOutputManager();
-  private final EvalManager evalManager = new EvalManager(alpha,
-      outputManager.getStatusStream());
+  private final EvalManager evalManager = new EvalManager(alpha);
   private String factor = "2,1,1";
   private int iter = -1;
   private double emdelta = .001;
@@ -72,7 +71,6 @@ public class Main {
 
         if (arg.equals("-output")) {
           outputManager = OutputManager.fromDirname(args[i++]);
-          evalManager.setStatusStream(outputManager.getStatusStream());
         }
 
         else if (arg.equals("-outputTo")) {
@@ -304,7 +302,7 @@ public class Main {
         "Creating train corpus from %d documents\n", trainCorpusString.length);
     trainStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha,
         trainCorpusString, trainFileType, trainSents, filterTrain, noSeg,
-        outputManager.getStatusStream(), reverse);
+        reverse);
     assert trainStopSegmentCorpus != null;
   }
 
@@ -404,17 +402,17 @@ public class Main {
     switch (trainFileType) {
       case WSJ:
         trainChunkedCorpus = CorpusUtil.wsjNPsGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       case NEGRA:
         trainChunkedCorpus = CorpusUtil.negraNPsGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       case CTB:
         trainChunkedCorpus = CorpusUtil.ctbNPsGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       default:
@@ -434,17 +432,17 @@ public class Main {
     switch (trainFileType) {
       case WSJ:
         trainChunkedCorpus = CorpusUtil.wsjClumpGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       case NEGRA:
         trainChunkedCorpus = CorpusUtil.negraClumpGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       case CTB:
         trainChunkedCorpus = CorpusUtil.ctbClumpGoldStandard(alpha,
-            trainCorpusString, null);
+            trainCorpusString);
         break;
 
       default:
@@ -476,7 +474,7 @@ public class Main {
   private void dumpText() throws IOException, CorpusError {
     StopSegmentCorpus corpus = CorpusUtil.stopSegmentCorpus(alpha,
         Arrays.copyOfRange(args, 1, args.length), trainFileType, trainSents,
-        filterTrain, noSeg, outputManager.getStatusStream(), reverse);
+        filterTrain, noSeg, reverse);
     corpus.writeTokenizedPlaintextTo(outputString);
   }
   
@@ -499,7 +497,6 @@ public class Main {
         prog.dumpText();
       
       else if (prog.action.equals(DUMP_CLUMPS_ACTION)) {
-        prog.evalManager.setStatusStream(System.err);
         prog.evalManager.getClumpGoldStandard().writeTo(prog.outputString);
       }
       

@@ -52,8 +52,8 @@ public class CorpusUtil {
   }
 
   public static StopSegmentCorpus splStopSegmentCorpus(final Alpha alpha,
-      final String[] corpusStr, final int numSent, final boolean noSeg,
-      final PrintStream statusStream) throws CorpusError {
+      final String[] corpusStr, final int numSent, final boolean noSeg)
+  throws CorpusError {
 
     // count the number of sentences:
     int s = 0;
@@ -75,8 +75,6 @@ public class CorpusUtil {
         throw new CorpusError(e1.getMessage());
       }
     }
-    statusStream
-        .format("Creating StopSegmentCorpus: counted %d sentences\n", s);
     final int[][][] corpus = new int[s][][];
 
     s = 0;
@@ -211,7 +209,7 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus getChunkedCorpusClumps(final Alpha alpha,
-      final Iterable<UnlabeledBracketSet> iter, final PrintStream status) {
+      final Iterable<UnlabeledBracketSet> iter) {
     final UnlabeledBracketSet[] uBraks = ubsArrayFromIter(iter);
     final int[][][] arrays = new int[uBraks.length][][];
     int[][] clumpArrays;
@@ -226,16 +224,6 @@ public class CorpusUtil {
       wrdsUnderClumps += wordsInClumps(clumpArrays);
       totalWrds += allWords(clumpArrays);
     }
-    
-    if (status != null) {
-      status.format("Clumps: %d of %d constituents (%.2f)\n", 
-          numClumps, clumpsTotal, 
-          (100.0 * (double)numClumps) / ((double)clumpsTotal));
-      status.format("Clumps: %d of %d words (%.2f)\n",
-          wrdsUnderClumps, totalWrds, 
-          (100.0 * (double)wrdsUnderClumps) / ((double)totalWrds));
-    }
-    
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
   
@@ -271,35 +259,32 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus wsjClumpGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         WSJCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
-            WSJCorpusStandard.instance),
-        status);
+            WSJCorpusStandard.instance));
   }
 
   public static ChunkedCorpus negraClumpGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         NegraCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
-            NegraCorpusStandard.instance),
-        status);
+            NegraCorpusStandard.instance));
   }
 
   public static ChunkedCorpus ctbClumpGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusClumps(
         alpha,
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha).toUnlabeledIter(
-            CTBCorpusStandard.instance),
-        status);
+            CTBCorpusStandard.instance));
   }
 
   private static ChunkedCorpus getChunkedCorpusNPs(final Alpha alpha,
       final Iterable<LabeledBracketSet> iter, final String cat,
-      final CorpusConstraints cc, final PrintStream status) {
+      final CorpusConstraints cc) {
     final LabeledBracketSet[] lBraks = lbsArrayFromIter(iter);
     final int[][][] arrays = new int[lBraks.length][][];
     int i = 0;
@@ -311,13 +296,6 @@ public class CorpusUtil {
       numConst += numClumps(constituents);
       numWords += wordsInClumps(constituents);
       totalWords += allWords(constituents);
-    }
-    if (status != null) {
-      status.format("%s: %d constituents\n", cat, numConst);
-      status.format("%s: %d of %d words (%.2f)\n",
-          cat, numWords, totalWords,
-          (100.0 * (double)numWords) / ((double)totalWords));
-      
     }
     return ChunkedCorpus.fromArrays(arrays, alpha);
   }
@@ -331,47 +309,46 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus wsjNPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         WSJCorpusTreeIter.fromFiles(corpusFiles, alpha), 
         "NP",
-        WSJCorpusStandard.instance, 
-        status);
+        WSJCorpusStandard.instance); 
   }
 
   public static ChunkedCorpus negraNPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         NegraCorpusTreeIter.fromFiles(corpusFiles, alpha), "NP",
-        NegraCorpusStandard.instance, status);
+        NegraCorpusStandard.instance);
   }
 
   public static ChunkedCorpus ctbNPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha), "NP",
-        CTBCorpusStandard.instance, status);
+        CTBCorpusStandard.instance);
   }
 
   public static ChunkedCorpus wsjPPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         WSJCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
-        WSJCorpusStandard.instance, status);
+        WSJCorpusStandard.instance);
   }
 
   public static ChunkedCorpus negraPPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         NegraCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
-        NegraCorpusStandard.instance, status);
+        NegraCorpusStandard.instance);
   }
 
   public static ChunkedCorpus ctbPPsGoldStandard(final Alpha alpha,
-      final String[] corpusFiles, final PrintStream status) {
+      final String[] corpusFiles) {
     return getChunkedCorpusNPs(alpha,
         CTBCorpusTreeIter.fromFiles(corpusFiles, alpha), "PP",
-        CTBCorpusStandard.instance, status);
+        CTBCorpusStandard.instance);
   }
 
   /**
@@ -387,7 +364,7 @@ public class CorpusUtil {
   public static StopSegmentCorpus stopSegmentCorpus(final Alpha alpha,
       final String[] corpusStr, final CorpusType fileType, final int numSent,
       final int filterByLength, final boolean noSeg,
-      final PrintStream statusStream, boolean reverse) throws CorpusError {
+      boolean reverse) throws CorpusError {
     StopSegmentCorpus corpus;
     switch (fileType) {
       case WSJ:
@@ -407,7 +384,7 @@ public class CorpusUtil {
 
       case SPL:
         corpus = CorpusUtil.splStopSegmentCorpus(alpha, corpusStr, numSent,
-            noSeg, statusStream);
+            noSeg);
         break;
 
       case WPL:
@@ -428,21 +405,20 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus npsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength, 
-      final PrintStream status)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength) 
       throws CorpusError {
     ChunkedCorpus corpus;
     switch (testFileType) {
       case WSJ:
-        corpus = CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.wsjNPsGoldStandard(alpha, corpusFiles);
         break;
 
       case NEGRA:
-        corpus = CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.negraNPsGoldStandard(alpha, corpusFiles);
         break;
 
       case CTB:
-        corpus = CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.ctbNPsGoldStandard(alpha, corpusFiles);
         break;
 
       default:
@@ -457,21 +433,20 @@ public class CorpusUtil {
   }
 
   public static ChunkedCorpus ppsGoldStandard(final CorpusType testFileType,
-      final Alpha alpha, final String[] corpusFiles, final int filterLength,
-      final PrintStream status)
+      final Alpha alpha, final String[] corpusFiles, final int filterLength)
       throws CorpusError {
     ChunkedCorpus corpus;
     switch (testFileType) {
       case WSJ:
-        corpus = CorpusUtil.wsjPPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.wsjPPsGoldStandard(alpha, corpusFiles);
         break;
 
       case NEGRA:
-        corpus = CorpusUtil.negraPPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.negraPPsGoldStandard(alpha, corpusFiles);
         break;
 
       case CTB:
-        corpus = CorpusUtil.ctbPPsGoldStandard(alpha, corpusFiles, status);
+        corpus = CorpusUtil.ctbPPsGoldStandard(alpha, corpusFiles);
         break;
 
       default:

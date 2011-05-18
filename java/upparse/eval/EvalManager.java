@@ -13,15 +13,10 @@ public class EvalManager {
 
   Alpha alpha;
 
-  public EvalManager(final Alpha a, PrintStream printStream) {
+  public EvalManager(final Alpha a) {
     alpha = a;
-    statusStream = printStream;
   }
   
-  public void setStatusStream(PrintStream stream) {
-    statusStream = stream;
-  }
-
   private EvalReportType evalReportType = EvalReportType.PR;
   private final List<Eval> evals = new ArrayList<Eval>();
   private final List<OutputType> evalTypes = new ArrayList<OutputType>();
@@ -40,7 +35,6 @@ public class EvalManager {
   private TreebankEval ubsFromClumpsEval;
   private TreebankEval ubsFromNPsEval;
   private boolean noSeg = false;
-  private PrintStream statusStream;
   private ChunkedCorpus ppsGoldStandard;
   private TreebankEval ubsFromPPsEval;
   private boolean reverse = false;
@@ -142,7 +136,7 @@ public class EvalManager {
   private void checkNPsGoldStandard() throws CorpusError {
     if (npsGoldStandard == null)
       npsGoldStandard = CorpusUtil.npsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength, statusStream);
+          corpusFiles, filterLength);
     assert npsGoldStandard != null;
   }
 
@@ -159,7 +153,7 @@ public class EvalManager {
   private void checkPPsGoldStandard() throws CorpusError {
     if (ppsGoldStandard == null)
       ppsGoldStandard = CorpusUtil.ppsGoldStandard(testFileType, alpha,
-          corpusFiles, filterLength, statusStream);
+          corpusFiles, filterLength);
     assert ppsGoldStandard != null;
   }
 
@@ -172,17 +166,17 @@ public class EvalManager {
     switch (testFileType) {
       case WSJ:
         clumpGoldStandard = 
-          CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles, statusStream);
+          CorpusUtil.wsjClumpGoldStandard(alpha, corpusFiles);
         break;
 
       case NEGRA:
         clumpGoldStandard = 
-          CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles, statusStream);
+          CorpusUtil.negraClumpGoldStandard(alpha, corpusFiles);
         break;
 
       case CTB:
         clumpGoldStandard = 
-          CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles, statusStream);
+          CorpusUtil.ctbClumpGoldStandard(alpha, corpusFiles);
         break;
         
       case SPL:
@@ -232,7 +226,7 @@ public class EvalManager {
 
   private void makeEvalStopSegmentCorpus() throws CorpusError {
     testStopSegmentCorpus = CorpusUtil.stopSegmentCorpus(alpha, corpusFiles,
-        testFileType, numSent, filterLength, noSeg, statusStream, reverse);
+        testFileType, numSent, filterLength, noSeg, reverse);
   }
 
   public boolean isNull() throws EvalError, CorpusError {
@@ -279,7 +273,7 @@ public class EvalManager {
   public void evalParserOutput(final UnlabeledBracketSetCorpus output,
       final OutputManager man) throws CorpusError, EvalError, IOException {
     final ChunkedCorpus chunked = CorpusUtil.getChunkedCorpusClumps(alpha,
-        output, statusStream);
+        output);
     treebankEval.getExperiment("asTrees", output.getTrees()).writeSummary(
         man.getResultsStream());
 
