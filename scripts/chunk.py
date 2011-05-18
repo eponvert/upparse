@@ -12,6 +12,7 @@ from optparse import OptionParser
 from subprocess import Popen, PIPE, STDOUT
 from collections import defaultdict
 from filecmp import cmp as filecmp
+from glob import glob
 
 class PhrasalTerms:
 
@@ -65,8 +66,8 @@ def guess_input_type(fname):
   else:
     return 'SPL'
 
-def run_cmd(cmd, fh=None):
-  log('cmd: ' + cmd)
+def run_cmd(cmd, fh=None, verbose=False):
+  if verbose: log('cmd: ' + cmd)
   p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
   while True:
     o = p.stdout.read(1)
@@ -120,7 +121,8 @@ class OptionHelper:
 
   def input_type(self):
     if self._input_type is None:
-      input_type = self.opt.input_type or guess_input_type(self.opt.test)
+      input_type = self.opt.input_type \
+        or guess_input_type(self._get_test_str())
       log('guessing input type = ' + input_type)
       self._input_type = input_type
     return self._input_type
@@ -221,21 +223,32 @@ class OptionHelper:
     cmd += self.reverse_flag()
     return cmd
 
+  def _get_train_str(self):
+    return self._get_glob_expanded(self.opt.train)
+
+  def _get_test_str(self):
+    if self.opt.test is None:
+      self.opt.test = self.opt.train
+
+    return self._get_glob_expanded(self.opt.test)
+
+  def _get_glob_expanded(self, fname_glob):
+    fnames = glob(fname_glob)
+    fnames.sort()
+    return ' '.join(fnames)
+
   def starter_train(self):
-    opt = self.opt
-    cmd = ' -train ' + opt.train
+    cmd = ' -train ' + self._get_train_str()
     cmd += ' -trainFileType ' + self.input_type()
     return cmd
 
   def starter_test(self):
-    opt = self.opt
-    cmd = ' -test ' + opt.test
+    cmd = ' -test ' + self._get_test_str()
     cmd += ' -testFileType ' + self.input_type()
     return cmd
 
   def starter_train_out(self):
-    opt = self.opt
-    cmd = ' -test ' + opt.train
+    cmd = ' -test ' + self._get_train_str()
     cmd += ' -testFileType ' + self.input_type()
     return cmd
 
