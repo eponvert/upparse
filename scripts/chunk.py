@@ -201,7 +201,7 @@ class OptionHelper:
 
   def coding_flag(self):
     opt = self.opt
-    assert opt.coding in ['BIO','BILO','BIO_GP','BIO_GP_NOSTOP']
+    assert opt.coding in ['BIO','BILO','BIO_GP','BIO_GP_NOSTOP','BEO']
     coding_flag = ' -G ' + opt.coding
     return coding_flag
 
