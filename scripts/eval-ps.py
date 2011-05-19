@@ -8,6 +8,7 @@ import sys
 from os.path import dirname, basename, exists
 from optparse import OptionParser
 from subprocess import Popen, PIPE, STDOUT
+from glob import glob
 
 # TODO try to import this function from ps_wrd_up
 def guess_input_type(fname):
@@ -24,7 +25,6 @@ def guess_input_type(fname):
     return 'SPL'
 
 def run_cmd(cmd):
-  log('cmd: ' + cmd)
   p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
   while True:
     o = p.stdout.read(1)
@@ -48,10 +48,17 @@ def main():
   op.add_option('-o', '--output')
   op.add_option('-f', '--filter_test', type='int', default='-1')
   op.add_option('-M', '--memflag', default='-Xmx1g')
+  op.add_option('-v', '--verbose', action='store_true')
 
   opt, args = op.parse_args()
 
-  input_type = opt.input_type or guess_input_type(opt.test)
+  tst = []
+  for g in opt.test.split():
+    tst.extend(glob(g))
+  tst.sort()
+  tst = ' '.join(tst)
+
+  input_type = opt.input_type or guess_input_type(tst)
   log('guessing input type = ' + input_type)
   log('running initial chunking')
 
@@ -59,11 +66,13 @@ def main():
   if opt.filter_test > 0: 
     filter_flag = ' -filterTest %d ' % opt.filter_test
 
-  cmd = 'java ' + opt.memflag + ' -jar upparse.jar cclp-eval'
-  cmd += ' -test ' + opt.test
+  cmd = 'java -ea ' + opt.memflag + ' -jar upparse.jar cclp-eval'
+  cmd += ' -test ' + tst
   cmd += ' -testFileType ' + input_type
   cmd += ' -cclpOutput ' + opt.output
   cmd += filter_flag
+  if opt.verbose:
+    log('cmd: ' + cmd)
   run_cmd(cmd)
 
 if __name__ == '__main__':
