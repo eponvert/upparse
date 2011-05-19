@@ -427,7 +427,7 @@ def main():
     cmd += opt_h.starter_test()
     cmd += opt_h.filter_flag()
 
-    cmd += ' -E PRCL -e CLUMP,NPS'
+    cmd += ' -E PRCL -e CLUMP,NPS,TREEBANKPREC'
     run_cmd(cmd, verbose=opt_h.verbose())
 
 if __name__ == '__main__':

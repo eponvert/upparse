@@ -13,6 +13,8 @@ public class WSJFileTreeStringIter extends FileTreeStringIter {
   
   @Override
   protected boolean skipLine(String line) {
-    return false;
+    line = line.trim();
+    // for use with Switchboard and Brown
+    return line.startsWith("*x*") || line.startsWith("( (CODE (SYM ");
   }
 }
