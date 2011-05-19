@@ -24,21 +24,21 @@ public class ChunkedCorpus {
     return corpus;
   }
   
-  public void writeTo(String filename) throws IOException {
-    BufferedWriter bw = new BufferedWriter(
-        new OutputStreamWriter(
-            new FileOutputStream(new File(filename)), "UTF-8"));
-        
+  public void writeTo(BufferedWriter bw, String[][] outputText) 
+  throws IOException {        
     int i, j, k;
+    final GetString getString = 
+      GetString.altGetString(outputText, corpus, alpha);
+    
     for (i = 0; i < corpus.length; i++) {
       for (j = 0; j < corpus[i].length; j++) {
         if (corpus[i][j].length == 1) 
-          bw.write(alpha.getString(corpus[i][j][0]));
+          bw.write(getString.getString(i, j, 0));
         
         else {
           bw.write("(");
           for (k = 0; k < corpus[i][j].length; k++) {
-            bw.write(alpha.getString(corpus[i][j][k]));
+            bw.write(getString.getString(i, j, k)); 
             if (k < corpus[i][j].length - 1) bw.write(" ");
           }
           bw.write(")");
@@ -53,17 +53,18 @@ public class ChunkedCorpus {
   }
   
 
-  public void writeToUnderscore(String filename) throws IOException {
-    BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+  public void writeToUnderscore(BufferedWriter bw, String[][] outputText) 
+  throws IOException {
+    GetString getString = GetString.altGetString(outputText, corpus, alpha);
     int i, j, k;
     for (i = 0; i < corpus.length; i++) {
       for (j = 0; j < corpus[i].length; j++) {
         if (corpus[i][j].length == 1) 
-          bw.write(alpha.getString(corpus[i][j][0]));
+          bw.write(getString.getString(i, j, 0));
         
         else {
           for (k = 0; k < corpus[i][j].length; k++) {
-            bw.write(alpha.getString(corpus[i][j][k]));
+            bw.write(getString.getString(i, j, k));
             if (k < corpus[i][j].length - 1) bw.write("_");
           }
         }

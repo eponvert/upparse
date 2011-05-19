@@ -7,6 +7,7 @@ import upparse.corpus.*;
 import upparse.corpus.TagEncoder.*;
 import upparse.eval.*;
 import upparse.model.*;
+import upparse.util.Util;
 
 /**
  * Main class manages command-line interface to UPP
@@ -48,6 +49,7 @@ public class Main {
   private boolean reverse = false;
   private ChunkedSegmentedCorpus trainChunkedSegmentedCorpus;
   private String outputString;
+  private boolean outputPos = false;
 
   private Main(final String[] args) throws CommandLineError, IOException,
       EvalError, EncoderError, CorpusError {
@@ -70,7 +72,11 @@ public class Main {
         arg = args[i++];
 
         if (arg.equals("-output")) {
-          outputManager = OutputManager.fromDirname(args[i++]);
+          String output = args[i++];
+          if (output.equals("-"))
+            outputManager = OutputManager.stdoutOutputManager();
+          else
+            outputManager = OutputManager.fromDirname(args[i++]);
         }
 
         else if (arg.equals("-outputTo")) {
@@ -79,6 +85,9 @@ public class Main {
 
         else if (arg.equals("-noSeg"))
           noSeg = true;
+        
+        else if (arg.equals("-outputPos"))
+          outputPos = true;
 
         else if (arg.equals("-reverse"))
           reverse = true;
@@ -339,8 +348,17 @@ public class Main {
   }
 
   private void writeOutput() throws EvalError, IOException, CorpusError {
+    if (outputPos) {
+      String[][] testPos = getTestPos();
+      outputManager.useOutputText(testPos);
+      evalManager.useOutputText(testPos);
+    }
     evalManager.writeEval(outputManager.getResultsStream());
     outputManager.writeOutput();
+  }
+  
+  private String[][] getTestPos() {
+    return evalManager.getTestPos();
   }
 
   private void chunkerEval(final SequenceModelChunker model)
@@ -497,11 +515,16 @@ public class Main {
         prog.dumpText();
       
       else if (prog.action.equals(DUMP_CLUMPS_ACTION)) {
-        prog.evalManager.getClumpGoldStandard().writeTo(prog.outputString);
+        String[][] altText = prog.outputPos ? prog.getTestPos() : null;
+        BufferedWriter bw = Util.bufferedWriter(prog.outputString);
+        prog.evalManager.getClumpGoldStandard().writeTo(bw, altText);
       }
       
-      else if (prog.action.equals(DUMP_NPS_ACTION))
-        prog.evalManager.getNPsGoldStandard().writeTo(prog.outputString);
+      else if (prog.action.equals(DUMP_NPS_ACTION)) {
+        String[][] altText = prog.outputPos ? prog.getTestPos() : null;
+        BufferedWriter bw = Util.bufferedWriter(prog.outputString);
+        prog.evalManager.getNPsGoldStandard().writeTo(bw, altText);
+      }
       
       else {
         System.err.println("Unexpected action: " + prog.action);

@@ -68,13 +68,13 @@ def guess_input_type(fname):
 
 def run_cmd(cmd, fh=None, verbose=False):
   if verbose: log('cmd: ' + cmd)
-  p = Popen(cmd, **dict(stdout=PIPE, stderr=STDOUT, shell=True))
+  p = Popen(cmd, **dict(stdout=PIPE, shell=True))
   while True:
     o = p.stdout.read(1)
     if o == '':
       break
     else:
-      sys.stderr.write(o)
+      sys.stdout.write(o)
       if fh is not None:
         fh.write(o)
 
@@ -98,11 +98,14 @@ class OptionHelper:
     op.add_option('-m', '--model', default='prlg-uni')
     op.add_option('-M', '--memflag', default='-Xmx1g')
     op.add_option('-c', '--coding', default='BIO')
+    op.add_option('-p', '--pos', action='store_true')
     op.add_option('-P', '--nopunc', action='store_true')
     op.add_option('-E', '--emdelta', type='float', default=.0001)
     op.add_option('-C', '--cascade', action='store_true')
     op.add_option('-S', '--smooth', type='float', default=.1)
     op.add_option('-I', '--iter', type='int', default=-1)
+    op.add_option('-v', '--verbose', action='store_true')
+    op.add_option('-O', '--stdout', action='store_true')
   
     opt, args = op.parse_args()
 
@@ -110,11 +113,20 @@ class OptionHelper:
 
     self._input_type = None
 
+  def verbose(self):
+    return self.opt.verbose
+
+  def stdout(self):
+    return self.opt.stdout
+
   def cascade(self):
     return self.opt.cascade
 
   def output(self):
     return self.opt.output
+
+  def output_type(self):
+    return self.opt.output_type
 
   def set_output(self, outp):
     self.opt.output = outp
@@ -213,6 +225,9 @@ class OptionHelper:
   def reverse_flag(self):
     return self.opt.reverse and ' -reverse' or ''
 
+  def pos_flag(self):
+    return self.opt.pos and ' -outputPos' or ''
+
   def basic_cmd(self):
     cmd = self.chunk_cmd()
     cmd += self.model_flag()
@@ -221,6 +236,7 @@ class OptionHelper:
     cmd += self.emdelta_flag()
     cmd += self.smooth_flag()
     cmd += self.reverse_flag()
+    cmd += self.pos_flag()
     return cmd
 
   def _get_train_str(self):
@@ -279,14 +295,16 @@ def main():
             + opt_h.starter_train() \
             + opt_h.starter_train_out() \
             + output_file_type \
-            + ' -output ' + cascade_train_out)
+            + ' -output ' + cascade_train_out, \
+            verbose=opt_h.verbose())
 
     run_cmd(basic_cmd \
             + opt_h.starter_train() \
             + opt_h.starter_test() \
             + opt_h.filter_flag() \
             + output_file_type \
-            + ' -output ' + cascade_test_out)
+            + ' -output ' + cascade_test_out, \
+            verbose=opt_h.verbose())
 
     cascade_iter = 1
 
@@ -331,7 +349,8 @@ def main():
       run_cmd(opt_h.eval_cmd() \
               + opt_h.starter_test() \
               + ' -cclpOutput ' + cascade_test_eval_fname \
-              + opt_h.filter_flag(), fh=results_fh)
+              + opt_h.filter_flag(), fh=results_fh, \
+              verbose=opt_h.verbose())
 
 
       cascade_expand_last = cascade_expand
@@ -357,7 +376,8 @@ def main():
               + ' -test ' + next_run_train_fname \
               + ' -testFileType SPL ' \
               + output_file_type \
-              + ' -output ' + cascade_train_out)
+              + ' -output ' + cascade_train_out,
+              verbose=opt_h.verbose())
 
       # if re-chunked train is the same as orig, break
       new_cascade_train_out_fname = get_output_fname(cascade_train_out)
@@ -378,7 +398,8 @@ def main():
               + ' -test ' + next_run_test_fname \
               + ' -testFileType SPL ' \
               + output_file_type \
-              + ' -output ' + cascade_test_out)
+              + ' -output ' + cascade_test_out,
+              verbose=opt_h.verbose())
 
       cascade_dir = new_cascade_dir
       cascade_iter += 1
@@ -389,7 +410,10 @@ def main():
     cmd = opt_h.basic_cmd()
 
     output_flag = ''
-    if opt_h.output() is not None:
+    if opt_h.stdout():
+      output_flag = ' -output -'
+
+    elif opt_h.output() is not None:
       opt_h.check_output()
       output_flag = ' -output ' + opt_h.output()
  
@@ -399,7 +423,7 @@ def main():
     cmd += opt_h.filter_flag()
 
     cmd += ' -E PRCL -e CLUMP,NPS'
-    run_cmd(cmd)
+    run_cmd(cmd, verbose=opt_h.verbose())
 
 if __name__ == '__main__':
   main()

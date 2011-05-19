@@ -16,6 +16,7 @@ public class DirectoryOutputManager extends OutputManager {
     new ArrayList<ChunkedSegmentedCorpus>();
   private List<String> fnames = new ArrayList<String>();
   private final PrintStream statusStream;
+  private String[][] outputText = null;
   
   private DirectoryOutputManager(final String dirName) throws CommandLineError {
     dir = dirName;
@@ -73,10 +74,12 @@ public class DirectoryOutputManager extends OutputManager {
         writeOutput.get(writeOutput.size()-1).nSentences());
     if (writeOutput.size() > 1)
       for (int i = 0; i < writeOutput.size(); i++)
-        writeOutput.get(i).writeTo(getFname(i), outputType);
+        writeOutput.get(i).writeTo(getFname(i), outputType, outputText);
     
     final String outputFilename = dir + File.separator + "OUTPUT";
-    writeOutput.get(writeOutput.size()-1).writeTo(outputFilename, outputType);
+    writeOutput
+      .get(writeOutput.size()-1)
+      .writeTo(outputFilename, outputType, outputText);
   }
 
   public static OutputManager fromDirname(final String filename) 
@@ -100,5 +103,10 @@ public class DirectoryOutputManager extends OutputManager {
   @Override
   public String clumpsOutputFilename() {
     return dir + File.separator + "as-chunks.txt";
+  }
+
+  @Override
+  public void useOutputText(String[][] text) {
+    outputText = text;
   }
 }

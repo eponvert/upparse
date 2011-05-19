@@ -1,6 +1,13 @@
 package upparse.util;
 
-import static java.lang.Math.*;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 /**
  * Static math utilities 
@@ -74,5 +81,11 @@ public class Util {
     for (int i = 0; i < n; i++)
       newCorpus[i] = reverse(corpus[n-i-1]);
     return newCorpus;
+  }
+
+  public static BufferedWriter bufferedWriter(String filename) 
+  throws IOException {
+    return new BufferedWriter(new OutputStreamWriter(
+        new FileOutputStream(new File(filename)), "UTF-8"));
   }
 }

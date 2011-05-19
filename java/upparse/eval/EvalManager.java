@@ -5,6 +5,7 @@ import java.util.*;
 
 import upparse.cli.*;
 import upparse.corpus.*;
+import upparse.util.Util;
 
 /**
  * @author eponvert@utexas.edu (Elias Ponvert)
@@ -38,6 +39,15 @@ public class EvalManager {
   private ChunkedCorpus ppsGoldStandard;
   private TreebankEval ubsFromPPsEval;
   private boolean reverse = false;
+  private String[][] outputText = null;
+  
+  public String[][] getTestPos() {
+    return getTestPos(null);
+  }
+  
+  public String[][] getTestPos(String puncSymbol) {
+    return GetPOS.getPos(alpha, corpusFiles, testFileType, puncSymbol, filterLength);
+  }
 
   public void setNoSeg(final boolean b) {
     noSeg = b;
@@ -294,11 +304,15 @@ public class EvalManager {
         man.getResultsStream());
 
     if (!man.isNull()) {
-      output.writeTo(man.treeOutputFilename());
-      chunked.writeTo(man.clumpsOutputFilename());
+      BufferedWriter bw = Util.bufferedWriter(man.treeOutputFilename()); 
+      output.writeTo(bw, outputText);
+      bw = Util.bufferedWriter(man.clumpsOutputFilename());
+      chunked.writeTo(bw, outputText);
     }
   }
-
+  
+  
+  
   public int getFilterLen() { 
     return filterLength;
   }
@@ -309,5 +323,9 @@ public class EvalManager {
 
   public void setReverseEval(final boolean r) {
     reverse = r;
+  }
+
+  public void useOutputText(String[][] testPos) {
+    outputText = testPos;
   }
 }

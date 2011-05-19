@@ -192,29 +192,34 @@ public class ChunkedSegmentedCorpus implements Corpus {
     return sb.toString();
   }
 
-  public void writeTo(String fname) throws IOException {
-    ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeTo(fname);
+  public void writeTo(BufferedWriter output, String[][] outputText) throws IOException {
+    ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeTo(output, outputText);
   }
   
 
-  private void writeToUnderscore(String output) throws IOException {
-    ChunkedCorpus.fromChunkedSegmentedCorpus(this).writeToUnderscore(output);
+  private void writeToUnderscore(BufferedWriter output, String[][] outputText) 
+  throws IOException {
+    ChunkedCorpus
+      .fromChunkedSegmentedCorpus(this).writeToUnderscore(output, outputText);
   }
   
-  private void writeToUnderscoreCCL(String output) throws IOException {
-    BufferedWriter bw = new BufferedWriter(
-        new OutputStreamWriter(new FileOutputStream(output), "UTF8"));
-    for (int[][][] s: corpus) {
-      for (int[][] seg: s) {
+  private void writeToUnderscoreCCL(BufferedWriter bw, String[][] outputText) 
+  throws IOException {
+    GetString getString = 
+      GetString.altGetString(outputText, toChunkedCorpus().getArrays(), alpha);
+
+    for (int sent = 0; sent < corpus.length; sent++) {
+      int chunkI = 0;
+      for (int[][] seg: corpus[sent]) {
         for (int[] chunk: seg) {
-          for (int i = 0; i < chunk.length; i++) {
-            bw.write(alpha.getString(chunk[i]));
-            if (i == chunk.length-1) {
+          for (int wrd = 0; wrd < chunk.length; wrd++) {
+            bw.write(getString.getString(sent, chunkI, wrd));
+            if (wrd == chunk.length - 1)
               bw.write(' ');
-            } else {
+            else
               bw.write('_');
-            }
           }
+          chunkI++;
         }
         bw.write(" ; ");
       }
@@ -224,28 +229,28 @@ public class ChunkedSegmentedCorpus implements Corpus {
   }
   
 
-  private void writeToWithPunc(String output) throws IOException {
-    BufferedWriter bw = new BufferedWriter(
-        new OutputStreamWriter(new FileOutputStream(output), "UTF8"));
-    for (int[][][] s: corpus) {
-      for (int[][] seg: s) {
-        for (int[] chunk: seg) {
-          if (chunk.length > 1)
-            bw.write(" (");
-          for (int i = 0; i < chunk.length; i++) {
-            bw.write(alpha.getString(chunk[i]));
-            if (i < chunk.length-1) {
+  private void writeToWithPunc(BufferedWriter bw, String[][] textOutput) 
+  throws IOException {
+    GetString getString = GetString.altGetString(
+        textOutput, toChunkedCorpus().getArrays(), alpha);
+    
+    for (int sent = 0; sent < corpus.length; sent++) {
+      for (int seg = 0; seg < corpus[sent].length; seg++) {
+        int chunkI = 0;
+        for (int[] chunk: corpus[sent][seg]) {
+          if (chunk.length > 1) 
+            bw.write("(");
+          for (int wrd = 0; wrd < chunk.length; wrd++) {
+            bw.write(getString.getString(sent, chunkI, wrd));
+            if (wrd < chunk.length - 1)
               bw.write(' ');
-            }
           }
-          if (chunk.length > 1)
-            bw.write(") ");
-          else
-            bw.write(" ");
+          bw.write(chunk.length > 1 ? ") " : " ");
+          chunkI++;
         }
         bw.write(" ; ");
       }
-      bw.write("\n");
+      bw.write('\n');
     }
     bw.close();
   }
@@ -299,42 +304,53 @@ public class ChunkedSegmentedCorpus implements Corpus {
     return n;
   }
 
+
   public void writeTo(
-      String output, OutputType outputType) throws IOException, CorpusError {
+      BufferedWriter output, OutputType outputType, String[][] outputText) 
+  throws IOException, CorpusError {
     switch (outputType) {
       case CLUMP:
       case NPS:
       case PPS:
-        writeTo(output);
+        writeTo(output, outputText);
         break;
         
       case PUNC:
-        writeToWithPunc(output);
+        writeToWithPunc(output, outputText);
         break;
        
       case UNDERSCORE:
-        writeToUnderscore(output);
+        writeToUnderscore(output, outputText);
         break;
         
       case UNDERSCORE4CCL:
-        writeToUnderscoreCCL(output);
+        writeToUnderscoreCCL(output, outputText);
         break;
         
       case TREEBANKRB:
-        UnlabeledBracketSetCorpus.fromArrays(asRB()).writeTo(output);
+        UnlabeledBracketSetCorpus.fromArrays(asRB()).writeTo(output, outputText);
         break;
         
       case TREEBANKPREC:
-        UnlabeledBracketSetCorpus.fromArrays(asChunked()).writeTo(output);
+        UnlabeledBracketSetCorpus
+          .fromArrays(asChunked()).writeTo(output, outputText);
         break;
         
       case TREEBANKFLAT:
-        UnlabeledBracketSetCorpus.fromArrays(asFlat()).writeTo(output);
+        UnlabeledBracketSetCorpus.fromArrays(asFlat())
+          .writeTo(output, outputText);
         break;
         
       default:
         throw new CorpusError("Unexpected output type: " + outputType);
     }
+  }
+
+  public void writeTo(
+      String output, OutputType outputType, String[][] outputText) 
+  throws IOException, CorpusError {
+    BufferedWriter bw = Util.bufferedWriter(output);
+    writeTo(bw, outputType, outputText);
   }
 
   public ChunkedSegmentedCorpus filter(int filterLen) {

@@ -23,6 +23,10 @@ public abstract class OutputManager {
   public static OutputManager nullOutputManager() {
     return NullOutputManager.instance();
   }
+  
+  public static OutputManager stdoutOutputManager() {
+    return StdoutOutputManager.instance();
+  }
 
   public abstract boolean isNull();
 
@@ -45,5 +49,7 @@ public abstract class OutputManager {
   public abstract String treeOutputFilename();
   
   public abstract String clumpsOutputFilename();
+
+  public abstract void useOutputText(String[][] testPos);
 }
 

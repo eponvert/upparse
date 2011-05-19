@@ -52,11 +52,11 @@ implements Iterable<UnlabeledBracketSet> {
     return new UnlabeledBracketSetCorpus(a);
   }
 
-  public void writeTo(String output) throws IOException {
-    PrintWriter writer = new PrintWriter(new BufferedWriter(
-        new FileWriter(new File(output))));
-    for (int i = 0; i < trees.length; i++)
-      writer.println(trees[i].toString());
+  public void writeTo(BufferedWriter writer, String[][] outputText) throws IOException {
+    for (int i = 0; i < trees.length; i++) {
+      writer.write(trees[i].toString());
+      writer.write('\n');
+    }
     writer.close();
   }
 

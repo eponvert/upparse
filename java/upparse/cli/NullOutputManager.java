@@ -46,4 +46,7 @@ public class NullOutputManager extends OutputManager {
   public String clumpsOutputFilename() {
     return null;
   }
+
+  @Override
+  public void useOutputText(String[][] testPos) { }
 }
