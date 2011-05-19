@@ -106,6 +106,7 @@ class OptionHelper:
     op.add_option('-I', '--iter', type='int', default=-1)
     op.add_option('-v', '--verbose', action='store_true')
     op.add_option('-O', '--stdout', action='store_true')
+    op.add_option('-x', '--output_type', default='CLUMP')
   
     opt, args = op.parse_args()
 
@@ -249,7 +250,9 @@ class OptionHelper:
     return self._get_glob_expanded(self.opt.test)
 
   def _get_glob_expanded(self, fname_glob):
-    fnames = glob(fname_glob)
+    fnames = []
+    for g in fname_glob.split():
+      fnames.extend(glob(g))
     fnames.sort()
     return ' '.join(fnames)
 
@@ -416,6 +419,8 @@ def main():
     elif opt_h.output() is not None:
       opt_h.check_output()
       output_flag = ' -output ' + opt_h.output()
+
+    cmd += ' -outputType ' + opt_h.output_type()
  
     cmd += output_flag
     cmd += opt_h.starter_train()
