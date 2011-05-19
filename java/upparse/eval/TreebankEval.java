@@ -60,7 +60,8 @@ public class TreebankEval {
         final UnlabeledBracketSetCorpus output) {
       super(_name);
       assert output != null;
-      assert gold.size() == output.size();
+      assert gold.size() == output.size():
+        "gold size: " + gold.size() + "; output size = " + output.size();
       
       for (int i = 0; i < gold.size(); i++) {
         final UnlabeledBracketSet 
