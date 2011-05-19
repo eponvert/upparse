@@ -235,8 +235,8 @@ public class ChunkedSegmentedCorpus implements Corpus {
         textOutput, toChunkedCorpus().getArrays(), alpha);
     
     for (int sent = 0; sent < corpus.length; sent++) {
+      int chunkI = 0;
       for (int seg = 0; seg < corpus[sent].length; seg++) {
-        int chunkI = 0;
         for (int[] chunk: corpus[sent][seg]) {
           if (chunk.length > 1) 
             bw.write("(");
