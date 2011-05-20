@@ -76,7 +76,7 @@ public class Main {
           if (output.equals("-"))
             outputManager = OutputManager.stdoutOutputManager();
           else
-            outputManager = OutputManager.fromDirname(args[i++]);
+            outputManager = OutputManager.fromDirname(output);
         }
 
         else if (arg.equals("-outputTo")) {
