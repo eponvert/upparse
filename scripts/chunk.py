@@ -109,6 +109,7 @@ class OptionHelper:
     op.add_option('-x', '--output_type', default='CLUMP')
     op.add_option('-N', '--numtrain', type='int', default=-1)
     op.add_option('-A', '--output_all', action='store_true')
+    op.add_option('-X', '--continuous_eval', action='store_true')
   
     opt, args = op.parse_args()
 
@@ -231,12 +232,16 @@ class OptionHelper:
   def output_all_flag(self):
     return self.opt.output_all and ' -outputAll' or ''
 
+  def continuous_eval_flag(self):
+    return self.opt.continuous_eval and ' -continuousEval' or ''
+
   def basic_cmd(self):
     cmd = self.chunk_cmd()
     cmd += self.model_flag()
     cmd += self.coding_flag()
     cmd += self.seg_flag()
     cmd += self.output_all_flag()
+    cmd += self.continuous_eval_flag()
     cmd += self.emdelta_flag()
     cmd += self.smooth_flag()
     cmd += self.reverse_flag()
