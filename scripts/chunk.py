@@ -107,6 +107,8 @@ class OptionHelper:
     op.add_option('-v', '--verbose', action='store_true')
     op.add_option('-O', '--stdout', action='store_true')
     op.add_option('-x', '--output_type', default='CLUMP')
+    op.add_option('-N', '--numtrain', type='int', default=-1)
+    op.add_option('-A', '--output_all', action='store_true')
   
     opt, args = op.parse_args()
 
@@ -158,19 +160,16 @@ class OptionHelper:
         else:
           rmtree(opt.output)
 
+  def numtrain_flag(self):
+    n = self.opt.numtrain
+    return n >= 0 and (' -numtrain %d' % n) or ''
+
   def filter_flag(self):
-    opt = self.opt
-    filter_flag = ''
-    if opt.filter_test > 0: 
-      filter_flag = ' -filterTest %d ' % opt.filter_test
-    return filter_flag
+    n = self.opt.filter_test
+    return n >= 0 and (' -filterTest %d' % n) or ''
   
   def seg_flag(self):
-    opt = self.opt
-    seg_flag = ''
-    if opt.nopunc:
-      seg_flag = ' -noSeg '
-    return seg_flag
+    return self.opt.nopunc and ' -noSeg ' or ''
 
   def model_flag(self):
     opt = self.opt
@@ -229,15 +228,20 @@ class OptionHelper:
   def pos_flag(self):
     return self.opt.pos and ' -outputPos' or ''
 
+  def output_all_flag(self):
+    return self.opt.output_all and ' -outputAll' or ''
+
   def basic_cmd(self):
     cmd = self.chunk_cmd()
     cmd += self.model_flag()
     cmd += self.coding_flag()
     cmd += self.seg_flag()
+    cmd += self.output_all_flag()
     cmd += self.emdelta_flag()
     cmd += self.smooth_flag()
     cmd += self.reverse_flag()
     cmd += self.pos_flag()
+    cmd += self.numtrain_flag()
     return cmd
 
   def _get_train_str(self):
