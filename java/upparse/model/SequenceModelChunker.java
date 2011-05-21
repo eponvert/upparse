@@ -59,7 +59,7 @@ public class SequenceModelChunker {
     if (totalIter == 0) 
       return false;
     if (totalIter > 0)
-      return currIter < totalIter && (lastPerplex < 0 || emdelta < currDelta());
+      return currIter < totalIter;
     else
       return lastPerplex < 0 || emdelta < currDelta();
   }
