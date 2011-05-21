@@ -136,12 +136,13 @@ class OptionHelper:
     self.opt.output = outp
 
   def input_type(self):
-    if self._input_type is None:
-      input_type = self.opt.input_type \
-        or guess_input_type(self._get_test_str())
+    input_type_map = {'wsj':'WSJ', 'negra':'NEGRA', 'ctb':'CTB', 'brown':'WSJ'}
+    try:
+      return input_type_map[self.opt.input_type]
+    except KeyError:
+      input_type = guess_input_type(self._get_test_str())
       log('guessing input type = ' + input_type)
-      self._input_type = input_type
-    return self._input_type
+      return input_type
 
   def check_output(self):
     opt = self.opt
