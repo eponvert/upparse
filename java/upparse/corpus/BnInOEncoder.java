@@ -155,7 +155,7 @@ public class BnInOEncoder extends TagEncoder {
   }
   
   private int reducedTagVal(int tag) {
-    final int val = (tag - 2) % (numGroups * 2);
+    final int val = (tag - 2) % 2;
     return val + 2;
   }
   
