@@ -1,6 +1,8 @@
 package upparse.corpus;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import upparse.model.*;
 import upparse.util.*;
@@ -12,18 +14,14 @@ import upparse.util.*;
  */
 public abstract class TagEncoder {
 
-  public static enum EncoderType {
-    BIO_GP_NOSTOP, BIO_GP, BIO, BILO, BEO;
-    public static String encoderTypeHelp() {
-      return 
-            "  BIO            Basic BIO encoding\n"
-          + "  BILO           Basic BILO encoding\n"
-          + "  BIO_GP         BIO encoding with 2nd order tagset\n"
-          + "  BIO_GP_NOSTOP  BIO encoding with 2nd order tagset (except on STOP)\n"
-          + "  BEO            Not sure, actually"
-          ;
-            
-    }
+  public static String encoderTypeHelp() {
+    return 
+    "  BIO            Basic BIO encoding\n"
+    + "  BILO           Basic BILO encoding\n"
+    + "  BIO_GP         BIO encoding with 2nd order tagset\n"
+    + "  BIO_GP_NOSTOP  BIO encoding with 2nd order tagset (except on STOP)\n"
+    + "  BEO            Two-tag two-word chunks only\n"
+    + "  BIO_n          BIO encoding with n groups of clumping types";
   }
 
   private static final String EOS = "__eos__";
@@ -54,26 +52,31 @@ public abstract class TagEncoder {
     return eosv;
   }
 
-  public static TagEncoder getBIOEncoder(final EncoderType gp,
+  public static TagEncoder getBIOEncoder(final String type,
       final String stop, final Alpha alpha) throws EncoderError {
-    switch (gp) {
-      case BIO_GP_NOSTOP:
-        return new GrandparentWithStopBIOEncoder(stop, alpha);
-
-      case BIO_GP:
-        return new GrandparentBIOEncoder(stop, alpha);
-
-      case BIO:
-        return new SimpleBIOEncoder(stop, alpha);
-        
-      case BILO:
-        return new SimpleBILOEncoder(stop, alpha);
-        
-      case BEO:
-        return new SimpleBEOEncoder(stop, alpha);
-
-      default:
-        throw new EncoderError("Unexpected GP option " + gp);
+    if (type.equals("BIO_GP_NOSTOP"))
+      return new GrandparentWithStopBIOEncoder(stop, alpha);
+    
+    else if (type.equals("BIO_GP"))
+      return new GrandparentBIOEncoder(stop, alpha);
+    
+    else if (type.equals("BIO")) 
+      return new SimpleBIOEncoder(stop, alpha);
+    
+    else if (type.equals("BILO"))
+      return new SimpleBILOEncoder(stop, alpha);
+    
+    else if (type.equals("BEO"))
+      return new SimpleBEOEncoder(stop, alpha);
+    
+    else {
+      Pattern bninoPatt = Pattern.compile("BIO_(\\d+)");
+      Matcher m = bninoPatt.matcher(type);
+      if (m != null && m.matches()) 
+        return new BnInOEncoder(stop, alpha, Integer.parseInt(m.group(1)));
+      
+      else
+        throw new EncoderError("Unexpected GP option " + type);
     }
   }
 

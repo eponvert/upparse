@@ -1,12 +1,36 @@
 package upparse.cli;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
-import upparse.corpus.*;
-import upparse.corpus.TagEncoder.*;
-import upparse.eval.*;
-import upparse.model.*;
+import upparse.corpus.Alpha;
+import upparse.corpus.ChunkedCorpus;
+import upparse.corpus.ChunkedSegmentedCorpus;
+import upparse.corpus.CorpusError;
+import upparse.corpus.CorpusType;
+import upparse.corpus.CorpusUtil;
+import upparse.corpus.EncoderError;
+import upparse.corpus.KeepStop;
+import upparse.corpus.OutputType;
+import upparse.corpus.StopSegmentCorpus;
+import upparse.corpus.TagEncoder;
+import upparse.corpus.UnlabeledBracketSetCorpus;
+import upparse.eval.Eval;
+import upparse.eval.EvalError;
+import upparse.eval.EvalManager;
+import upparse.eval.EvalReportType;
+import upparse.model.Chunker;
+import upparse.model.ChunkerError;
+import upparse.model.SequenceModel;
+import upparse.model.SequenceModelChunker;
+import upparse.model.SequenceModelError;
+import upparse.model.SequenceModelType;
+import upparse.model.SimpleChunker;
 import upparse.util.Util;
 
 /**
@@ -32,8 +56,8 @@ public class Main {
   private int iter = -1;
   private double emdelta = .001;
   private String[] args = new String[0];
-  private TagEncoder encoder = TagEncoder.getBIOEncoder(EncoderType.BIO,
-      KeepStop.STOP, alpha);
+  private TagEncoder encoder = 
+    TagEncoder.getBIOEncoder("BIO", KeepStop.STOP, alpha);
   private String[] trainCorpusString = null;
   private CorpusType trainFileType = CorpusType.WSJ;
   private int trainSents = -1;
@@ -66,7 +90,6 @@ public class Main {
 
     try {
       final List<String> otherArgs = new ArrayList<String>();
-      encoder = TagEncoder.getBIOEncoder(EncoderType.BIO, KeepStop.STOP, alpha);
       int filterTest = -1;
       while (i < args.length) {
         arg = args[i++];
@@ -149,8 +172,7 @@ public class Main {
           emdelta = Float.parseFloat(args[i++]);
 
         else if (arg.equals("-G") || arg.equals("-encoderType"))
-          encoder = TagEncoder.getBIOEncoder(EncoderType.valueOf(args[i++]),
-              KeepStop.STOP, alpha);
+          encoder = TagEncoder.getBIOEncoder(args[i++], KeepStop.STOP, alpha);
 
         else if (arg.equals("-E") || arg.equals("-evalReportType"))
           evalManager.setEvalReportType(EvalReportType.valueOf(args[i++]));
@@ -194,10 +216,6 @@ public class Main {
         evalManager.setTestCorpusString(trainCorpusString);
         evalManager.setParserEvaluationTypes("NONE");
       }
-
-      // don't run EM more than 200 iterations
-      if (iter < 0)
-        iter = 200;
 
       outputManager.writeMetadata(this);
     } catch (final ArrayIndexOutOfBoundsException e) {
@@ -297,7 +315,7 @@ public class Main {
             + "  WPL    : Word per line (sentences seperated by blank lines)\n"
             + "\n" + OutputType.outputTypesHelp() + "\n\n"
             + Eval.evalReportHelp() + "\n\n"
-            + TagEncoder.EncoderType.encoderTypeHelp());
+            + TagEncoder.encoderTypeHelp());
   }
 
   private StopSegmentCorpus getTrainStopSegmentCorpus() throws CorpusError {
