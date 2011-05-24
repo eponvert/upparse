@@ -126,7 +126,7 @@ public class StopSegmentCorpus {
   }
 
   public void writeTokenizedPlaintextTo(String output) throws IOException {
-    BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), "UTF8"));
     for (int[][] sent : corpus) {
       final int n = sent.length;
       for (int i = 0; i < n; i++) {
