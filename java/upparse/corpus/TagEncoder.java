@@ -21,7 +21,8 @@ public abstract class TagEncoder {
     + "  BIO_GP         BIO encoding with 2nd order tagset\n"
     + "  BIO_GP_NOSTOP  BIO encoding with 2nd order tagset (except on STOP)\n"
     + "  BEO            Two-tag two-word chunks only\n"
-    + "  BIO_n          BIO encoding with n groups of clumping types";
+    + "  BIO_n          BIO encoding with n groups of clumping types\n"
+    + "  BILO_n         BILO encoding with n groups of clumping types";
   }
 
   private static final String EOS = "__eos__";
@@ -70,10 +71,15 @@ public abstract class TagEncoder {
       return new SimpleBEOEncoder(stop, alpha);
     
     else {
-      Pattern bninoPatt = Pattern.compile("BIO_(\\d+)");
-      Matcher m = bninoPatt.matcher(type);
+      Pattern patt = Pattern.compile("BIO_(\\d+)");
+      Matcher m = patt.matcher(type);
       if (m != null && m.matches()) 
         return new BnInOEncoder(stop, alpha, Integer.parseInt(m.group(1)));
+      
+      patt = Pattern.compile("BILO_(\\d+)");
+      m = patt.matcher(type);
+      if (m != null && m.matches())
+        return new BnInLnOEncoder(stop, alpha, Integer.parseInt(m.group(1)));
       
       else
         throw new EncoderError("Unexpected GP option " + type);
