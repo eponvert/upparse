@@ -71,7 +71,7 @@ public class BnInLnOEncoder extends TagEncoder {
         assert nextEoSeg <= nextEos;
 
         assert isStopState(output[nextEoSeg]);
-        assert nextEoSeg >= output.length-1 || isIState(output[nextEoSeg + 1]);
+        assert nextEoSeg >= output.length-1 || !isIState(output[nextEoSeg + 1]);
 
         // count the number of clumps
         numClumps = 0;
