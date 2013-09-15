@@ -41,7 +41,9 @@ public class UnlabeledBracket implements Comparable<UnlabeledBracket> {
     if (o == null) throw new NullPointerException();
     else if (last < o.first) return -1;
     else if (o.last < first) return 1;
+    else if (o.first == first && last == o.last) return 0;
     else if (o.first <= first && last <= o.last) return -1;
+    else if (first <= o.first && o.last <= last) return 1;
     else return 0;
   }
 
